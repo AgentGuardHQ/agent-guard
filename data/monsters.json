@@ -1,0 +1,32 @@
+[
+  {
+    "id": 1,
+    "name": "NullPointer",
+    "hp": 30,
+    "attack": 8,
+    "defense": 4,
+    "speed": 6,
+    "moves": ["segfault", "hotfix"],
+    "color": "#e74c3c"
+  },
+  {
+    "id": 2,
+    "name": "RaceCondition",
+    "hp": 25,
+    "attack": 6,
+    "defense": 3,
+    "speed": 10,
+    "moves": ["threadlock", "hotfix"],
+    "color": "#f39c12"
+  },
+  {
+    "id": 3,
+    "name": "MemoryLeak",
+    "hp": 40,
+    "attack": 5,
+    "defense": 6,
+    "speed": 3,
+    "moves": ["garbagecollect", "memorydump"],
+    "color": "#2ecc71"
+  }
+]

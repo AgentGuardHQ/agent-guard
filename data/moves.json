@@ -1,0 +1,7 @@
+[
+  { "id": "segfault", "name": "SegFault", "power": 10 },
+  { "id": "hotfix", "name": "Hotfix", "power": 6 },
+  { "id": "threadlock", "name": "ThreadLock", "power": 8 },
+  { "id": "garbagecollect", "name": "GarbageCollect", "power": 7 },
+  { "id": "memorydump", "name": "MemoryDump", "power": 9 }
+]

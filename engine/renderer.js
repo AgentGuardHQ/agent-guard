@@ -1,0 +1,147 @@
+// Canvas rendering
+const TILE = 32;
+const COLORS = {
+  ground: '#c2b280',
+  wall: '#555555',
+  grass: '#228B22',
+  grassDark: '#1a6b1a',
+  player: '#3498db'
+};
+
+let ctx;
+
+export function initRenderer(canvas) {
+  ctx = canvas.getContext('2d');
+}
+
+export function drawMap(mapData) {
+  for (let y = 0; y < mapData.height; y++) {
+    for (let x = 0; x < mapData.width; x++) {
+      const tile = mapData.tiles[y][x];
+      if (tile === 1) {
+        ctx.fillStyle = COLORS.wall;
+      } else if (tile === 2) {
+        ctx.fillStyle = COLORS.grass;
+      } else {
+        ctx.fillStyle = COLORS.ground;
+      }
+      ctx.fillRect(x * TILE, y * TILE, TILE, TILE);
+
+      // Grass crosshatch
+      if (tile === 2) {
+        ctx.strokeStyle = COLORS.grassDark;
+        ctx.lineWidth = 1;
+        for (let i = 0; i < TILE; i += 8) {
+          ctx.beginPath();
+          ctx.moveTo(x * TILE + i, y * TILE);
+          ctx.lineTo(x * TILE + i, y * TILE + TILE);
+          ctx.stroke();
+        }
+      }
+
+      // Grid lines
+      ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+      ctx.lineWidth = 0.5;
+      ctx.strokeRect(x * TILE, y * TILE, TILE, TILE);
+    }
+  }
+}
+
+export function drawPlayer(player) {
+  const px = player.x * TILE;
+  const py = player.y * TILE;
+
+  ctx.fillStyle = COLORS.player;
+  ctx.fillRect(px + 4, py + 4, TILE - 8, TILE - 8);
+
+  // Direction indicator
+  ctx.fillStyle = '#2980b9';
+  const cx = px + TILE / 2;
+  const cy = py + TILE / 2;
+  ctx.beginPath();
+  if (player.dir === 'up') {
+    ctx.moveTo(cx, py + 2);
+    ctx.lineTo(cx - 4, py + 10);
+    ctx.lineTo(cx + 4, py + 10);
+  } else if (player.dir === 'down') {
+    ctx.moveTo(cx, py + TILE - 2);
+    ctx.lineTo(cx - 4, py + TILE - 10);
+    ctx.lineTo(cx + 4, py + TILE - 10);
+  } else if (player.dir === 'left') {
+    ctx.moveTo(px + 2, cy);
+    ctx.lineTo(px + 10, cy - 4);
+    ctx.lineTo(px + 10, cy + 4);
+  } else {
+    ctx.moveTo(px + TILE - 2, cy);
+    ctx.lineTo(px + TILE - 10, cy - 4);
+    ctx.lineTo(px + TILE - 10, cy + 4);
+  }
+  ctx.fill();
+}
+
+export function drawBattle(battle, movesData) {
+  // Background
+  ctx.fillStyle = '#1a1a2e';
+  ctx.fillRect(0, 0, 480, 320);
+
+  // Enemy BugMon (top right)
+  ctx.fillStyle = battle.enemy.color;
+  ctx.fillRect(320, 40, 64, 64);
+  ctx.fillStyle = '#fff';
+  ctx.font = '14px monospace';
+  ctx.fillText(battle.enemy.name, 300, 30);
+  drawHPBar(300, 110, 100, battle.enemy.currentHP, battle.enemy.hp);
+
+  // Player BugMon (bottom left)
+  const playerMon = battle.playerMon;
+  ctx.fillStyle = playerMon.color;
+  ctx.fillRect(80, 140, 64, 64);
+  ctx.fillStyle = '#fff';
+  ctx.fillText(playerMon.name, 60, 130);
+  drawHPBar(60, 210, 100, playerMon.currentHP, playerMon.hp);
+
+  // Menu area
+  ctx.fillStyle = '#16213e';
+  ctx.fillRect(0, 240, 480, 80);
+  ctx.strokeStyle = '#e94560';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(0, 240, 480, 80);
+
+  if (battle.state === 'menu') {
+    const options = ['Fight', 'Capture', 'Run'];
+    options.forEach((opt, i) => {
+      ctx.fillStyle = i === battle.menuIndex ? '#e94560' : '#fff';
+      ctx.font = '16px monospace';
+      ctx.fillText(opt, 20 + i * 160, 275);
+    });
+  } else if (battle.state === 'fight') {
+    const moves = playerMon.moves;
+    moves.forEach((moveId, i) => {
+      const move = movesData.find(m => m.id === moveId);
+      if (move) {
+        ctx.fillStyle = i === battle.moveIndex ? '#e94560' : '#fff';
+        ctx.font = '14px monospace';
+        ctx.fillText(move.name, 20 + i * 160, 275);
+      }
+    });
+  } else if (battle.state === 'message') {
+    ctx.fillStyle = '#fff';
+    ctx.font = '14px monospace';
+    ctx.fillText(battle.message, 20, 275);
+  }
+}
+
+function drawHPBar(x, y, width, current, max) {
+  const pct = Math.max(0, current / max);
+  ctx.fillStyle = '#333';
+  ctx.fillRect(x, y, width, 10);
+  ctx.fillStyle = pct > 0.5 ? '#2ecc71' : pct > 0.2 ? '#f39c12' : '#e74c3c';
+  ctx.fillRect(x, y, width * pct, 10);
+  ctx.fillStyle = '#fff';
+  ctx.font = '10px monospace';
+  ctx.fillText(`${Math.max(0, Math.ceil(current))}/${max}`, x + width + 5, y + 9);
+}
+
+export function clear() {
+  ctx.clearRect(0, 0, 480, 320);
+}
