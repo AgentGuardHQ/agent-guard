@@ -9,17 +9,20 @@ python3 -m http.server
 # open http://localhost:8000
 ```
 
+Also deployable to GitHub Pages — see `.github/workflows/deploy.yml`.
+
 ## Project Structure
 
 ```
 BugMon/
-├── index.html              Entry point - canvas element, loads game.js
+├── index.html              Entry point - canvas, touch controls, loads game.js
 ├── game.js                 Game loop, data loading, orchestration
 │
 ├── engine/                 Core engine (framework-level)
-│   ├── state.js            Game state machine: EXPLORE | BATTLE | MENU
-│   ├── input.js            Keyboard input tracking (pressed/just-pressed)
-│   └── renderer.js         All Canvas drawing functions
+│   ├── state.js            Game state machine: EXPLORE | BATTLE_TRANSITION | BATTLE | MENU
+│   ├── input.js            Keyboard + touch input (pressed/just-pressed/simulate)
+│   ├── renderer.js         All Canvas drawing functions
+│   └── transition.js       Battle transition animation (flash/fade)
 │
 ├── world/                  Overworld systems
 │   ├── map.js              Map data loading, tile queries, collision
@@ -31,12 +34,21 @@ BugMon/
 │   └── damage.js           Damage formula
 │
 ├── data/                   Game content (JSON, data-driven)
-│   ├── monsters.json       BugMon creatures and stats
+│   ├── monsters.json       BugMon creatures, stats, and sprite refs
 │   ├── moves.json          Move definitions
 │   └── map.json            Tile grid for the world map
 │
-└── sprites/                Pixel art sprites (Canvas-generated)
-    └── sprites.js          Sprite drawing functions for each BugMon
+├── sprites/                Pixel art sprites (PNG images)
+│   ├── sprites.js          Image loader with preload and fallback
+│   ├── SPRITE_GUIDE.md     Art specs, palettes, and generation prompts
+│   ├── nullpointer.png     Battle sprite (64x64)
+│   ├── racecondition.png   Battle sprite (64x64)
+│   ├── memoryleak.png      Battle sprite (64x64)
+│   ├── deadlock.png        Battle sprite (64x64)
+│   └── player_*.png        Player directional sprites (32x32 x4)
+│
+└── .github/workflows/
+    └── deploy.yml          GitHub Pages auto-deploy on push to main
 ```
 
 ## Module Dependency Graph
@@ -44,14 +56,16 @@ BugMon/
 ```
 game.js (entry point)
 ├── engine/state.js         (no deps)
-├── engine/input.js         (no deps)
-├── engine/renderer.js      (no deps)
+├── engine/input.js         (no deps, also used by index.html touch controls)
+├── engine/renderer.js      ← sprites/sprites.js
+├── engine/transition.js    (no deps)
 ├── world/map.js            (no deps)
 ├── world/player.js         ← engine/input.js, world/map.js
 ├── world/encounters.js     (no deps, receives data via setter)
 ├── battle/damage.js        (no deps)
-└── battle/battleEngine.js  ← battle/damage.js, engine/input.js,
-                               engine/state.js, world/player.js
+├── battle/battleEngine.js  ← battle/damage.js, engine/input.js,
+│                              engine/state.js, world/player.js
+└── sprites/sprites.js      (no deps, image loader)
 ```
 
 All modules use ES Module `import`/`export`. JSON data is loaded via `fetch()` at startup in `game.js` and passed to modules through setter functions.
@@ -59,11 +73,11 @@ All modules use ES Module `import`/`export`. JSON data is loaded via `fetch()` a
 ## Game State Machine
 
 ```
-┌─────────┐  encounter   ┌─────────┐
-│ EXPLORE │─────────────>│ BATTLE  │
-│         │<─────────────│         │
-└─────────┘  win/run/    └─────────┘
-     │       capture
+┌─────────┐  encounter  ┌──────────────────┐  done  ┌─────────┐
+│ EXPLORE │────────────>│ BATTLE_TRANSITION │──────>│ BATTLE  │
+│         │<────────────│  (flash + fade)   │       │         │
+└─────────┘  win/run/   └──────────────────┘       └─────────┘
+     │       capture          ~860ms
      │
      │ Esc (future)
      v
@@ -73,9 +87,16 @@ All modules use ES Module `import`/`export`. JSON data is loaded via `fetch()` a
 ```
 
 ### EXPLORE State
-- Player moves on a tile grid (arrow keys)
+- Player moves on a tile grid (arrow keys or D-pad)
 - 150ms cooldown between moves
 - Walking on grass (tile 2) has 10% encounter chance
+
+### BATTLE_TRANSITION State
+- 3 quick white flashes over the map view
+- Fade to black
+- Hold black briefly
+- Total duration: ~860ms
+- Then enters BATTLE state
 
 ### BATTLE State
 Battle has its own sub-states:
@@ -110,6 +131,22 @@ chance = (1 - enemyHP/maxHP) * 0.5 + 0.1
 ```
 At full HP: 10% chance. At 1 HP: ~60% chance. Failed capture = enemy gets a free turn.
 
+## Input System
+
+Unified input system supporting both keyboard and touch:
+
+- **Keyboard**: `keydown`/`keyup` events tracked in `keys` map
+- **Touch**: `simulatePress(key)`/`simulateRelease(key)` called by touch button handlers in `index.html`
+- **API**: `wasPressed(key)` for one-shot actions, `isDown(key)` for held state
+- `clearJustPressed()` called each frame after update
+
+### Controls
+| Action | Keyboard | Touch |
+|--------|----------|-------|
+| Move | Arrow keys | D-pad |
+| Confirm | Enter | A button |
+| Back | Escape | B button |
+
 ## Data Formats
 
 ### monsters.json
@@ -120,7 +157,8 @@ At full HP: 10% chance. At 1 HP: ~60% chance. Failed capture = enemy gets a free
   "hp": 30, "attack": 8, "defense": 4, "speed": 6,
   "moves": ["segfault", "hotfix"],
   "color": "#e74c3c",
-  "sprite": "nullpointer"
+  "sprite": "nullpointer",
+  "description": "Art prompt for sprite generation..."
 }
 ```
 
@@ -135,18 +173,42 @@ Tile values: `0` = ground, `1` = wall, `2` = tall grass
 { "width": 15, "height": 10, "tiles": [[1,1,...], ...] }
 ```
 
+## Sprite System
+
+Image-based sprites loaded at startup via `sprites/sprites.js`:
+
+- **Battle sprites**: 64x64 PNG, transparent background, loaded by `sprite` field in monsters.json
+- **Player sprites**: 32x32 PNG, 4 directional frames (`player_down.png`, etc.)
+- **Fallback**: colored rectangles if a PNG fails to load
+- **Preload**: all sprites loaded via `preloadAll()` before game starts
+- `imageSmoothingEnabled = false` keeps pixel art crisp when scaled
+
+See `sprites/SPRITE_GUIDE.md` for art specs and generation prompts.
+
 ## Rendering
 
 - Canvas: 480x320 (15×10 tiles at 32px)
+- Scales to fit screen width on mobile (`max-width: 100%`)
 - Tiles: colored rectangles (tan ground, gray walls, green grass with crosshatch)
-- Player: blue square with directional triangle
-- Battle: split screen with HP bars and text menu
-- BugMon sprites: pixel art drawn programmatically on canvas (see `sprites/sprites.js`)
+- Player: directional sprite (cyberpunk debugger with teal visor)
+- Battle: split screen with sprites, HP bars, and text menu
+- Transition: white flash overlay → fade to black between explore and battle
+
+## Mobile Support
+
+- Touch controls auto-shown on touch devices and narrow screens (<600px)
+- D-pad (left) for movement, A/B buttons (right) for confirm/back
+- `touch-action: none` prevents browser zoom/scroll
+- `user-scalable=no` in viewport meta
+- Canvas scales responsively
 
 ## Key Design Decisions
 
 - **ES Modules** over script tags: proper scoping, explicit dependencies
 - **Setter functions** for data injection: modules like `encounters.js` receive monster data via `setMonstersData()` rather than importing JSON directly (fetch requires async)
 - **Single mutable state**: no framework, no event bus. Modules read/write shared state directly. Works at this scale.
-- **Grid-locked movement**: player position is always integer tile coords. No sub-tile animation in V1.
+- **Grid-locked movement**: player position is always integer tile coords. No sub-tile animation yet.
 - **Message queue pattern**: battle uses `showMessage(text, callback)` to chain actions with visible pauses between them
+- **Image sprites with fallback**: PNG files loaded at startup, graceful degradation to colored squares
+- **Unified input**: keyboard and touch both feed into the same key state, so game logic doesn't need to know the input source
+- **GitHub Pages deploy**: zero-config static hosting, auto-deploys on push to main

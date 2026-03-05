@@ -14,21 +14,24 @@
 
 ## V1.1 - Sprites & Polish (IN PROGRESS)
 
-- [x] Pixel art sprites for all 3 BugMon (canvas-drawn)
-- [x] Player character sprite with directional frames
+- [x] Pixel art battle sprites for all BugMon (64x64 PNG)
+- [x] Player character sprite with 4 directional frames (cyberpunk debugger)
+- [x] Battle transition animation (3x white flash + fade to black)
+- [x] Mobile touch controls (D-pad + A/B buttons)
+- [x] GitHub Pages deployment workflow
+- [x] Deadlock BugMon (#4) with Mutex and ForceQuit moves
 - [ ] Tile sprites (ground texture, wall bricks, animated grass)
-- [ ] Battle transition animation (flash/fade)
 - [ ] Battle background art
 - [ ] Sound effects (Web Audio API, no files needed)
 
 ## V2 - More BugMon & Moves
 
 - [ ] Expand to 9+ BugMon:
-  - Deadlock, OffByOne, MergeConflict
+  - ~~Deadlock~~ (done), OffByOne, MergeConflict
   - CallbackHell, Heisenbug, InfiniteLoop
   - SpaghettiCode, StackOverflow (creature), IndexOutOfBounds
 - [ ] Expand to 15+ moves:
-  - PatchDeploy, Refactor, ForceQuit, BlueScreen
+  - PatchDeploy, Refactor, ~~ForceQuit~~ (done), BlueScreen
   - CoreDump, Rollback, HotReload, TypeMismatch
   - NullCheck, BufferOverrun, Reboot, Compile
 - [ ] Type system (memory, logic, runtime, syntax)
@@ -87,7 +90,7 @@
 - [ ] BugDex (collection tracker)
 - [ ] Move descriptions shown in battle
 - [ ] Smooth tile-to-tile movement animation
-- [ ] Mobile touch controls
+- [x] Mobile touch controls
 - [ ] Minimap
 
 ## Stretch Goals
@@ -100,12 +103,12 @@
 
 ## BugMon Ideas Backlog
 
-| Name | Type | Concept |
-|------|------|---------|
-| NullPointer | reference | Points to nothing |
-| RaceCondition | logic | Unpredictably fast |
-| MemoryLeak | memory | Bloated, won't free |
-| Deadlock | logic | Two threads, neither yields |
+| Name | Type | Status | Concept |
+|------|------|--------|---------|
+| NullPointer | reference | DONE | Points to nothing |
+| RaceCondition | logic | DONE | Unpredictably fast |
+| MemoryLeak | memory | DONE | Bloated, won't free |
+| Deadlock | logic | DONE | Two threads, neither yields |
 | OffByOne | logic | Always slightly wrong |
 | MergeConflict | syntax | Two versions collide |
 | CallbackHell | runtime | Nested chaos |
@@ -120,20 +123,21 @@
 
 ## Move Ideas Backlog
 
-| Name | Power | Concept |
-|------|-------|---------|
-| SegFault | 10 | Crashes hard |
-| Hotfix | 6 | Quick patch |
-| ThreadLock | 8 | Seizes up |
-| GarbageCollect | 7 | Cleans up |
-| MemoryDump | 9 | Dumps everything |
-| Refactor | 8 | Restructures |
-| PatchDeploy | 7 | Ships a fix |
-| ForceQuit | 12 | Terminates with prejudice |
-| BlueScreen | 11 | Critical failure |
-| CoreDump | 10 | Full memory spill |
-| Rollback | 5 | Undo + heal? |
-| HotReload | 6 | Quick refresh |
-| Compile | 14 | 2-turn charge attack |
-| NullCheck | 4 | Weak but reliable |
-| BufferOverrun | 13 | High damage, high risk |
+| Name | Power | Status | Concept |
+|------|-------|--------|---------|
+| SegFault | 10 | DONE | Crashes hard |
+| Hotfix | 6 | DONE | Quick patch |
+| ThreadLock | 8 | DONE | Seizes up |
+| GarbageCollect | 7 | DONE | Cleans up |
+| MemoryDump | 9 | DONE | Dumps everything |
+| Mutex | 7 | DONE | Locks the resource |
+| ForceQuit | 12 | DONE | Terminates with prejudice |
+| Refactor | 8 | - | Restructures |
+| PatchDeploy | 7 | - | Ships a fix |
+| BlueScreen | 11 | - | Critical failure |
+| CoreDump | 10 | - | Full memory spill |
+| Rollback | 5 | - | Undo + heal? |
+| HotReload | 6 | - | Quick refresh |
+| Compile | 14 | - | 2-turn charge attack |
+| NullCheck | 4 | - | Weak but reliable |
+| BufferOverrun | 13 | - | High damage, high risk |
