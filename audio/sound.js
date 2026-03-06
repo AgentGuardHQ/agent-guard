@@ -5,23 +5,28 @@ let masterGain = null;
 let muted = false;
 let volume = 0.5;
 
-function ensureContext() {
-  if (!ctx) {
-    try {
-      ctx = new (window.AudioContext || window.webkitAudioContext)();
-      masterGain = ctx.createGain();
-      masterGain.gain.value = volume;
-      masterGain.connect(ctx.destination);
-    } catch (e) {
-      return false;
-    }
+function initContext() {
+  if (ctx) return true;
+  try {
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    masterGain = ctx.createGain();
+    masterGain.gain.value = volume;
+    masterGain.connect(ctx.destination);
+    return true;
+  } catch (e) {
+    return false;
   }
+}
+
+function ensureContext() {
+  if (!initContext()) return false;
   if (ctx.state === 'suspended') ctx.resume();
   return true;
 }
 
 export function unlock() {
-  ensureContext();
+  if (!initContext()) return;
+  if (ctx.state === 'suspended') ctx.resume();
 }
 
 export function toggleMute() {
@@ -32,78 +37,91 @@ export function toggleMute() {
 }
 
 // --- Synthesis primitives ---
+// Use osc.start() with no args (starts immediately) and direct gain.value
+// to avoid AudioContext timing issues with suspended contexts.
 
-function playTone(freq, duration, type, gain, rampDown) {
+function playTone(freq, duration, type, vol) {
   if (!ensureContext()) return;
-  const osc = ctx.createOscillator();
-  const g = ctx.createGain();
-  const vol = gain !== undefined ? gain : 0.3;
-  osc.type = type || 'square';
-  osc.frequency.value = freq;
-  osc.connect(g);
-  g.connect(masterGain);
-  const now = ctx.currentTime;
-  g.gain.setValueAtTime(vol, now);
-  if (rampDown) {
-    g.gain.exponentialRampToValueAtTime(0.001, now + duration);
-  }
-  osc.start(now);
-  osc.stop(now + duration + 0.01);
+  try {
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.type = type || 'square';
+    osc.frequency.value = freq;
+    g.gain.value = vol !== undefined ? vol : 0.3;
+    osc.connect(g);
+    g.connect(masterGain);
+    osc.start();
+    osc.stop(ctx.currentTime + duration);
+  } catch (e) { /* ignore audio errors */ }
 }
 
-function playToneAt(freq, duration, type, gain, startTime, rampDown) {
+function playToneFade(freq, duration, type, vol) {
   if (!ensureContext()) return;
-  const osc = ctx.createOscillator();
-  const g = ctx.createGain();
-  const vol = gain !== undefined ? gain : 0.3;
-  osc.type = type || 'sine';
-  osc.frequency.value = freq;
-  osc.connect(g);
-  g.connect(masterGain);
-  g.gain.setValueAtTime(vol, startTime);
-  if (rampDown) {
-    g.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
-  }
-  osc.start(startTime);
-  osc.stop(startTime + duration + 0.01);
+  try {
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    const v = vol !== undefined ? vol : 0.3;
+    osc.type = type || 'square';
+    osc.frequency.value = freq;
+    g.gain.value = v;
+    osc.connect(g);
+    g.connect(masterGain);
+    const t = ctx.currentTime;
+    osc.start();
+    g.gain.setValueAtTime(v, t);
+    g.gain.linearRampToValueAtTime(0.001, t + duration);
+    osc.stop(t + duration + 0.05);
+  } catch (e) { /* ignore audio errors */ }
 }
 
-function playSweep(startFreq, endFreq, duration, type, gain) {
+function playSweep(startFreq, endFreq, duration, type, vol) {
   if (!ensureContext()) return;
-  const osc = ctx.createOscillator();
-  const g = ctx.createGain();
-  const vol = gain !== undefined ? gain : 0.3;
-  osc.type = type || 'sine';
-  osc.connect(g);
-  g.connect(masterGain);
-  const now = ctx.currentTime;
-  osc.frequency.setValueAtTime(startFreq, now);
-  osc.frequency.exponentialRampToValueAtTime(endFreq, now + duration);
-  g.gain.setValueAtTime(vol, now);
-  g.gain.exponentialRampToValueAtTime(0.001, now + duration);
-  osc.start(now);
-  osc.stop(now + duration + 0.01);
+  try {
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    const v = vol !== undefined ? vol : 0.3;
+    osc.type = type || 'sine';
+    g.gain.value = v;
+    osc.connect(g);
+    g.connect(masterGain);
+    const t = ctx.currentTime;
+    osc.frequency.setValueAtTime(startFreq, t);
+    osc.frequency.exponentialRampToValueAtTime(Math.max(endFreq, 1), t + duration);
+    g.gain.setValueAtTime(v, t);
+    g.gain.linearRampToValueAtTime(0.001, t + duration);
+    osc.start();
+    osc.stop(t + duration + 0.05);
+  } catch (e) { /* ignore audio errors */ }
 }
 
-function playNoise(duration, gain) {
+function playNoise(duration, vol) {
   if (!ensureContext()) return;
-  const bufferSize = Math.max(1, Math.floor(ctx.sampleRate * duration));
-  const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-  const data = buffer.getChannelData(0);
-  for (let i = 0; i < bufferSize; i++) {
-    data[i] = Math.random() * 2 - 1;
-  }
-  const source = ctx.createBufferSource();
-  source.buffer = buffer;
-  const g = ctx.createGain();
-  const vol = gain !== undefined ? gain : 0.15;
-  source.connect(g);
-  g.connect(masterGain);
-  const now = ctx.currentTime;
-  g.gain.setValueAtTime(vol, now);
-  g.gain.exponentialRampToValueAtTime(0.001, now + duration);
-  source.start(now);
-  source.stop(now + duration + 0.01);
+  try {
+    const bufferSize = Math.max(1, Math.floor(ctx.sampleRate * duration));
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = Math.random() * 2 - 1;
+    }
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    const g = ctx.createGain();
+    g.gain.value = vol !== undefined ? vol : 0.2;
+    source.connect(g);
+    g.connect(masterGain);
+    source.start();
+    source.stop(ctx.currentTime + duration + 0.05);
+  } catch (e) { /* ignore audio errors */ }
+}
+
+function playToneDelayed(freq, duration, type, vol, delayMs, fade) {
+  setTimeout(() => {
+    if (fade) {
+      playToneFade(freq, duration, type, vol);
+    } else {
+      playTone(freq, duration, type, vol);
+    }
+  }, delayMs);
 }
 
 // --- Sound effects ---
@@ -113,10 +131,8 @@ export function playMenuNav() {
 }
 
 export function playMenuConfirm() {
-  if (!ensureContext()) return;
-  const now = ctx.currentTime;
-  playToneAt(880, 0.07, 'square', 0.3, now);
-  playToneAt(1320, 0.09, 'square', 0.3, now + 0.07, true);
+  playTone(880, 0.07, 'square', 0.3);
+  playToneDelayed(1320, 0.09, 'square', 0.3, 70, true);
 }
 
 export function playMenuCancel() {
@@ -124,24 +140,21 @@ export function playMenuCancel() {
 }
 
 export function playFootstep() {
-  playTone(200, 0.05, 'triangle', 0.15, true);
+  playToneFade(200, 0.06, 'triangle', 0.15);
 }
 
 export function playEncounterAlert() {
-  if (!ensureContext()) return;
-  const now = ctx.currentTime;
   const notes = [523, 659, 784, 1047]; // C5, E5, G5, C6
   notes.forEach((freq, i) => {
-    playToneAt(freq, 0.1, 'square', 0.35, now + i * 0.1, true);
+    playToneDelayed(freq, 0.1, 'square', 0.35, i * 100, true);
   });
 }
 
 export function playTransitionFlash() {
-  playNoise(0.08, 0.2);
+  playNoise(0.08, 0.25);
 }
 
 export function playAttack() {
-  if (!ensureContext()) return;
   playNoise(0.1, 0.3);
   playSweep(800, 200, 0.18, 'sawtooth', 0.3);
 }
@@ -151,29 +164,22 @@ export function playFaint() {
 }
 
 export function playCaptureSuccess() {
-  if (!ensureContext()) return;
-  const now = ctx.currentTime;
   const notes = [523, 659, 784, 1047, 1319]; // C5, E5, G5, C6, E6
   notes.forEach((freq, i) => {
     const dur = i === notes.length - 1 ? 0.25 : 0.12;
-    playToneAt(freq, dur, 'sine', 0.35, now + i * 0.12, true);
+    playToneDelayed(freq, dur, 'sine', 0.35, i * 120, true);
   });
 }
 
 export function playCaptureFailure() {
-  if (!ensureContext()) return;
-  const now = ctx.currentTime;
   playSweep(400, 800, 0.12, 'sine', 0.3);
-  // Schedule second part using Web Audio timing instead of setTimeout
-  playToneAt(800, 0.18, 'sine', 0.3, now + 0.12, true);
+  playToneDelayed(600, 0.2, 'sine', 0.25, 130, true);
 }
 
 export function playBattleVictory() {
-  if (!ensureContext()) return;
-  const now = ctx.currentTime;
   const notes = [262, 330, 392, 523, 659]; // C4, E4, G4, C5, E5
   notes.forEach((freq, i) => {
     const dur = i === notes.length - 1 ? 0.35 : 0.14;
-    playToneAt(freq, dur, 'sine', 0.35, now + i * 0.14, true);
+    playToneDelayed(freq, dur, 'sine', 0.35, i * 140, true);
   });
 }
