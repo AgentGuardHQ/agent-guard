@@ -7,6 +7,7 @@ import { getPlayer, updatePlayer } from './world/player.js';
 import { setMonstersData, checkEncounter } from './world/encounters.js';
 import { setMovesData, startBattle, getBattle, updateBattle, movesData } from './battle/battleEngine.js';
 import { preloadAll } from './sprites/sprites.js';
+import { initTileTextures } from './sprites/tiles.js';
 import { startTransition, updateTransition, getTransition, drawTransitionOverlay } from './engine/transition.js';
 
 let lastTime = 0;
@@ -30,6 +31,7 @@ async function init() {
   await preloadAll(monsters);
 
   await loadMap();
+  initTileTextures();
 
   // Give player a starter BugMon
   const player = getPlayer();

@@ -12,7 +12,7 @@
 - [x] Run option (always succeeds)
 - [x] HUD showing active BugMon and party size
 
-## V1.1 - Sprites & Polish (IN PROGRESS)
+## V1.1 - Sprites & Polish (DONE)
 
 - [x] Pixel art battle sprites for all BugMon (64x64 PNG)
 - [x] Player character sprite with 4 directional frames (cyberpunk debugger)
@@ -20,8 +20,8 @@
 - [x] Mobile touch controls (D-pad + A/B buttons)
 - [x] GitHub Pages deployment workflow
 - [x] Deadlock BugMon (#4) with Mutex and ForceQuit moves
-- [ ] Tile sprites (ground texture, wall bricks, animated grass)
-- [ ] Battle background art
+- [x] Tile sprites (ground texture, wall bricks, animated grass)
+- [x] Battle background art
 - [x] Sound effects (Web Audio API, synthesized — no audio files)
 - [x] Mute toggle button
 
