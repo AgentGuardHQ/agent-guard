@@ -250,6 +250,51 @@ function wordWrap(text, maxWidth) {
   return lines.length ? lines : [''];
 }
 
+/**
+ * Render the player's party.
+ */
+export function renderParty(party) {
+  if (!party || party.length === 0) {
+    process.stdout.write('\n  No BugMon in your party yet.\n  Run "bugmon watch --catch -- <command>" to start catching!\n\n');
+    return;
+  }
+
+  const lines = [];
+  lines.push('');
+  lines.push(bold(color('  ╔══════════════════════════════════════╗', 'yellow')));
+  lines.push(bold(color('  ║           P A R T Y                 ║', 'yellow')));
+  lines.push(bold(color('  ╚══════════════════════════════════════╝', 'yellow')));
+  lines.push('');
+
+  for (let i = 0; i < party.length; i++) {
+    const mon = party[i];
+    const typeColor = TYPE_COLORS[mon.type] || 'white';
+    const hp = mon.currentHP ?? mon.hp;
+    const bar = renderHPBar(hp, mon.hp, 10);
+    const name = bold(mon.name.padEnd(18));
+    const type = color(mon.type.padEnd(10), typeColor);
+    lines.push(`  ${color(`[${i + 1}]`, 'gray')} ${name} ${type} ${bar} ${hp}/${mon.hp}`);
+  }
+
+  lines.push('');
+  process.stdout.write(lines.join('\n') + '\n');
+}
+
+/**
+ * Render the encounter prompt — asks if the player wants to fight.
+ */
+export function renderEncounterPrompt(monster) {
+  const typeColor = TYPE_COLORS[monster.type] || 'white';
+  const lines = [];
+  lines.push('');
+  lines.push(color('  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', typeColor));
+  lines.push(`  ${bold(`A wild ${color(monster.name, typeColor)} appeared!`)}`);
+  lines.push(`  Type: ${color(monster.type.toUpperCase(), typeColor)}  HP: ${monster.hp}  ATK: ${monster.attack}  SPD: ${monster.speed}`);
+  lines.push(color('  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', typeColor));
+  lines.push('');
+  process.stderr.write(lines.join('\n') + '\n');
+}
+
 function getXPForLevel(level) {
   // 0, 100, 300, 600, 1000, 1500, 2100, ...
   return level <= 1 ? 0 : (level * (level - 1)) / 2 * 100;
