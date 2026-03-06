@@ -1,50 +1,33 @@
 // Canvas rendering
 import { drawSprite } from '../sprites/sprites.js';
+import { getTileTexture, getGrassFrame, getBattleBackground } from '../sprites/tiles.js';
 
 const TILE = 32;
 const COLORS = {
-  ground: '#c2b280',
-  wall: '#555555',
-  grass: '#228B22',
-  grassDark: '#1a6b1a',
   player: '#3498db'
 };
 
 let ctx;
+let frameCount = 0;
 
 export function initRenderer(canvas) {
   ctx = canvas.getContext('2d');
 }
 
 export function drawMap(mapData) {
+  frameCount++;
   for (let y = 0; y < mapData.height; y++) {
     for (let x = 0; x < mapData.width; x++) {
       const tile = mapData.tiles[y][x];
+      let texture;
       if (tile === 1) {
-        ctx.fillStyle = COLORS.wall;
+        texture = getTileTexture('wall');
       } else if (tile === 2) {
-        ctx.fillStyle = COLORS.grass;
+        texture = getGrassFrame(frameCount);
       } else {
-        ctx.fillStyle = COLORS.ground;
+        texture = getTileTexture('ground');
       }
-      ctx.fillRect(x * TILE, y * TILE, TILE, TILE);
-
-      // Grass crosshatch
-      if (tile === 2) {
-        ctx.strokeStyle = COLORS.grassDark;
-        ctx.lineWidth = 1;
-        for (let i = 0; i < TILE; i += 8) {
-          ctx.beginPath();
-          ctx.moveTo(x * TILE + i, y * TILE);
-          ctx.lineTo(x * TILE + i, y * TILE + TILE);
-          ctx.stroke();
-        }
-      }
-
-      // Grid lines
-      ctx.strokeStyle = 'rgba(0,0,0,0.1)';
-      ctx.lineWidth = 0.5;
-      ctx.strokeRect(x * TILE, y * TILE, TILE, TILE);
+      ctx.drawImage(texture, x * TILE, y * TILE);
     }
   }
 }
@@ -87,8 +70,13 @@ export function drawPlayer(player) {
 
 export function drawBattle(battle, movesData) {
   // Background
-  ctx.fillStyle = '#1a1a2e';
-  ctx.fillRect(0, 0, 480, 320);
+  const bg = getBattleBackground();
+  if (bg) {
+    ctx.drawImage(bg, 0, 0);
+  } else {
+    ctx.fillStyle = '#1a1a2e';
+    ctx.fillRect(0, 0, 480, 320);
+  }
 
   // Enemy BugMon (top right)
   if (!battle.enemy.sprite || !drawSprite(ctx, battle.enemy.sprite, 320, 40, 64, 64)) {
