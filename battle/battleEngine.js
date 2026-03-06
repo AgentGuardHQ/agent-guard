@@ -129,10 +129,11 @@ function executeTurn(playerMove) {
 
 function doAttack(attacker, move, defender, callback) {
   const typeChart = typeData ? typeData.effectiveness : null;
-  const { damage, effectiveness } = calcDamage(attacker, move, defender, typeChart);
+  const { damage, effectiveness, critical } = calcDamage(attacker, move, defender, typeChart);
   defender.currentHP -= damage;
   playAttack();
   let msg = `${attacker.name} used ${move.name}! ${damage} damage!`;
+  if (critical) msg += ' Critical hit!';
   if (effectiveness > 1.0) msg += ' Super effective!';
   else if (effectiveness < 1.0) msg += ' Not very effective...';
   showMessage(msg, callback);
