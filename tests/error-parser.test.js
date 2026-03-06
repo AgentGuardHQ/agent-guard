@@ -1,0 +1,108 @@
+import assert from 'node:assert';
+import { test, suite } from './run.js';
+import { parseErrors } from '../core/error-parser.js';
+
+suite('Error Parser (core/error-parser.js)', () => {
+  test('parses TypeError null reference', () => {
+    const result = parseErrors("TypeError: Cannot read properties of null (reading 'foo')");
+    assert.strictEqual(result.length, 1);
+    assert.strictEqual(result[0].type, 'null-reference');
+  });
+
+  test('parses SyntaxError', () => {
+    const result = parseErrors('SyntaxError: Unexpected token }');
+    assert.strictEqual(result.length, 1);
+    assert.strictEqual(result[0].type, 'syntax');
+  });
+
+  test('parses RangeError stack overflow', () => {
+    const result = parseErrors('RangeError: Maximum call stack size exceeded');
+    assert.strictEqual(result.length, 1);
+    assert.strictEqual(result[0].type, 'stack-overflow');
+  });
+
+  test('parses ReferenceError', () => {
+    const result = parseErrors('ReferenceError: foo is not defined');
+    assert.strictEqual(result.length, 1);
+    assert.strictEqual(result[0].type, 'undefined-reference');
+  });
+
+  test('parses network errors (ECONNREFUSED)', () => {
+    const result = parseErrors('Error: connect ECONNREFUSED 127.0.0.1:3000');
+    assert.strictEqual(result.length, 1);
+    assert.strictEqual(result[0].type, 'network');
+  });
+
+  test('parses module not found', () => {
+    const result = parseErrors("Error: Cannot find module 'express'");
+    assert.strictEqual(result.length, 1);
+    assert.strictEqual(result[0].type, 'import');
+  });
+
+  test('parses file not found (ENOENT)', () => {
+    const result = parseErrors("Error: ENOENT: no such file or directory, open '/tmp/missing.txt'");
+    assert.strictEqual(result.length, 1);
+    assert.strictEqual(result[0].type, 'file-not-found');
+  });
+
+  test('parses memory leak', () => {
+    const result = parseErrors('FATAL ERROR: CALL_AND_RETRY_LAST Allocation failed - JavaScript heap out of memory');
+    assert.strictEqual(result.length, 1);
+    assert.strictEqual(result[0].type, 'memory-leak');
+  });
+
+  test('handles empty input', () => {
+    const result = parseErrors('');
+    assert.strictEqual(result.length, 0);
+  });
+
+  test('handles whitespace-only input', () => {
+    const result = parseErrors('   \n  \n   ');
+    assert.strictEqual(result.length, 0);
+  });
+
+  test('collects stack trace lines with the error', () => {
+    const input = `TypeError: Cannot read properties of null (reading 'name')
+    at Object.<anonymous> (/app/index.js:42:15)
+    at Module._compile (node:internal/modules/cjs/loader:1234:14)`;
+    const result = parseErrors(input);
+    assert.strictEqual(result.length, 1);
+    assert.ok(result[0].rawLines.length >= 2, 'should collect stack trace lines');
+  });
+
+  test('deduplicates identical errors, keeps one with more context', () => {
+    const input = `TypeError: Cannot read properties of null (reading 'x')
+TypeError: Cannot read properties of null (reading 'x')
+    at foo (/app/bar.js:10:5)
+    at baz (/app/qux.js:20:3)`;
+    const result = parseErrors(input);
+    assert.strictEqual(result.length, 1);
+    assert.ok(result[0].rawLines.length >= 2, 'should keep the one with more context');
+  });
+
+  test('parses multiple different errors', () => {
+    const input = `TypeError: foo is not a function
+SyntaxError: Unexpected end of input`;
+    const result = parseErrors(input);
+    assert.strictEqual(result.length, 2);
+    assert.strictEqual(result[0].type, 'type-mismatch');
+    assert.strictEqual(result[1].type, 'syntax');
+  });
+
+  test('extracts message from error line', () => {
+    const result = parseErrors("TypeError: Cannot read properties of null (reading 'bar')");
+    assert.ok(result[0].message.length > 0, 'message should not be empty');
+  });
+
+  test('parses assertion errors', () => {
+    const result = parseErrors('AssertionError: expected true to equal false');
+    assert.strictEqual(result.length, 1);
+    assert.strictEqual(result[0].type, 'assertion');
+  });
+
+  test('parses permission errors (EACCES)', () => {
+    const result = parseErrors("Error: EACCES: permission denied, open '/etc/passwd'");
+    assert.strictEqual(result.length, 1);
+    assert.strictEqual(result[0].type, 'permission');
+  });
+});

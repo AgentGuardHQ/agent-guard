@@ -62,4 +62,28 @@ suite('RNG (simulation/rng.js)', () => {
     const rng = createRNG(999);
     assert.strictEqual(rng.seed, 999);
   });
+
+  test('seed 0 works correctly', () => {
+    const rng = createRNG(0);
+    const v = rng.random();
+    assert.ok(v >= 0 && v < 1, `seed 0 should produce valid output, got ${v}`);
+  });
+
+  test('large seed works correctly', () => {
+    const rng = createRNG(2147483647);
+    const v = rng.random();
+    assert.ok(v >= 0 && v < 1, `large seed should produce valid output, got ${v}`);
+  });
+
+  test('negative seed works correctly', () => {
+    const rng = createRNG(-42);
+    const v = rng.random();
+    assert.ok(v >= 0 && v < 1, `negative seed should produce valid output, got ${v}`);
+  });
+
+  test('int(min, max) works when min equals max', () => {
+    const rng = createRNG(42);
+    const v = rng.int(5, 5);
+    assert.strictEqual(v, 5, 'int(5,5) should return 5');
+  });
 });

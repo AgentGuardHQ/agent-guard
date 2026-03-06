@@ -43,6 +43,14 @@ async function main() {
   await import('./report.test.js');
   await import('./data.test.js');
   await import('./build.test.js');
+  await import('./battle-core.test.js');
+  await import('./evolution.test.js');
+  await import('./error-parser.test.js');
+  await import('./stacktrace-parser.test.js');
+  await import('./bug-event.test.js');
+  await import('./events.test.js');
+  await import('./matcher.test.js');
+  await import('./map.test.js');
 
   console.log('\n' + '='.repeat(40));
   if (totalFailed === 0) {
