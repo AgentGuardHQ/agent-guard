@@ -1,0 +1,59 @@
+#!/usr/bin/env node
+
+// Minimal test harness — zero dependencies, uses node:assert
+// Usage: node tests/run.js
+
+let totalPassed = 0;
+let totalFailed = 0;
+let currentSuite = '';
+
+const RED = '\x1b[31m';
+const GREEN = '\x1b[32m';
+const DIM = '\x1b[2m';
+const BOLD = '\x1b[1m';
+const RESET = '\x1b[0m';
+
+export function test(name, fn) {
+  try {
+    fn();
+    totalPassed++;
+    console.log(`  ${GREEN}✓${RESET} ${DIM}${name}${RESET}`);
+  } catch (err) {
+    totalFailed++;
+    console.log(`  ${RED}✗ ${name}${RESET}`);
+    console.log(`    ${RED}${err.message}${RESET}`);
+  }
+}
+
+export function suite(name, fn) {
+  currentSuite = name;
+  console.log(`\n${BOLD}${name}${RESET}`);
+  fn();
+}
+
+// Import and run all test modules
+async function main() {
+  console.log('BugMon Test Suite\n');
+
+  await import('./rng.test.js');
+  await import('./damage.test.js');
+  await import('./strategies.test.js');
+  await import('./battle.test.js');
+  await import('./simulator.test.js');
+  await import('./report.test.js');
+  await import('./data.test.js');
+
+  console.log('\n' + '='.repeat(40));
+  if (totalFailed === 0) {
+    console.log(`${GREEN}${BOLD}All ${totalPassed} tests passed${RESET}`);
+  } else {
+    console.log(`${RED}${BOLD}${totalFailed} failed${RESET}, ${GREEN}${totalPassed} passed${RESET}`);
+    process.exitCode = 1;
+  }
+  console.log('');
+}
+
+main().catch(err => {
+  console.error('Test runner failed:', err);
+  process.exitCode = 1;
+});
