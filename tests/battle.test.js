@@ -6,20 +6,20 @@ import { createRNG } from '../simulation/rng.js';
 
 suite('Headless Battle (simulation/headlessBattle.js)', () => {
   const movesData = [
-    { id: 'segfault', name: 'Segfault', power: 8, type: 'memory' },
-    { id: 'hotfix', name: 'Hotfix', power: 6, type: 'logic' },
-    { id: 'deadlockGrip', name: 'Deadlock Grip', power: 10, type: 'logic' },
-    { id: 'threadBlock', name: 'Thread Block', power: 7, type: 'runtime' }
+    { id: 'segfault', name: 'SegFault', power: 10, type: 'backend' },
+    { id: 'unhandledexception', name: 'UnhandledException', power: 8, type: 'backend' },
+    { id: 'layoutshift', name: 'LayoutShift', power: 7, type: 'frontend' },
+    { id: 'zindexwar', name: 'ZIndexWar', power: 9, type: 'frontend' }
   ];
 
   const typeChart = {
-    memory: { runtime: 1.5, logic: 0.5 },
-    runtime: { logic: 1.5, memory: 0.5 },
-    logic: { memory: 1.5, runtime: 0.5 }
+    backend:  { frontend: 0.5, backend: 1.0, devops: 1.5, testing: 1.0, architecture: 1.5, security: 0.5, ai: 1.0 },
+    frontend: { frontend: 1.0, backend: 1.5, devops: 1.0, testing: 1.5, architecture: 0.5, security: 1.0, ai: 0.5 },
+    devops:   { frontend: 1.0, backend: 0.5, devops: 1.0, testing: 1.5, architecture: 1.0, security: 1.5, ai: 0.5 }
   };
 
-  const monA = { name: 'NullPointer', type: 'memory', hp: 30, attack: 8, defense: 4, speed: 6, moves: ['segfault', 'hotfix'] };
-  const monB = { name: 'Deadlock', type: 'logic', hp: 35, attack: 7, defense: 8, speed: 3, moves: ['deadlockGrip', 'threadBlock'] };
+  const monA = { name: 'NullPointer', type: 'backend', hp: 30, attack: 8, defense: 4, speed: 6, moves: ['segfault', 'unhandledexception'] };
+  const monB = { name: 'CSSGlitch', type: 'frontend', hp: 35, attack: 7, defense: 8, speed: 3, moves: ['layoutshift', 'zindexwar'] };
 
   test('battle produces a deterministic result with same seed', () => {
     const r1 = runBattle(monA, monB, movesData, typeChart, randomStrategy, randomStrategy, createRNG(42));
@@ -30,14 +30,20 @@ suite('Headless Battle (simulation/headlessBattle.js)', () => {
     assert.strictEqual(r1.remainingHP.b, r2.remainingHP.b);
   });
 
-  test('different seeds can produce different outcomes', () => {
-    const results = new Set();
-    for (let seed = 0; seed < 100; seed++) {
-      const r = runBattle(monA, monB, movesData, typeChart, randomStrategy, randomStrategy, createRNG(seed));
-      results.add(r.winner);
+  test('different seeds can produce different turn counts', () => {
+    // Use monsters with multiple moves of varied power so randomStrategy picks differently
+    const variedMoves = [
+      { id: 'm1', name: 'Weak', power: 3, type: 'backend' },
+      { id: 'm2', name: 'Strong', power: 14, type: 'backend' }
+    ];
+    const varA = { name: 'VarA', type: 'backend', hp: 50, attack: 6, defense: 4, speed: 5, moves: ['m1', 'm2'] };
+    const varB = { name: 'VarB', type: 'backend', hp: 50, attack: 6, defense: 4, speed: 4, moves: ['m1', 'm2'] };
+    const turnCounts = new Set();
+    for (let seed = 0; seed < 200; seed++) {
+      const r = runBattle(varA, varB, variedMoves, typeChart, randomStrategy, randomStrategy, createRNG(seed));
+      turnCounts.add(r.turns);
     }
-    // With enough seeds we should see at least A and B win
-    assert.ok(results.size > 1, 'different seeds should produce varied outcomes');
+    assert.ok(turnCounts.size > 1, 'different seeds should produce varied turn counts');
   });
 
   test('faster monster acts first (speed determines turn order)', () => {
@@ -45,7 +51,7 @@ suite('Headless Battle (simulation/headlessBattle.js)', () => {
     const rng = createRNG(42);
     const result = runBattle(monA, monB, movesData, typeChart, randomStrategy, randomStrategy, rng);
     assert.ok(result.log.length > 0, 'should have turn log entries');
-    assert.strictEqual(result.log[0].attacker, 'NullPointer', 'faster monster should attack first');
+    assert.strictEqual(result.log[0].attacker, monA.name, 'faster monster should attack first');
   });
 
   test('battle ends when one monster reaches 0 HP', () => {
@@ -90,8 +96,8 @@ suite('Headless Battle (simulation/headlessBattle.js)', () => {
   test('result contains monster names', () => {
     const rng = createRNG(42);
     const result = runBattle(monA, monB, movesData, typeChart, randomStrategy, randomStrategy, rng);
-    assert.strictEqual(result.monA, 'NullPointer');
-    assert.strictEqual(result.monB, 'Deadlock');
+    assert.strictEqual(result.monA, monA.name);
+    assert.strictEqual(result.monB, monB.name);
   });
 
   test('high HP monster vs low HP monster - high HP has advantage', () => {

@@ -6,7 +6,7 @@ suite('Report (simulation/report.js)', () => {
   function makeStats(overrides = {}) {
     return {
       name: 'TestMon',
-      type: 'memory',
+      type: 'backend',
       hp: 30,
       attack: 8,
       defense: 4,
@@ -107,16 +107,16 @@ suite('Report (simulation/report.js)', () => {
   test('type performance section is included', () => {
     const result = {
       stats: {
-        A: makeStats({ name: 'A', type: 'memory' }),
-        B: makeStats({ name: 'B', type: 'logic' })
+        A: makeStats({ name: 'A', type: 'backend' }),
+        B: makeStats({ name: 'B', type: 'frontend' })
       },
       totalBattles: 200,
       strategy: 'test'
     };
     const report = generateReport(result);
     assert.ok(report.includes('TYPE PERFORMANCE'), 'should include type performance section');
-    assert.ok(report.includes('memory'), 'should include memory type stats');
-    assert.ok(report.includes('logic'), 'should include logic type stats');
+    assert.ok(report.includes('backend'), 'should include backend type stats');
+    assert.ok(report.includes('frontend'), 'should include frontend type stats');
   });
 
   test('lopsided matchups section is included', () => {

@@ -5,18 +5,18 @@ import { createRNG } from '../simulation/rng.js';
 
 suite('Strategies (simulation/strategies.js)', () => {
   const movesData = [
-    { id: 'weak', name: 'Weak', power: 4, type: 'memory' },
-    { id: 'strong', name: 'Strong', power: 12, type: 'logic' },
-    { id: 'medium', name: 'Medium', power: 8, type: 'runtime' }
+    { id: 'weak', name: 'Weak', power: 4, type: 'backend' },
+    { id: 'strong', name: 'Strong', power: 12, type: 'frontend' },
+    { id: 'medium', name: 'Medium', power: 8, type: 'devops' }
   ];
 
-  const attacker = { name: 'Attacker', type: 'memory', attack: 8, defense: 4, speed: 6, moves: ['weak', 'strong', 'medium'] };
-  const defender = { name: 'Defender', type: 'runtime', attack: 6, defense: 6, speed: 5, moves: ['weak'] };
+  const attacker = { name: 'Attacker', type: 'backend', attack: 8, defense: 4, speed: 6, moves: ['weak', 'strong', 'medium'] };
+  const defender = { name: 'Defender', type: 'devops', attack: 6, defense: 6, speed: 5, moves: ['weak'] };
 
   const typeChart = {
-    memory: { runtime: 1.5, logic: 0.5 },
-    runtime: { logic: 1.5, memory: 0.5 },
-    logic: { memory: 1.5, runtime: 0.5 }
+    backend:  { frontend: 0.5, backend: 1.0, devops: 1.5, testing: 1.0, architecture: 1.5, security: 0.5, ai: 1.0 },
+    frontend: { frontend: 1.0, backend: 1.5, devops: 1.0, testing: 1.5, architecture: 0.5, security: 1.0, ai: 0.5 },
+    devops:   { frontend: 1.0, backend: 0.5, devops: 1.0, testing: 1.5, architecture: 1.0, security: 1.5, ai: 0.5 }
   };
 
   test('randomStrategy returns a valid move', () => {
@@ -46,23 +46,23 @@ suite('Strategies (simulation/strategies.js)', () => {
   });
 
   test('typeAwareStrategy prioritizes type effectiveness', () => {
-    // Against runtime defender: memory moves are super-effective (1.5x)
+    // Against devops defender: backend moves are super-effective (1.5x)
     const rng = createRNG(42);
     const move = typeAwareStrategy(attacker, defender, movesData, typeChart, rng);
-    // Should pick 'weak' (memory type, 1.5x vs runtime) since it has highest effectiveness
-    assert.strictEqual(move.type, 'memory', 'should prefer super-effective type');
+    // Should pick 'weak' (backend type, 1.5x vs devops) since it has highest effectiveness
+    assert.strictEqual(move.type, 'backend', 'should prefer super-effective type');
   });
 
   test('typeAwareStrategy breaks ties by power', () => {
-    // Give attacker two memory moves with different power
-    const twoMemoryAttacker = { ...attacker, moves: ['weak', 'strong', 'medium'] };
-    const twoMemoryMoves = [
-      { id: 'weak', name: 'Weak', power: 4, type: 'memory' },
-      { id: 'strong', name: 'Strong', power: 12, type: 'memory' },
-      { id: 'medium', name: 'Medium', power: 8, type: 'runtime' }
+    // Give attacker two backend moves with different power
+    const twoBackendAttacker = { ...attacker, moves: ['weak', 'strong', 'medium'] };
+    const twoBackendMoves = [
+      { id: 'weak', name: 'Weak', power: 4, type: 'backend' },
+      { id: 'strong', name: 'Strong', power: 12, type: 'backend' },
+      { id: 'medium', name: 'Medium', power: 8, type: 'devops' }
     ];
     const rng = createRNG(42);
-    const move = typeAwareStrategy(twoMemoryAttacker, defender, twoMemoryMoves, typeChart, rng);
+    const move = typeAwareStrategy(twoBackendAttacker, defender, twoBackendMoves, typeChart, rng);
     assert.strictEqual(move.id, 'strong', 'should pick higher power when effectiveness is equal');
   });
 

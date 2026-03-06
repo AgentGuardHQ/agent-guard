@@ -79,6 +79,17 @@ Each BugMon and move has a type. Type matchups affect damage:
 - Mute toggle (speaker icon, top-right corner)
 - Zero dependencies -- pure vanilla JS and HTML5 Canvas
 
+## Contribute a BugMon
+
+No coding required! Submit your own BugMon in 4 steps:
+
+1. [Open a new BugMon submission](../../issues/new?template=new-bugmon.yml)
+2. Fill out the form with your BugMon's name, type, stats, and moves
+3. A bot will validate your submission and show a battle preview
+4. Once approved by a maintainer, your BugMon joins the game!
+
+See the [issue template](../../issues/new?template=new-bugmon.yml) to get started.
+
 ## Run Locally
 
 ```bash

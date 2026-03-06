@@ -4,13 +4,13 @@ import { calcDamageHeadless } from '../simulation/headlessBattle.js';
 import { createRNG } from '../simulation/rng.js';
 
 suite('Damage Calculation (battle/damage.js, headlessBattle.js)', () => {
-  const attacker = { name: 'TestMon', type: 'memory', attack: 8, defense: 4, speed: 6 };
-  const defender = { name: 'DefMon', type: 'runtime', attack: 6, defense: 6, speed: 5 };
-  const move = { id: 'testmove', name: 'TestMove', power: 10, type: 'memory' };
+  const attacker = { name: 'TestMon', type: 'backend', attack: 8, defense: 4, speed: 6 };
+  const defender = { name: 'DefMon', type: 'devops', attack: 6, defense: 6, speed: 5 };
+  const move = { id: 'testmove', name: 'TestMove', power: 10, type: 'backend' };
   const typeChart = {
-    memory: { runtime: 1.5, logic: 0.5 },
-    runtime: { logic: 1.5, memory: 0.5 },
-    logic: { memory: 1.5, runtime: 0.5 }
+    backend:  { frontend: 0.5, backend: 1.0, devops: 1.5, testing: 1.0, architecture: 1.5, security: 0.5, ai: 1.0 },
+    frontend: { frontend: 1.0, backend: 1.5, devops: 1.0, testing: 1.5, architecture: 0.5, security: 1.0, ai: 0.5 },
+    devops:   { frontend: 1.0, backend: 0.5, devops: 1.0, testing: 1.5, architecture: 1.0, security: 1.5, ai: 0.5 }
   };
 
   test('base damage formula is correct (power + attack - defense/2 + random)', () => {
@@ -21,23 +21,23 @@ suite('Damage Calculation (battle/damage.js, headlessBattle.js)', () => {
   });
 
   test('super-effective multiplier (1.5x) applied correctly', () => {
-    // memory vs runtime = 1.5x
+    // backend vs devops = 1.5x
     const rng = createRNG(42);
     const result = calcDamageHeadless(attacker, move, defender, typeChart, rng);
     assert.strictEqual(result.effectiveness, 1.5);
   });
 
   test('not-very-effective multiplier (0.5x) applied correctly', () => {
-    // memory vs logic = 0.5x
-    const logicDefender = { ...defender, type: 'logic' };
+    // backend vs frontend = 0.5x
+    const frontendDefender = { ...defender, type: 'frontend' };
     const rng = createRNG(42);
-    const result = calcDamageHeadless(attacker, move, logicDefender, typeChart, rng);
+    const result = calcDamageHeadless(attacker, move, frontendDefender, typeChart, rng);
     assert.strictEqual(result.effectiveness, 0.5);
   });
 
   test('neutral effectiveness (1.0x) for unrelated types', () => {
-    // memory vs memory = neutral (no entry)
-    const sameTypeDefender = { ...defender, type: 'memory' };
+    // backend vs backend = 1.0x
+    const sameTypeDefender = { ...defender, type: 'backend' };
     const rng = createRNG(42);
     const result = calcDamageHeadless(attacker, move, sameTypeDefender, typeChart, rng);
     assert.strictEqual(result.effectiveness, 1.0);

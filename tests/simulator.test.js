@@ -5,19 +5,19 @@ import { randomStrategy } from '../simulation/strategies.js';
 
 suite('Simulator (simulation/simulator.js)', () => {
   const movesData = [
-    { id: 'move1', name: 'Move1', power: 8, type: 'memory' },
-    { id: 'move2', name: 'Move2', power: 10, type: 'logic' }
+    { id: 'move1', name: 'Move1', power: 8, type: 'backend' },
+    { id: 'move2', name: 'Move2', power: 10, type: 'frontend' }
   ];
 
   const typeChart = {
-    memory: { runtime: 1.5, logic: 0.5 },
-    logic: { memory: 1.5, runtime: 0.5 }
+    backend:  { frontend: 0.5, backend: 1.0, devops: 1.5 },
+    frontend: { frontend: 1.0, backend: 1.5, devops: 1.0 }
   };
 
   const monsters = [
-    { name: 'Mon1', type: 'memory', hp: 30, attack: 8, defense: 4, speed: 6, moves: ['move1'] },
-    { name: 'Mon2', type: 'logic', hp: 30, attack: 8, defense: 4, speed: 5, moves: ['move2'] },
-    { name: 'Mon3', type: 'memory', hp: 25, attack: 10, defense: 3, speed: 7, moves: ['move1', 'move2'] }
+    { name: 'Mon1', type: 'backend', hp: 30, attack: 8, defense: 4, speed: 6, moves: ['move1'] },
+    { name: 'Mon2', type: 'frontend', hp: 30, attack: 8, defense: 4, speed: 5, moves: ['move2'] },
+    { name: 'Mon3', type: 'backend', hp: 25, attack: 10, defense: 3, speed: 7, moves: ['move1', 'move2'] }
   ];
 
   test('round-robin generates correct number of matchups', () => {
