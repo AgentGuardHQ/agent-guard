@@ -4,6 +4,7 @@
   "description": "A Pokemon-style browser RPG themed around software bugs",
   "type": "module",
   "scripts": {
+    "test": "node tests/run.js",
     "simulate": "node simulation/cli.js",
     "simulate:quick": "node simulation/cli.js --battles 1000",
     "simulate:full": "node simulation/cli.js --battles 50000"
