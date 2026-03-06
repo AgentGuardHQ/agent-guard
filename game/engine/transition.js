@@ -1,6 +1,12 @@
 // Battle transition - flash and fade
 import { playTransitionFlash } from '../audio/sound.js';
 
+function hexToRgb(hex) {
+  if (!hex || hex[0] !== '#') return { r: 255, g: 255, b: 255 };
+  const n = parseInt(hex.slice(1), 16);
+  return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+}
+
 let transition = null;
 
 export function startTransition(wildMon) {
@@ -36,7 +42,8 @@ export function drawTransitionOverlay(ctx, w, h, mapDrawFn) {
   const p = transition.timer / TRANSITION_PHASES[transition.phase];
   if (type === 'flash') {
     const i = p < 0.5 ? p * 2 : (1 - p) * 2;
-    ctx.fillStyle = `rgba(255,255,255,${(i * 0.9).toFixed(2)})`;
+    const { r, g, b } = hexToRgb(transition.wildMon.color);
+    ctx.fillStyle = `rgba(${r},${g},${b},${(i * 0.9).toFixed(2)})`;
     ctx.fillRect(0, 0, w, h);
   } else if (type === 'fade') {
     ctx.fillStyle = `rgba(0,0,0,${p.toFixed(2)})`;
