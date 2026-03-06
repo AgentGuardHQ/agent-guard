@@ -183,3 +183,25 @@ export function playBattleVictory() {
     playToneDelayed(freq, dur, 'sine', 0.35, i * 140, true);
   });
 }
+
+export function playEvolution() {
+  // Ascending magical sweep building to a climax
+  playSweep(200, 800, 1.5, 'sine', 0.2);
+  // Shimmering tones during transformation
+  const shimmer = [523, 659, 784, 880, 1047, 1319, 1568]; // C5 up to G6
+  shimmer.forEach((freq, i) => {
+    playToneDelayed(freq, 0.3, 'sine', 0.15, 500 + i * 350, true);
+  });
+  // Triumphant reveal fanfare
+  const fanfare = [784, 988, 1175, 1568]; // G5, B5, D6, G6
+  fanfare.forEach((freq, i) => {
+    const dur = i === fanfare.length - 1 ? 0.5 : 0.2;
+    playToneDelayed(freq, dur, 'sine', 0.3, 3200 + i * 200, true);
+  });
+}
+
+export function playDevEvent() {
+  // Quick positive chime for logging dev activity
+  playTone(660, 0.08, 'sine', 0.2);
+  playToneDelayed(880, 0.1, 'sine', 0.2, 80, true);
+}

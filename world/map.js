@@ -1,21 +1,15 @@
-// Map loading and tile queries
-let mapData = null;
-
-export async function loadMap() {
-  const res = await fetch('data/map.json');
-  mapData = await res.json();
-  return mapData;
-}
+// Map tile queries
+import { MAP_DATA } from '../data/mapData.js';
 
 export function getMap() {
-  return mapData;
+  return MAP_DATA;
 }
 
 export function getTile(x, y) {
-  if (!mapData || y < 0 || y >= mapData.height || x < 0 || x >= mapData.width) {
+  if (y < 0 || y >= MAP_DATA.height || x < 0 || x >= MAP_DATA.width) {
     return 1; // out of bounds = wall
   }
-  return mapData.tiles[y][x];
+  return MAP_DATA.tiles[y][x];
 }
 
 export function isWalkable(x, y) {

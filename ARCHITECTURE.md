@@ -2,7 +2,7 @@
 
 ## Overview
 
-BugMon is a developer-themed monster battle engine. It runs entirely client-side with vanilla JS, HTML Canvas, and zero dependencies. Serve it with any static file server and open `index.html`.
+BugMon is a Pokémon-style browser game themed around software bugs. It runs entirely client-side with vanilla JS, HTML Canvas, and zero dependencies. Serve it with any static file server and open `index.html`.
 
 ```
 python3 -m http.server
@@ -17,9 +17,13 @@ Also deployable to GitHub Pages — see `.github/workflows/deploy.yml`.
 BugMon/
 ├── index.html              Entry point - canvas, touch controls, loads game.js
 ├── game.js                 Game loop, data loading, orchestration
+├── simulate.js             Battle simulator CLI (Node.js)
+├── package.json            npm scripts (simulate, serve)
 │
 ├── engine/                 Core engine (framework-level)
-│   ├── state.js            Game state machine: EXPLORE | BATTLE_TRANSITION | BATTLE | MENU
+│   ├── state.js            Game state machine with named transitions
+│   ├── events.js           Event bus for decoupled system communication
+│   ├── entities.js         Entity system (BugMon, Player, NPC, Item)
 │   ├── input.js            Keyboard + touch input (pressed/just-pressed/simulate)
 │   ├── renderer.js         All Canvas drawing functions
 │   └── transition.js       Battle transition animation (flash/fade)
@@ -30,13 +34,14 @@ BugMon/
 │   └── encounters.js       Wild encounter checks (10% in tall grass)
 │
 ├── battle/                 Battle systems
-│   ├── battleEngine.js     Turn-based battle state machine
+│   ├── battle-core.js      Pure battle engine (no UI/audio — testable, simulatable)
+│   ├── battleEngine.js     Battle UI controller (connects core to input/audio)
 │   └── damage.js           Damage formula
 │
 ├── data/                   Game content (JSON, data-driven)
 │   ├── monsters.json       BugMon creatures, stats, and sprite refs
 │   ├── moves.json          Move definitions
-│   ├── types.json          Type definitions, colors, and effectiveness chart
+│   ├── types.json          Type system and effectiveness chart
 │   └── map.json            Tile grid for the world map
 │
 ├── audio/                  Sound effects (Web Audio API, no files)
@@ -51,36 +56,59 @@ BugMon/
 │   ├── deadlock.png        Battle sprite (64x64)
 │   └── player_*.png        Player directional sprites (32x32 x4)
 │
-├── CONTRIBUTING.md         Contributor guide (add BugMon, moves, sprites)
-│
-└── .github/
-    ├── workflows/
-    │   ├── deploy.yml      GitHub Pages auto-deploy on push to main
-    │   └── validate.yml    JSON data validation on PRs
-    ├── scripts/
-    │   └── validate-data.mjs  Data validation logic
-    └── ISSUE_TEMPLATE/     Issue templates for contributions
+└── .github/workflows/
+    └── deploy.yml          GitHub Pages auto-deploy on push to main
 ```
 
 ## Module Dependency Graph
 
 ```
-game.js (entry point)
-├── engine/state.js         (no deps)
+game.js (entry point, browser)
+├── engine/events.js        (no deps — event bus)
+├── engine/entities.js      (no deps — entity factories)
+├── engine/state.js         ← engine/events.js
 ├── engine/input.js         ← audio/sound.js
 ├── engine/renderer.js      ← sprites/sprites.js
 ├── engine/transition.js    ← audio/sound.js
 ├── world/map.js            (no deps)
 ├── world/player.js         ← engine/input.js, world/map.js, audio/sound.js
 ├── world/encounters.js     ← audio/sound.js (receives data via setter)
-├── battle/damage.js        (no deps)
-├── battle/battleEngine.js  ← battle/damage.js, engine/input.js,
-│                              engine/state.js, world/player.js, audio/sound.js
+├── battle/damage.js        (no deps — pure math)
+├── battle/battle-core.js   ← battle/damage.js (pure logic, no UI)
+├── battle/battleEngine.js  ← battle/battle-core.js, battle/damage.js,
+│                              engine/input.js, engine/state.js,
+│                              engine/events.js, world/player.js, audio/sound.js
 ├── audio/sound.js          (no deps, Web Audio API)
 └── sprites/sprites.js      (no deps, image loader)
+
+simulate.js (entry point, Node.js CLI)
+└── battle/battle-core.js   ← battle/damage.js (pure logic only)
 ```
 
 All modules use ES Module `import`/`export`. JSON data is loaded via `fetch()` at startup in `game.js` and passed to modules through setter functions.
+
+### Architecture Layers
+
+```
+┌─────────────────────────────────────────────┐
+│  game.js / simulate.js  (entry points)      │
+├─────────────────────────────────────────────┤
+│  battle/battleEngine.js  (UI controller)    │
+│  world/*.js              (overworld)        │  ← Game layer (presentation)
+│  engine/renderer.js      (drawing)          │
+│  audio/sound.js          (sound effects)    │
+├─────────────────────────────────────────────┤
+│  battle/battle-core.js   (pure logic)       │
+│  battle/damage.js        (pure math)        │  ← Engine layer (logic)
+│  engine/state.js         (state machine)    │
+│  engine/events.js        (event bus)        │
+│  engine/entities.js      (entity system)    │
+├─────────────────────────────────────────────┤
+│  data/*.json             (content)          │  ← Data layer (content)
+└─────────────────────────────────────────────┘
+```
+
+The engine layer has zero UI dependencies and can run in Node.js (used by the battle simulator CLI).
 
 ## Game State Machine
 
@@ -166,7 +194,6 @@ Unified input system supporting both keyboard and touch:
 {
   "id": 1,
   "name": "NullPointer",
-  "type": "memory",
   "hp": 30, "attack": 8, "defense": 4, "speed": 6,
   "moves": ["segfault", "hotfix"],
   "color": "#e74c3c",
@@ -177,24 +204,8 @@ Unified input system supporting both keyboard and touch:
 
 ### moves.json
 ```json
-{ "id": "segfault", "name": "SegFault", "power": 10, "type": "memory" }
+{ "id": "segfault", "name": "SegFault", "power": 10 }
 ```
-
-### types.json
-```json
-{
-  "types": ["memory", "logic", "runtime", "syntax", "frontend", "backend", "devops", "testing"],
-  "typeColors": { "memory": "#2ecc71", "logic": "#f39c12", ... },
-  "effectiveness": {
-    "memory": { "memory": 1.0, "logic": 1.0, "runtime": 1.5, ... }
-  }
-}
-```
-
-8 types organized in two interlocking effectiveness cycles:
-- **Bug types:** Memory > Runtime > Logic > Syntax > Memory
-- **Dev types:** Frontend > Backend > DevOps > Testing > Frontend
-- Each type also has cross-cycle super-effective and not-very-effective matchups
 
 ### map.json
 Tile values: `0` = ground, `1` = wall, `2` = tall grass
@@ -261,9 +272,44 @@ All sound effects are synthesized at runtime using the Web Audio API — no audi
 
 - **ES Modules** over script tags: proper scoping, explicit dependencies
 - **Setter functions** for data injection: modules like `encounters.js` receive monster data via `setMonstersData()` rather than importing JSON directly (fetch requires async)
-- **Single mutable state**: no framework, no event bus. Modules read/write shared state directly. Works at this scale.
+- **Pure battle engine**: `battle-core.js` contains all battle logic with zero UI/audio/DOM dependencies. This enables AI opponents, battle simulations, balance testing, and multiplayer without touching UI code
+- **Event bus**: systems communicate via events (`MOVE_USED`, `BUGMON_FAINTED`, etc.) instead of calling each other directly, preventing tight coupling between battle logic, UI, and audio
+- **State machine with named transitions**: `enterBattle()`, `exitBattle()`, etc. instead of raw `setState()` calls, making state flow explicit and preventing invalid transitions
+- **Entity system**: lightweight entity model (`createBugMon()`, `createPlayer()`, etc.) that separates data from behavior, preparing for trainers, NPCs, and items
+- **Data-driven content**: all BugMon, moves, types, and maps live in `/data` JSON files. The engine reads data at runtime — no hardcoded monsters
 - **Grid-locked movement**: player position is always integer tile coords. No sub-tile animation yet.
 - **Message queue pattern**: battle uses `showMessage(text, callback)` to chain actions with visible pauses between them
 - **Image sprites with fallback**: PNG files loaded at startup, graceful degradation to colored squares
 - **Unified input**: keyboard and touch both feed into the same key state, so game logic doesn't need to know the input source
 - **GitHub Pages deploy**: zero-config static hosting, auto-deploys on push to main
+
+## Battle Simulator CLI
+
+Run battles from the command line using the pure battle engine:
+
+```bash
+npm run simulate                              # Random matchup (verbose)
+npm run simulate -- NullPointer Deadlock       # Specific matchup (verbose)
+npm run simulate -- NullPointer Deadlock --runs 1000  # Statistical analysis
+npm run simulate -- --all                      # Full roster round-robin
+npm run simulate -- --all --runs 500           # Round-robin with custom sample
+```
+
+The simulator uses `battle/battle-core.js` directly with no browser dependencies. This enables balance testing, AI training data generation, and quick debugging.
+
+## Event Bus
+
+Systems subscribe to game events for decoupled communication:
+
+```js
+import { eventBus, Events } from './engine/events.js';
+
+// Any system can listen
+eventBus.on(Events.BUGMON_FAINTED, ({ name, side }) => { ... });
+eventBus.on(Events.MOVE_USED, ({ attacker, move, damage }) => { ... });
+
+// Battle engine emits events
+eventBus.emit(Events.MOVE_USED, { attacker: 'NullPointer', move: 'SegFault', damage: 12 });
+```
+
+Available events: `BATTLE_STARTED`, `TURN_STARTED`, `MOVE_USED`, `DAMAGE_DEALT`, `BUGMON_FAINTED`, `CAPTURE_ATTEMPTED`, `CAPTURE_SUCCESS`, `CAPTURE_FAILED`, `BATTLE_ENDED`, `STATE_CHANGED`, `PLAYER_MOVED`, `ENCOUNTER_TRIGGERED`.

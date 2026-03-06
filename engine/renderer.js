@@ -1,6 +1,7 @@
 // Canvas rendering
 import { drawSprite } from '../sprites/sprites.js';
 import { getTileTexture, getGrassFrame, getBattleBackground } from '../sprites/tiles.js';
+import { generateMonster, generateEgg } from '../sprites/monsterGen.js';
 
 const TILE = 32;
 const COLORS = {
@@ -78,10 +79,10 @@ export function drawBattle(battle, movesData, typeColors) {
     ctx.fillRect(0, 0, 480, 320);
   }
 
-  // Enemy BugMon (top right)
+  // Enemy BugMon (top right) - wild monsters show as eggs until caught
   if (!battle.enemy.sprite || !drawSprite(ctx, battle.enemy.sprite, 320, 40, 64, 64)) {
-    ctx.fillStyle = battle.enemy.color;
-    ctx.fillRect(320, 40, 64, 64);
+    const enemySprite = generateEgg(battle.enemy.id, battle.enemy.color, 64);
+    ctx.drawImage(enemySprite, 320, 40);
   }
   ctx.fillStyle = '#fff';
   ctx.font = '14px monospace';
@@ -94,8 +95,8 @@ export function drawBattle(battle, movesData, typeColors) {
   // Player BugMon (bottom left)
   const playerMon = battle.playerMon;
   if (!playerMon.sprite || !drawSprite(ctx, playerMon.sprite, 80, 140, 64, 64)) {
-    ctx.fillStyle = playerMon.color;
-    ctx.fillRect(80, 140, 64, 64);
+    const playerSprite = generateMonster(playerMon.id, playerMon.color, 64);
+    ctx.drawImage(playerSprite, 80, 140);
   }
   ctx.fillStyle = '#fff';
   ctx.fillText(playerMon.name, 60, 130);
@@ -112,7 +113,7 @@ export function drawBattle(battle, movesData, typeColors) {
   ctx.strokeRect(0, 240, 480, 80);
 
   if (battle.state === 'menu') {
-    const options = ['Fight', 'Capture', 'Run'];
+    const options = ['Fight', 'Cache', 'Run'];
     options.forEach((opt, i) => {
       ctx.fillStyle = i === battle.menuIndex ? '#e94560' : '#fff';
       ctx.font = '16px monospace';

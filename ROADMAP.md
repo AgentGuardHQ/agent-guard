@@ -11,9 +11,9 @@
 ### Milestone Dependency Map
 
 ```
-V1 -> V1.1 -> V2 -> V2.5 -> V2.1 -> V3 -> V4 -> V5 -> V6 -> V7
-                                                          |
-                                                          +-> V8
+V1 -> V1.1 -> V2 -> V2.5 -> V2.9 -> V2.1 -> V3 -> V4 -> V5 -> V6 -> V7
+                                                                  |
+                                                                  +-> V8
 ```
 
 ---
@@ -77,14 +77,25 @@ V1 -> V1.1 -> V2 -> V2.5 -> V2.1 -> V3 -> V4 -> V5 -> V6 -> V7
 - [ ] Move categories: damage, heal, status, utility -- `[S]`
 - [ ] Reboot move (planned in V2 but not yet implemented) -- `[S]`
 
+## V2.9 -- CLI ↔ Browser Sync & "Cache" Mechanic (DONE)
+
+> **Depends on:** V2.5 | **Effort:** Medium | **Theme:** Bridge terminal and browser — cache 'em all
+
+- [x] Rename "Catch/Capture" to "Cache" throughout (thematic: you cache BugMon to storage) -- `[M]`
+- [x] Browser persistence via localStorage (party, BugDex, position, auto-save) -- `[M]`
+- [x] CLI sync server (`bugmon sync`) — Node.js built-in WebSocket, zero deps -- `[M]`
+- [x] Browser sync client — auto-connects to local sync server, real-time state push/pull -- `[M]`
+- [x] Shared BugDex — CLI and browser merge party, storage, seen counts, stats -- `[M]`
+- [x] Seamless handoff — cache BugMon in terminal, see them in browser game instantly -- `[S]`
+
 ## V3 -- Save/Load & Core QoL
 
-> **Depends on:** V2.1 | **Effort:** Large | **Theme:** Make the game feel like a real play session
+> **Depends on:** V2.9 | **Effort:** Large | **Theme:** Make the game feel like a real play session
 
-- [ ] Save/load via localStorage -- `[L]`
+- [x] Save/load via localStorage -- `[L]` *(done in V2.9)*
 - [ ] Party management (swap active BugMon) -- `[M]`
 - [ ] Settings menu (volume, text speed) -- `[M]`
-- [ ] BugDex / collection tracker -- `[M]`
+- [x] BugDex / collection tracker -- `[M]` *(done in V2.9)*
 - [ ] Smooth tile-to-tile movement animation -- `[M]`
 - [ ] PP system for moves (limited uses, restored at healing stations) -- `[M]`
 
