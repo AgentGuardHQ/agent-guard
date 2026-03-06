@@ -1,0 +1,11 @@
+{
+  "name": "bugmon",
+  "version": "0.2.0",
+  "description": "A Pokémon-style browser RPG themed around software bugs",
+  "type": "module",
+  "scripts": {
+    "simulate": "node simulate.js",
+    "serve": "python3 -m http.server"
+  },
+  "license": "MIT"
+}

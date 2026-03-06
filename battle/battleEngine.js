@@ -1,13 +1,17 @@
-// Battle state machine
+// Battle UI controller - connects pure battle engine to input/audio/state
 import { calcDamage } from './damage.js';
 import { wasPressed } from '../engine/input.js';
 import { setState, STATES } from '../engine/state.js';
 import { getPlayer } from '../world/player.js';
+import { eventBus, Events } from '../engine/events.js';
 import {
   playMenuNav, playMenuConfirm, playMenuCancel,
   playAttack, playFaint, playCaptureSuccess,
   playCaptureFailure, playBattleVictory
 } from '../audio/sound.js';
+import { captureChance } from './battle-core.js';
+import { checkPartyEvolutions, applyEvolution } from '../evolution/evolution.js';
+import { startEvolutionAnimation } from '../evolution/animation.js';
 
 let battle = null;
 let movesData = [];
@@ -35,6 +39,10 @@ export function startBattle(wildMon) {
     message: '',
     nextAction: null
   };
+  eventBus.emit(Events.BATTLE_STARTED, {
+    playerMon: battle.playerMon.name,
+    enemy: battle.enemy.name,
+  });
   return battle;
 }
 
@@ -93,10 +101,16 @@ export function updateBattle(dt) {
 function executeTurn(playerMove) {
   const playerFirst = battle.playerMon.speed >= battle.enemy.speed;
 
+  eventBus.emit(Events.TURN_STARTED, {
+    turn: (battle.turn || 0) + 1,
+    firstMover: playerFirst ? battle.playerMon.name : battle.enemy.name,
+  });
+
   if (playerFirst) {
     doAttack(battle.playerMon, playerMove, battle.enemy, () => {
       if (battle.enemy.currentHP <= 0) {
         playFaint();
+        eventBus.emit(Events.BUGMON_FAINTED, { name: battle.enemy.name, side: 'enemy' });
         showMessage(`Wild ${battle.enemy.name} fainted!`, () => endBattle());
       } else {
         enemyTurn();
@@ -106,6 +120,7 @@ function executeTurn(playerMove) {
     enemyTurn(() => {
       if (battle.playerMon.currentHP <= 0) {
         playFaint();
+        eventBus.emit(Events.BUGMON_FAINTED, { name: battle.playerMon.name, side: 'player' });
         showMessage(`${battle.playerMon.name} fainted!`, () => {
           // Heal and return
           const player = getPlayer();
@@ -116,6 +131,7 @@ function executeTurn(playerMove) {
         doAttack(battle.playerMon, playerMove, battle.enemy, () => {
           if (battle.enemy.currentHP <= 0) {
             playFaint();
+            eventBus.emit(Events.BUGMON_FAINTED, { name: battle.enemy.name, side: 'enemy' });
             showMessage(`Wild ${battle.enemy.name} fainted!`, () => endBattle());
           } else {
             battle.state = 'menu';
@@ -132,6 +148,15 @@ function doAttack(attacker, move, defender, callback) {
   const { damage, effectiveness } = calcDamage(attacker, move, defender, typeChart);
   defender.currentHP -= damage;
   playAttack();
+
+  eventBus.emit(Events.MOVE_USED, {
+    attacker: attacker.name,
+    move: move.name,
+    defender: defender.name,
+    damage,
+    effectiveness,
+  });
+
   let msg = `${attacker.name} used ${move.name}! ${damage} damage!`;
   if (effectiveness > 1.0) msg += ' Super effective!';
   else if (effectiveness < 1.0) msg += ' Not very effective...';
@@ -144,6 +169,7 @@ function enemyTurn(callback) {
   doAttack(battle.enemy, move, battle.playerMon, () => {
     if (battle.playerMon.currentHP <= 0) {
       playFaint();
+      eventBus.emit(Events.BUGMON_FAINTED, { name: battle.playerMon.name, side: 'player' });
       showMessage(`${battle.playerMon.name} fainted!`, () => {
         const player = getPlayer();
         player.party[0].currentHP = player.party[0].hp;
@@ -159,17 +185,23 @@ function enemyTurn(callback) {
 }
 
 function attemptCapture() {
-  const hpRatio = battle.enemy.currentHP / battle.enemy.hp;
-  const chance = (1 - hpRatio) * 0.5 + 0.1;
+  const chance = captureChance(battle.enemy);
+
+  eventBus.emit(Events.CAPTURE_ATTEMPTED, {
+    target: battle.enemy.name,
+    chance,
+  });
 
   if (Math.random() < chance) {
     const player = getPlayer();
     const captured = { ...battle.enemy, currentHP: battle.enemy.currentHP };
     player.party.push(captured);
     playCaptureSuccess();
+    eventBus.emit(Events.CAPTURE_SUCCESS, { name: battle.enemy.name });
     showMessage(`Caught ${battle.enemy.name}!`, () => endBattle());
   } else {
     playCaptureFailure();
+    eventBus.emit(Events.CAPTURE_FAILED, { name: battle.enemy.name });
     showMessage(`${battle.enemy.name} broke free!`, () => {
       enemyTurn();
     });
@@ -186,14 +218,26 @@ function showMessage(msg, callback) {
 function endBattle() {
   // Sync player mon HP back
   const player = getPlayer();
+  const outcome = battle.enemy.currentHP <= 0 ? 'win' : 'other';
   if (battle.playerMon.currentHP > 0) {
     player.party[0].currentHP = battle.playerMon.currentHP;
   }
-  if (battle.enemy.currentHP <= 0) {
+  const wasVictory = battle.enemy.currentHP <= 0;
+  if (wasVictory) {
     playBattleVictory();
   }
+  eventBus.emit(Events.BATTLE_ENDED, { outcome });
   battle = null;
-  setState(STATES.EXPLORE);
+
+  // Check if any party member can evolve after battle
+  const evo = checkPartyEvolutions(player.party);
+  if (evo) {
+    applyEvolution(player.party, evo.partyIndex, evo.to);
+    startEvolutionAnimation(evo.from, evo.to);
+    setState(STATES.EVOLVING);
+  } else {
+    setState(STATES.EXPLORE);
+  }
 }
 
 export { movesData };

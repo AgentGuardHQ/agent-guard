@@ -1,0 +1,139 @@
+name: New BugMon Submission
+description: Submit a new BugMon to the game. No coding required!
+title: "[BugMon] "
+labels: ["bugmon-submission"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Submit Your BugMon
+
+        Fill out the form below to submit a new BugMon. A bot will validate your submission and show a battle preview. If approved by a maintainer, your BugMon will be added to the game!
+
+  - type: input
+    id: name
+    attributes:
+      label: Name
+      description: Your BugMon's name. Must be unique and use only letters and numbers (e.g. "CallbackHell", "NullPointer").
+      placeholder: e.g. RaceCondition
+    validations:
+      required: true
+
+  - type: dropdown
+    id: type
+    attributes:
+      label: Type
+      description: Your BugMon's type. Determines type effectiveness in battle.
+      options:
+        - memory
+        - logic
+        - runtime
+        - syntax
+    validations:
+      required: true
+
+  - type: input
+    id: hp
+    attributes:
+      label: HP
+      description: Hit Points (1-120). Current roster ranges from 25-45.
+      placeholder: e.g. 30
+    validations:
+      required: true
+
+  - type: input
+    id: attack
+    attributes:
+      label: Attack
+      description: Attack stat (1-120). Current roster ranges from 4-9.
+      placeholder: e.g. 8
+    validations:
+      required: true
+
+  - type: input
+    id: defense
+    attributes:
+      label: Defense
+      description: Defense stat (1-120). Current roster ranges from 3-8.
+      placeholder: e.g. 5
+    validations:
+      required: true
+
+  - type: input
+    id: speed
+    attributes:
+      label: Speed
+      description: Speed stat (1-120). Faster BugMon attacks first. Current roster ranges from 1-10.
+      placeholder: e.g. 6
+    validations:
+      required: true
+
+  - type: dropdown
+    id: move1
+    attributes:
+      label: Move 1
+      description: First move for your BugMon.
+      options:
+        - SegFault
+        - Hotfix
+        - ThreadLock
+        - GarbageCollect
+        - MemoryDump
+        - Mutex
+        - ForceQuit
+        - PatchDeploy
+        - Refactor
+        - BlueScreen
+        - CoreDump
+        - Rollback
+        - HotReload
+        - TypeMismatch
+        - Compile
+        - NullCheck
+        - BufferOverrun
+    validations:
+      required: true
+
+  - type: dropdown
+    id: move2
+    attributes:
+      label: Move 2
+      description: Second move for your BugMon. Must be different from Move 1.
+      options:
+        - SegFault
+        - Hotfix
+        - ThreadLock
+        - GarbageCollect
+        - MemoryDump
+        - Mutex
+        - ForceQuit
+        - PatchDeploy
+        - Refactor
+        - BlueScreen
+        - CoreDump
+        - Rollback
+        - HotReload
+        - TypeMismatch
+        - Compile
+        - NullCheck
+        - BufferOverrun
+    validations:
+      required: true
+
+  - type: input
+    id: color
+    attributes:
+      label: Color (optional)
+      description: Hex color code for your BugMon (e.g. "#e74c3c"). Leave blank to use the default color for your type.
+      placeholder: e.g. #e74c3c
+    validations:
+      required: false
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: A vivid description of your BugMon's appearance. This is used as a reference for sprite art.
+      placeholder: Describe what your BugMon looks like...
+    validations:
+      required: true

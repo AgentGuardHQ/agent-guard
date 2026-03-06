@@ -103,6 +103,56 @@
       border-color: #3498db;
     }
 
+    /* Dev Activity Panel */
+    #dev-panel {
+      display: none;
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      background: rgba(0,0,0,0.85);
+      border: 1px solid #e94560;
+      border-radius: 6px;
+      padding: 8px 12px;
+      z-index: 20;
+      max-width: 280px;
+    }
+    #dev-panel.open { display: block; }
+    #dev-panel h3 { color: #e94560; font-size: 11px; margin-bottom: 6px; }
+    .dev-btn {
+      display: inline-block;
+      background: rgba(233, 69, 96, 0.2);
+      border: 1px solid #e94560;
+      border-radius: 4px;
+      color: #fff;
+      font-size: 10px;
+      font-family: monospace;
+      padding: 3px 6px;
+      margin: 2px;
+      cursor: pointer;
+    }
+    .dev-btn:hover { background: rgba(233, 69, 96, 0.5); }
+    #dev-toggle {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      cursor: pointer;
+      color: #e94560;
+      font-size: 14px;
+      font-family: monospace;
+      z-index: 10;
+      opacity: 0.7;
+      background: rgba(0,0,0,0.5);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    #dev-toggle:hover { opacity: 1; }
+    #dev-status {
+      color: #2ecc71;
+      font-size: 10px;
+      margin-top: 6px;
+      min-height: 14px;
+    }
+
     /* Show touch controls on touch-capable devices */
     @media (pointer: coarse) {
       #touch-controls { display: flex; }
@@ -120,6 +170,12 @@
   <div id="game-container" style="position:relative;">
     <canvas id="game" width="480" height="320"></canvas>
     <div id="mute-btn" style="position:absolute;top:8px;right:8px;cursor:pointer;color:#fff;font-size:20px;z-index:10;opacity:0.7;">&#x1f50a;</div>
+    <div id="dev-toggle">&gt;_ DEV</div>
+    <div id="dev-panel">
+      <h3>DEV ACTIVITY</h3>
+      <div id="dev-buttons"></div>
+      <div id="dev-status"></div>
+    </div>
     <div id="touch-controls">
       <div class="dpad">
         <div class="dpad-blank"></div>
@@ -143,6 +199,40 @@
   <script type="module">
     import { simulatePress, simulateRelease } from './engine/input.js';
     import { unlock, toggleMute } from './audio/sound.js';
+
+    // Dev Activity Panel
+    const devEvents = [
+      { id: 'commits', label: 'Commit' },
+      { id: 'prs_merged', label: 'PR Merge' },
+      { id: 'bugs_fixed', label: 'Bug Fix' },
+      { id: 'tests_passing', label: 'Tests Pass' },
+      { id: 'refactors', label: 'Refactor' },
+      { id: 'code_reviews', label: 'Review' },
+      { id: 'conflicts_resolved', label: 'Resolve' },
+      { id: 'ci_passes', label: 'CI Pass' },
+      { id: 'deploys', label: 'Deploy' },
+      { id: 'docs_written', label: 'Write Docs' }
+    ];
+
+    const devBtnContainer = document.getElementById('dev-buttons');
+    const devStatus = document.getElementById('dev-status');
+    devEvents.forEach(evt => {
+      const btn = document.createElement('span');
+      btn.className = 'dev-btn';
+      btn.textContent = evt.label;
+      btn.addEventListener('click', () => {
+        if (window.bugmon && window.bugmon.log) {
+          window.bugmon.log(evt.id);
+          devStatus.textContent = `${evt.label} logged!`;
+          setTimeout(() => { devStatus.textContent = ''; }, 1500);
+        }
+      });
+      devBtnContainer.appendChild(btn);
+    });
+
+    document.getElementById('dev-toggle').addEventListener('click', () => {
+      document.getElementById('dev-panel').classList.toggle('open');
+    });
 
     document.getElementById('mute-btn').addEventListener('click', () => {
       unlock();

@@ -1,0 +1,57 @@
+#!/bin/sh
+# BugMon Git Hook - post-commit
+# Tracks git commits for BugMon evolution system
+# Install: cp hooks/post-commit .git/hooks/post-commit && chmod +x .git/hooks/post-commit
+
+EVENTS_FILE="$(git rev-parse --show-toplevel)/.events.json"
+
+# Initialize events file if it doesn't exist
+if [ ! -f "$EVENTS_FILE" ]; then
+  echo '{"commits":0,"prs_merged":0,"bugs_fixed":0,"tests_passing":0,"refactors":0,"code_reviews":0,"conflicts_resolved":0,"ci_passes":0,"deploys":0,"docs_written":0}' > "$EVENTS_FILE"
+fi
+
+# Increment commit counter
+if command -v python3 > /dev/null 2>&1; then
+  python3 -c "
+import json
+with open('$EVENTS_FILE', 'r') as f:
+    data = json.load(f)
+data['commits'] = data.get('commits', 0) + 1
+
+# Check commit message for keywords
+import subprocess
+msg = subprocess.run(['git', 'log', '-1', '--format=%s'], capture_output=True, text=True).stdout.lower()
+
+if any(word in msg for word in ['fix', 'bug', 'patch', 'resolve']):
+    data['bugs_fixed'] = data.get('bugs_fixed', 0) + 1
+if any(word in msg for word in ['refactor', 'clean', 'restructure']):
+    data['refactors'] = data.get('refactors', 0) + 1
+if any(word in msg for word in ['doc', 'readme', 'comment', 'jsdoc']):
+    data['docs_written'] = data.get('docs_written', 0) + 1
+if any(word in msg for word in ['deploy', 'release', 'publish']):
+    data['deploys'] = data.get('deploys', 0) + 1
+if any(word in msg for word in ['test', 'spec', 'assert']):
+    data['tests_passing'] = data.get('tests_passing', 0) + 1
+
+with open('$EVENTS_FILE', 'w') as f:
+    json.dump(data, f, indent=2)
+print('[BugMon] Dev activity logged! Your BugMon grow stronger.')
+"
+elif command -v node > /dev/null 2>&1; then
+  node -e "
+const fs = require('fs');
+const { execSync } = require('child_process');
+const data = JSON.parse(fs.readFileSync('$EVENTS_FILE', 'utf8'));
+data.commits = (data.commits || 0) + 1;
+
+const msg = execSync('git log -1 --format=%s').toString().toLowerCase();
+if (/fix|bug|patch|resolve/.test(msg)) data.bugs_fixed = (data.bugs_fixed || 0) + 1;
+if (/refactor|clean|restructure/.test(msg)) data.refactors = (data.refactors || 0) + 1;
+if (/doc|readme|comment|jsdoc/.test(msg)) data.docs_written = (data.docs_written || 0) + 1;
+if (/deploy|release|publish/.test(msg)) data.deploys = (data.deploys || 0) + 1;
+if (/test|spec|assert/.test(msg)) data.tests_passing = (data.tests_passing || 0) + 1;
+
+fs.writeFileSync('$EVENTS_FILE', JSON.stringify(data, null, 2));
+console.log('[BugMon] Dev activity logged! Your BugMon grow stronger.');
+"
+fi
