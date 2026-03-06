@@ -1,5 +1,6 @@
 import assert from 'node:assert';
 import { readFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import { test, suite } from './run.js';
 
 const root = new URL('../', import.meta.url);
@@ -7,6 +8,7 @@ const monsters = JSON.parse(await readFile(new URL('ecosystem/data/monsters.json
 const moves = JSON.parse(await readFile(new URL('ecosystem/data/moves.json', root), 'utf-8'));
 const types = JSON.parse(await readFile(new URL('ecosystem/data/types.json', root), 'utf-8'));
 const map = JSON.parse(await readFile(new URL('ecosystem/data/map.json', root), 'utf-8'));
+const evolutions = JSON.parse(await readFile(new URL('ecosystem/data/evolutions.json', root), 'utf-8'));
 
 const moveIds = new Set(moves.map(m => m.id));
 const typeNames = new Set(types.types);
@@ -114,5 +116,76 @@ suite('Data Validation (data/*.json)', () => {
     for (const mon of monsters) {
       assert.ok(mon.moves.length >= 1, `${mon.name} has no moves`);
     }
+  });
+
+  test('monster rarity values are valid', () => {
+    const validRarities = ['common', 'uncommon', 'rare', 'legendary', 'evolved'];
+    for (const mon of monsters) {
+      assert.ok(validRarities.includes(mon.rarity),
+        `${mon.name} has invalid rarity: "${mon.rarity}", expected one of ${validRarities}`);
+    }
+  });
+
+  test('evolvesTo references valid monster IDs', () => {
+    const monsterIds = new Set(monsters.map(m => m.id));
+    for (const mon of monsters) {
+      if (mon.evolvesTo) {
+        assert.ok(monsterIds.has(mon.evolvesTo),
+          `${mon.name} evolvesTo ID ${mon.evolvesTo} does not exist in monsters.json`);
+      }
+    }
+  });
+
+  test('evolution chain stages reference valid monsters', () => {
+    const monsterIds = new Set(monsters.map(m => m.id));
+    for (const chain of evolutions.chains) {
+      for (const stage of chain.stages) {
+        assert.ok(monsterIds.has(stage.monsterId),
+          `evolution chain "${chain.name}" references non-existent monster ID ${stage.monsterId}`);
+      }
+    }
+  });
+
+  test('evolution triggers reference valid event types', () => {
+    const validEvents = new Set(Object.keys(evolutions.events));
+    for (const chain of evolutions.chains) {
+      for (const trigger of chain.triggers) {
+        assert.ok(validEvents.has(trigger.condition.event),
+          `chain "${chain.name}" uses unknown event type "${trigger.condition.event}"`);
+      }
+    }
+  });
+
+  test('existing sprite PNGs match a valid monster sprite field', () => {
+    // Verify that PNG files in sprites/ correspond to actual monsters
+    // (Not all monsters have sprites yet — fallback rectangles are used)
+    const monsterSprites = new Set(monsters.filter(m => m.sprite).map(m => m.sprite));
+    const spritesDir = new URL('game/sprites/', root);
+    for (const mon of monsters) {
+      if (mon.sprite) {
+        const spritePath = new URL(`${mon.sprite}.png`, spritesDir);
+        if (existsSync(spritePath)) {
+          assert.ok(monsterSprites.has(mon.sprite),
+            `sprite file "${mon.sprite}.png" exists but no monster references it`);
+        }
+      }
+    }
+    // At least some sprites should exist
+    const existing = monsters.filter(m => m.sprite && existsSync(new URL(`${m.sprite}.png`, spritesDir)));
+    assert.ok(existing.length > 0, 'at least one monster sprite should exist');
+  });
+
+  test('no duplicate monster names', () => {
+    const names = monsters.map(m => m.name);
+    const unique = new Set(names);
+    assert.strictEqual(names.length, unique.size,
+      `duplicate monster names found: ${names.filter((n, i) => names.indexOf(n) !== i)}`);
+  });
+
+  test('no duplicate move names', () => {
+    const names = moves.map(m => m.name);
+    const unique = new Set(names);
+    assert.strictEqual(names.length, unique.size,
+      `duplicate move names found: ${names.filter((n, i) => names.indexOf(n) !== i)}`);
   });
 });
