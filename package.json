@@ -5,7 +5,10 @@
   "type": "module",
   "scripts": {
     "simulate": "node simulate.js",
+    "simulate:quick": "node simulation/cli.js --battles 1000",
+    "simulate:full": "node simulation/cli.js --battles 50000",
     "serve": "python3 -m http.server"
   },
+  "keywords": ["game", "rpg", "pokemon", "simulation"],
   "license": "MIT"
 }
