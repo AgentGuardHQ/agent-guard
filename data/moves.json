@@ -64,5 +64,15 @@
   { "id": "creativeguess",        "name": "CreativeGuess",        "power": 8,  "type": "ai" },
   { "id": "recursiveselfimprove", "name": "RecursiveSelfImprove", "power": 14, "type": "ai" },
   { "id": "computeoverload",      "name": "ComputeOverload",      "power": 12, "type": "ai" },
-  { "id": "alignmenttest",        "name": "AlignmentTest",        "power": 11, "type": "ai" }
+  { "id": "alignmenttest",        "name": "AlignmentTest",        "power": 11, "type": "ai" },
+
+  { "id": "safeaccess",           "name": "SafeAccess",           "power": 9,  "type": "backend" },
+  { "id": "typecheck",            "name": "TypeCheck",            "power": 11, "type": "backend" },
+  { "id": "asyncresolve",         "name": "AsyncResolve",         "power": 12, "type": "backend" },
+  { "id": "memoryreclaim",        "name": "MemoryReclaim",        "power": 10, "type": "backend" },
+  { "id": "flexalign",            "name": "FlexAlign",            "power": 9,  "type": "frontend" },
+  { "id": "gridsnap",             "name": "GridSnap",             "power": 12, "type": "frontend" },
+  { "id": "cleanhistory",         "name": "CleanHistory",         "power": 10, "type": "devops" },
+  { "id": "servicemesh",          "name": "ServiceMesh",          "power": 11, "type": "architecture" },
+  { "id": "fewshotlearn",         "name": "FewShotLearn",         "power": 11, "type": "ai" }
 ]

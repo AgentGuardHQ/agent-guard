@@ -5,6 +5,7 @@ const STATES = {
   EXPLORE: 'EXPLORE',
   BATTLE_TRANSITION: 'BATTLE_TRANSITION',
   BATTLE: 'BATTLE',
+  EVOLVING: 'EVOLVING',
   MENU: 'MENU'
 };
 
@@ -30,6 +31,14 @@ export function startBattleState() {
 }
 
 export function exitBattle() {
+  setState(STATES.EXPLORE);
+}
+
+export function enterEvolution() {
+  setState(STATES.EVOLVING);
+}
+
+export function exitEvolution() {
   setState(STATES.EXPLORE);
 }
 

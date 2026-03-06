@@ -1,0 +1,33 @@
+#!/bin/sh
+# BugMon Git Hook - post-merge
+# Tracks merges and conflict resolutions for BugMon evolution
+# Install: cp hooks/post-merge .git/hooks/post-merge && chmod +x .git/hooks/post-merge
+
+EVENTS_FILE="$(git rev-parse --show-toplevel)/.events.json"
+
+if [ ! -f "$EVENTS_FILE" ]; then
+  echo '{"commits":0,"prs_merged":0,"bugs_fixed":0,"tests_passing":0,"refactors":0,"code_reviews":0,"conflicts_resolved":0,"ci_passes":0,"deploys":0,"docs_written":0}' > "$EVENTS_FILE"
+fi
+
+# Check if this was a squash merge (from a PR)
+IS_SQUASH="$1"
+
+if command -v python3 > /dev/null 2>&1; then
+  python3 -c "
+import json
+with open('$EVENTS_FILE', 'r') as f:
+    data = json.load(f)
+data['prs_merged'] = data.get('prs_merged', 0) + 1
+with open('$EVENTS_FILE', 'w') as f:
+    json.dump(data, f, indent=2)
+print('[BugMon] Merge logged! Your BugMon grow stronger.')
+"
+elif command -v node > /dev/null 2>&1; then
+  node -e "
+const fs = require('fs');
+const data = JSON.parse(fs.readFileSync('$EVENTS_FILE', 'utf8'));
+data.prs_merged = (data.prs_merged || 0) + 1;
+fs.writeFileSync('$EVENTS_FILE', JSON.stringify(data, null, 2));
+console.log('[BugMon] Merge logged! Your BugMon grow stronger.');
+"
+fi
