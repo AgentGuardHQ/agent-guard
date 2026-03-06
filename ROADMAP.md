@@ -2,6 +2,24 @@
 
 > The codebase is infested with bugs. Time to catch 'em all.
 
+## Vision
+
+BugMon is building toward a game where **your real coding life drives your monsters' evolution**. The core loop:
+
+```
+code → encounter → battle → cache → evolve → repeat
+ ↑                                              |
+ └──────────────────────────────────────────────┘
+```
+
+Commit code, your BugMon evolve. Merge a PR, unlock new forms. Fix bugs, encounter rare creatures. The game doesn't compete with your work — it runs alongside it.
+
+**Strategic priorities:**
+1. Lock in the core game loop (V3)
+2. Activate the dev-activity evolution mechanic as the central differentiator (V5)
+3. Build enough content to sustain engagement (V6)
+4. Grow through community contributions and developer word-of-mouth
+
 ### Legend
 
 - **Effort:** `[S]` = hours | `[M]` = 1-2 days | `[L]` = 3+ days
@@ -117,9 +135,11 @@ V1 -> V1.1 -> V2 -> V2.5 -> V2.9 -> V2.1 -> V3 -> V4 -> V5 -> V6 -> V7
 - [ ] Critical hits (small random chance for 1.5x damage) -- `[S]`
 - [ ] Accuracy/evasion stats -- `[M]`
 
-## V5 -- Progression & Evolution
+## V5 -- Progression & Evolution (Core Differentiator)
 
-> **Depends on:** V4 | **Effort:** Large | **Theme:** Watch your BugMon grow (and mutate)
+> **Depends on:** V4 | **Effort:** Large | **Theme:** Your coding life drives your monsters' growth
+
+This is BugMon's unique selling point. No other game evolves creatures based on real developer activity.
 
 **Leveling:**
 - [ ] Experience points and leveling -- `[L]`
@@ -127,7 +147,7 @@ V1 -> V1.1 -> V2 -> V2.5 -> V2.9 -> V2.1 -> V3 -> V4 -> V5 -> V6 -> V7
 - [ ] Learn new moves at level thresholds -- `[M]`
 - [ ] Move replacement UI (pick which move to forget) -- `[M]`
 
-**Evolution:**
+**Evolution (dev-activity triggers):**
 - [ ] Evolution system with transformations: -- `[L]`
   - CallbackHell -> AsyncAwait
   - MemoryLeak -> GarbageCollector
@@ -139,6 +159,13 @@ V1 -> V1.1 -> V2 -> V2.5 -> V2.9 -> V2.1 -> V3 -> V4 -> V5 -> V6 -> V7
   - InfiniteLoop -> RecursionLimit
   - Heisenbug -> Schrodinbug
   - BitRot -> DataCorruption -> SystemFailure (3-stage)
+
+**Dev-activity integration:**
+- [ ] Commit streak bonuses (consecutive days → XP multiplier) -- `[M]`
+- [ ] PR merges trigger evolution checks -- `[S]`
+- [ ] Bug fix commits unlock rare encounters -- `[M]`
+- [ ] CI failures spawn boss-like encounters -- `[M]`
+- [ ] Code review activity rewards (reviewer XP) -- `[S]`
 
 **Scaling:**
 - [ ] Wild BugMon level scaling by area -- `[M]`
@@ -202,6 +229,13 @@ V1 -> V1.1 -> V2 -> V2.5 -> V2.9 -> V2.1 -> V3 -> V4 -> V5 -> V6 -> V7
 
 ## Stretch Goals
 
+**Dev-activity expansion:**
+- [ ] Team leaderboards (compare BugDex across a dev team)
+- [ ] GitHub Action that posts BugMon evolution announcements to PRs
+- [ ] Repo-specific encounter tables (different projects spawn different BugMon)
+- [ ] Weekly/monthly dev activity summaries as in-game rewards
+
+**Game features:**
 - [ ] Procedural BugMon generator (random stats, names, sprites)
 - [ ] Online trading (WebRTC or simple server)
 - [ ] Online battles (WebRTC)
@@ -293,16 +327,18 @@ V1 -> V1.1 -> V2 -> V2.5 -> V2.9 -> V2.1 -> V3 -> V4 -> V5 -> V6 -> V7
 
 ## Evolution Chains
 
-| From | To | Method |
-|------|----|--------|
-| CallbackHell | AsyncAwait | Level 20 |
-| MemoryLeak | GarbageCollector | Level 18 |
-| SpaghettiCode | CleanArchitecture | Level 22 |
-| NullPointer | OptionalChaining | Level 16 |
-| RaceCondition | MutexGuard | Level 18 |
-| OffByOne | ArrayOutOfBounds | Level 15 |
-| MergeConflict | RebaseHell | Level 20 |
-| InfiniteLoop | RecursionLimit | Level 25 |
-| Heisenbug | Schrodinbug | Level 22 |
-| BitRot | DataCorruption | Level 14 |
-| DataCorruption | SystemFailure | Level 28 |
+Evolutions can trigger via traditional leveling OR dev-activity milestones (whichever comes first).
+
+| From | To | Level | Dev-Activity Trigger |
+|------|----|-------|---------------------|
+| CallbackHell | AsyncAwait | 20 | Refactor 5 files in one commit |
+| MemoryLeak | GarbageCollector | 18 | Fix 10 bugs |
+| SpaghettiCode | CleanArchitecture | 22 | 20 commits with "refactor" in message |
+| NullPointer | OptionalChaining | 16 | 10 commits |
+| RaceCondition | MutexGuard | 18 | Resolve 5 merge conflicts |
+| OffByOne | ArrayOutOfBounds | 15 | 5 test-related commits |
+| MergeConflict | RebaseHell | 20 | Merge 10 PRs |
+| InfiniteLoop | RecursionLimit | 25 | 30 commits (the grind) |
+| Heisenbug | Schrodinbug | 22 | Fix a bug that returns within 24h |
+| BitRot | DataCorruption | 14 | 7-day commit streak |
+| DataCorruption | SystemFailure | 28 | 3 CI failures in one day |

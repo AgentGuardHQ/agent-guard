@@ -10,7 +10,9 @@
 
 > The Pokémon game developers deserve.
 
-A monster-taming RPG where the monsters are software bugs, the types are programming domains, and every battle is a debugging session. Built with zero dependencies, pure vanilla JS, and way too many puns.
+A monster-taming RPG where the monsters are software bugs, the types are programming domains, and your real coding activity drives your monsters' evolution. Commit code, your BugMon evolve. Merge a PR, unlock new forms. Fix bugs, encounter rare creatures.
+
+Built with zero dependencies, pure vanilla JS, and way too many puns.
 
 **[Play Now](https://jpleva91.github.io/BugMon/)**
 
@@ -59,12 +61,11 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide.
 ## Features
 
 - **30 BugMon** across 7 types with evolutions
-- **CLI debugging tool** — real errors become monster encounters with fix tips
+- **Dev-activity evolution** — your commits, PRs, and bug fixes trigger monster evolutions via git hooks
+- **CLI companion** — battle simulator, BugDex, and real-time sync between terminal and browser
 - Turn-based combat with speed priority, type effectiveness, and critical hits
 - Tile-based exploration with random encounters in tall grass
-- Capture mechanic with HP-based probability
-- Egg hatching mechanic for captured monsters
-- Procedurally generated monster sprites
+- Cache mechanic with HP-based probability
 - Synthesized sound effects (Web Audio API)
 - Mobile touch controls (D-pad + A/B buttons)
 - **Zero dependencies** -- vanilla JS, HTML5 Canvas, no build step ([see the Lightweight Manifesto](LIGHTWEIGHT.md))
