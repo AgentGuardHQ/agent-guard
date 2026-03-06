@@ -5,6 +5,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 [![Play Now](https://img.shields.io/badge/Play-GitHub%20Pages-orange.svg)](https://jpleva91.github.io/BugMon/)
+[![Size](https://img.shields.io/badge/gzipped-12.5_KB-brightgreen.svg)](LIGHTWEIGHT.md)
+[![Dependencies](https://img.shields.io/badge/dependencies-0-brightgreen.svg)](LIGHTWEIGHT.md)
 
 > The Pokémon game developers deserve.
 
@@ -52,7 +54,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide.
 - Pixel art sprites with procedural fallbacks
 - Synthesized sound effects (Web Audio API)
 - Mobile touch controls (D-pad + A/B buttons)
-- **Zero dependencies** -- vanilla JS, HTML5 Canvas, no build step
+- **Zero dependencies** -- vanilla JS, HTML5 Canvas, no build step ([see the Lightweight Manifesto](LIGHTWEIGHT.md))
 
 ## How to Play
 

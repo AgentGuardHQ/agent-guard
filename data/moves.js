@@ -1,0 +1,154 @@
+// Move data — inlined from moves.json
+// To regenerate: node scripts/sync-data.js
+export const MOVES = [
+  {
+    id: 'segfault',
+    name: 'SegFault',
+    power: 10,
+    type: 'memory'
+  },
+  {
+    id: 'hotfix',
+    name: 'Hotfix',
+    power: 6,
+    type: 'syntax'
+  },
+  {
+    id: 'threadlock',
+    name: 'ThreadLock',
+    power: 8,
+    type: 'logic'
+  },
+  {
+    id: 'garbagecollect',
+    name: 'GarbageCollect',
+    power: 7,
+    type: 'memory'
+  },
+  {
+    id: 'memorydump',
+    name: 'MemoryDump',
+    power: 9,
+    type: 'memory'
+  },
+  {
+    id: 'mutex',
+    name: 'Mutex',
+    power: 7,
+    type: 'logic'
+  },
+  {
+    id: 'forcequit',
+    name: 'ForceQuit',
+    power: 12,
+    type: 'runtime'
+  },
+  {
+    id: 'patchdeploy',
+    name: 'PatchDeploy',
+    power: 7,
+    type: 'syntax'
+  },
+  {
+    id: 'refactor',
+    name: 'Refactor',
+    power: 8,
+    type: 'syntax'
+  },
+  {
+    id: 'bluescreen',
+    name: 'BlueScreen',
+    power: 11,
+    type: 'runtime'
+  },
+  {
+    id: 'coredump',
+    name: 'CoreDump',
+    power: 10,
+    type: 'memory'
+  },
+  {
+    id: 'rollback',
+    name: 'Rollback',
+    power: 5,
+    type: 'logic'
+  },
+  {
+    id: 'hotreload',
+    name: 'HotReload',
+    power: 6,
+    type: 'runtime'
+  },
+  {
+    id: 'typemismatch',
+    name: 'TypeMismatch',
+    power: 8,
+    type: 'logic'
+  },
+  {
+    id: 'compile',
+    name: 'Compile',
+    power: 14,
+    type: 'syntax'
+  },
+  {
+    id: 'nullcheck',
+    name: 'NullCheck',
+    power: 4,
+    type: 'memory'
+  },
+  {
+    id: 'bufferoverrun',
+    name: 'BufferOverrun',
+    power: 13,
+    type: 'memory'
+  },
+  {
+    id: 'cacheinvalidation',
+    name: 'CacheInvalidation',
+    power: 9,
+    type: 'frontend'
+  },
+  {
+    id: 'dommanipulation',
+    name: 'DOMManipulation',
+    power: 7,
+    type: 'frontend'
+  },
+  {
+    id: 'sqlinjection',
+    name: 'SQLInjection',
+    power: 11,
+    type: 'backend'
+  },
+  {
+    id: 'apitimeout',
+    name: 'APITimeout',
+    power: 8,
+    type: 'backend'
+  },
+  {
+    id: 'dockerkill',
+    name: 'DockerKill',
+    power: 10,
+    type: 'devops'
+  },
+  {
+    id: 'pipelinefailure',
+    name: 'PipelineFailure',
+    power: 7,
+    type: 'devops'
+  },
+  {
+    id: 'assertionerror',
+    name: 'AssertionError',
+    power: 8,
+    type: 'testing'
+  },
+  {
+    id: 'mockoverride',
+    name: 'MockOverride',
+    power: 6,
+    type: 'testing'
+  }
+];

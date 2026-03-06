@@ -2,45 +2,36 @@
 import { initRenderer, drawMap, drawPlayer, drawBattle, clear } from './engine/renderer.js';
 import { clearJustPressed } from './engine/input.js';
 import { getState, setState, STATES } from './engine/state.js';
-import { loadMap, getMap, getTile } from './world/map.js';
+import { getMap } from './world/map.js';
 import { getPlayer, updatePlayer } from './world/player.js';
 import { setMonstersData, checkEncounter } from './world/encounters.js';
 import { setMovesData, setTypeData, startBattle, getBattle, updateBattle, movesData } from './battle/battleEngine.js';
 import { preloadAll } from './sprites/sprites.js';
 import { initTileTextures } from './sprites/tiles.js';
-import { startTransition, updateTransition, getTransition, drawTransitionOverlay } from './engine/transition.js';
+import { MONSTERS } from './data/monsters.js';
+import { MOVES } from './data/moves.js';
+import { TYPES } from './data/types.js';
+import { startTransition, updateTransition, drawTransitionOverlay } from './engine/transition.js';
 
 let lastTime = 0;
-let typeColors = null;
 
 async function init() {
   const canvas = document.getElementById('game');
   initRenderer(canvas);
 
-  // Load data
-  const [monstersRes, movesRes, typesRes] = await Promise.all([
-    fetch('data/monsters.json'),
-    fetch('data/moves.json'),
-    fetch('data/types.json')
-  ]);
-  const monsters = await monstersRes.json();
-  const moves = await movesRes.json();
-  const types = await typesRes.json();
-
-  setMonstersData(monsters);
-  setMovesData(moves);
-  setTypeData(types);
-  typeColors = types.typeColors;
+  // Wire up data modules
+  setMonstersData(MONSTERS);
+  setMovesData(MOVES);
+  setTypeData(TYPES);
 
   // Preload sprite images (gracefully falls back if PNGs don't exist yet)
-  await preloadAll(monsters);
+  await preloadAll(MONSTERS);
 
-  await loadMap();
   initTileTextures();
 
   // Give player a starter BugMon
   const player = getPlayer();
-  const starter = { ...monsters[0], currentHP: monsters[0].hp };
+  const starter = { ...MONSTERS[0], currentHP: MONSTERS[0].hp };
   player.party.push(starter);
 
   // Start game loop
@@ -107,7 +98,7 @@ function render() {
   } else if (state === STATES.BATTLE) {
     const battle = getBattle();
     if (battle) {
-      drawBattle(battle, movesData, typeColors);
+      drawBattle(battle, movesData, TYPES.typeColors);
     }
   }
 }
