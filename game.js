@@ -193,11 +193,9 @@ function update(dt) {
 function render() {
   clear();
   const state = getState();
-
   const ctx = document.getElementById('game').getContext('2d');
 
   if (state === STATES.TITLE) {
-    const ctx = document.getElementById('game').getContext('2d');
     drawTitle(ctx);
     return;
   } else if (state === STATES.EXPLORE) {

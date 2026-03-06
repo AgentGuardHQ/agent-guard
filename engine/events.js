@@ -31,14 +31,9 @@ class EventBus {
     }
   }
 
-  clear() {
-    this.listeners = {};
-  }
 }
 
-// Game event constants
 export const Events = {
-  // Battle events
   BATTLE_STARTED: 'BATTLE_STARTED',
   TURN_STARTED: 'TURN_STARTED',
   MOVE_USED: 'MOVE_USED',
@@ -48,13 +43,7 @@ export const Events = {
   CACHE_SUCCESS: 'CACHE_SUCCESS',
   CACHE_FAILED: 'CACHE_FAILED',
   BATTLE_ENDED: 'BATTLE_ENDED',
-
-  // State events
   STATE_CHANGED: 'STATE_CHANGED',
-
-  // World events
-  PLAYER_MOVED: 'PLAYER_MOVED',
-  ENCOUNTER_TRIGGERED: 'ENCOUNTER_TRIGGERED',
 };
 
 export const eventBus = new EventBus();

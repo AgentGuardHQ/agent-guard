@@ -1,93 +1,50 @@
-// Battle transition - flash and fade effect when entering encounters
+// Battle transition - flash and fade
 import { playTransitionFlash } from '../audio/sound.js';
 
 let transition = null;
 
-function hexToRgb(hex) {
-  const n = parseInt((hex || '#ffffff').replace('#', ''), 16);
-  return `${(n >> 16) & 255},${(n >> 8) & 255},${n & 255}`;
-}
-
-function buildPhases(flashRgb) {
-  const flashColor = `rgba(${flashRgb},`;
-  return [
-    { type: 'flash', duration: 60, color: flashColor },
-    { type: 'pause', duration: 80 },
-    { type: 'flash', duration: 60, color: flashColor },
-    { type: 'pause', duration: 80 },
-    { type: 'flash', duration: 80, color: flashColor },
-    { type: 'fade',  duration: 300, color: 'rgba(0,0,0,' },
-    { type: 'hold',  duration: 200 },
-  ];
-}
-
 export function startTransition(wildMon) {
-  const rgb = hexToRgb(wildMon.color);
-  transition = {
-    wildMon,
-    phases: buildPhases(rgb),
-    phase: 0,
-    timer: 0,
-    totalTime: 0,
-    done: false
-  };
+  transition = { wildMon, phase: 0, timer: 0, done: false };
   playTransitionFlash();
 }
 
+// Phases: flash(60), pause(80), flash(60), pause(80), flash(80), fade(300), hold(200)
+const PHASES = [60, 80, 60, 80, 80, 300, 200];
+const TYPES = ['flash', 'pause', 'flash', 'pause', 'flash', 'fade', 'hold'];
+
 export function updateTransition(dt) {
   if (!transition || transition.done) return null;
-
   transition.timer += dt;
-  const phases = transition.phases;
-  const phase = phases[transition.phase];
-
-  if (transition.timer >= phase.duration) {
+  if (transition.timer >= PHASES[transition.phase]) {
     transition.timer = 0;
     transition.phase++;
-
-    if (transition.phase < phases.length && phases[transition.phase].type === 'flash') {
-      playTransitionFlash();
-    }
-
-    if (transition.phase >= phases.length) {
+    if (transition.phase < PHASES.length && TYPES[transition.phase] === 'flash') playTransitionFlash();
+    if (transition.phase >= PHASES.length) {
       transition.done = true;
       const mon = transition.wildMon;
       transition = null;
-      return mon; // signal to start the battle
+      return mon;
     }
   }
-
-  return null; // still transitioning
+  return null;
 }
 
-export function getTransition() {
-  return transition;
-}
+export function getTransition() { return transition; }
 
-export function drawTransitionOverlay(ctx, width, height, mapDrawFn) {
+export function drawTransitionOverlay(ctx, w, h, mapDrawFn) {
   if (!transition) return;
-
-  // Always draw the map underneath during transition
   mapDrawFn();
-
-  const phase = transition.phases[transition.phase];
-  const progress = transition.timer / phase.duration;
-
-  if (phase.type === 'flash') {
-    // Quick white flash: ramp up then down
-    const intensity = progress < 0.5
-      ? progress * 2
-      : (1 - progress) * 2;
-    ctx.fillStyle = phase.color + (intensity * 0.9).toFixed(2) + ')';
-    ctx.fillRect(0, 0, width, height);
-  } else if (phase.type === 'fade') {
-    // Fade to black
-    ctx.fillStyle = phase.color + progress.toFixed(2) + ')';
-    ctx.fillRect(0, 0, width, height);
-  } else if (phase.type === 'hold') {
-    // Solid black
+  const type = TYPES[transition.phase];
+  const p = transition.timer / PHASES[transition.phase];
+  if (type === 'flash') {
+    const i = p < 0.5 ? p * 2 : (1 - p) * 2;
+    ctx.fillStyle = `rgba(255,255,255,${(i * 0.9).toFixed(2)})`;
+    ctx.fillRect(0, 0, w, h);
+  } else if (type === 'fade') {
+    ctx.fillStyle = `rgba(0,0,0,${p.toFixed(2)})`;
+    ctx.fillRect(0, 0, w, h);
+  } else if (type === 'hold') {
     ctx.fillStyle = 'rgba(0,0,0,1)';
-    ctx.fillRect(0, 0, width, height);
+    ctx.fillRect(0, 0, w, h);
   }
-  // 'pause' type: just show the map, no overlay
 }

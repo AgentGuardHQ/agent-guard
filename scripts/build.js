@@ -26,12 +26,16 @@ const MODULE_ORDER = [
   'audio/sound.js',
   'engine/input.js',
   'sprites/sprites.js',
+  'sprites/monsterGen.js',
   'sprites/tiles.js',
   'world/map.js',
   'world/player.js',
   'world/encounters.js',
   'engine/renderer.js',
   'engine/transition.js',
+  'sync/save.js',
+  'sync/client.js',
+  'engine/title.js',
   'battle/damage.js',
   'battle/battle-core.js',
   'battle/battleEngine.js',
@@ -55,12 +59,13 @@ function readModule(relPath) {
 
 function stripImportsExports(code) {
   // Remove import lines (named imports, default imports, side-effect imports)
-  code = code.replace(/^import\s+\{[^}]*\}\s+from\s+['"][^'"]+['"];?\s*$/gm, '');
-  code = code.replace(/^import\s+\w+\s+from\s+['"][^'"]+['"];?\s*$/gm, '');
-  code = code.replace(/^import\s+['"][^'"]+['"];?\s*$/gm, '');
+  code = code.replace(/^\s*import\s+\{[^}]*\}\s+from\s+['"][^'"]+['"];?\s*$/gm, '');
+  code = code.replace(/^\s*import\s+\w+\s+from\s+['"][^'"]+['"];?\s*$/gm, '');
+  code = code.replace(/^\s*import\s+['"][^'"]+['"];?\s*$/gm, '');
   // Remove dynamic imports (await import(...))
   code = code.replace(/^.*await\s+import\s*\([^)]*\).*$/gm, '');
-  // Convert "export function" → "function"
+  // Convert "export function" / "export async function" → "function" / "async function"
+  code = code.replace(/^export\s+async\s+function\s/gm, 'async function ');
   code = code.replace(/^export\s+function\s/gm, 'function ');
   // Convert "export class" → "class"
   code = code.replace(/^export\s+class\s/gm, 'class ');
@@ -74,14 +79,20 @@ function stripImportsExports(code) {
 }
 
 function minifyJS(code) {
-  // Strip single-line comments (but not URLs with //)
+  // Strip single-line comments (preserve URLs and strings)
   code = code.replace(/(?<![:'"])\/\/(?!['"]).*$/gm, '');
   // Strip multi-line comments
   code = code.replace(/\/\*[\s\S]*?\*\//g, '');
-  // Collapse multiple newlines
+  // Collapse blank lines
   code = code.replace(/\n\s*\n/g, '\n');
   // Trim each line
   code = code.split('\n').map(l => l.trim()).filter(l => l).join('\n');
+  // Semicolons before }
+  code = code.replace(/;\n}/g, '}');
+  // Collapse simple blocks to one line
+  code = code.replace(/\{\n([^\n{]*)\n}/g, '{$1}');
+  // Note: Can't remove spaces around operators safely without a proper parser
+  // (would break inside string literals). Keep it simple.
   return code;
 }
 
@@ -145,24 +156,34 @@ const inlineScript = inlineScriptMatch ? inlineScriptMatch[1] : '';
 // --- Bundle all JS modules ---
 let bundle = '(function() {\n"use strict";\n\n';
 
+const declaredNames = new Set();
+
 for (const mod of MODULE_ORDER) {
   const raw = readModule(mod);
   if (!raw) continue;
-  const stripped = stripImportsExports(raw);
+  let stripped = stripImportsExports(raw);
+  // Deduplicate top-level const/let declarations across modules
+  stripped = stripped.replace(/^(const|let)\s+(\w+)\s*(=|;|,)/gm, (match, kw, name, sep) => {
+    if (declaredNames.has(name)) {
+      return `${name} ${sep === '=' ? '=' : sep}`;
+    }
+    declaredNames.add(name);
+    return match;
+  });
   bundle += `// --- ${mod} ---\n${stripped}\n\n`;
 }
-
-// Add sprite inlining
-bundle += inlineSprites();
 
 // Add inline script (touch controls), stripping its imports
 bundle += '\n// --- Touch controls & mute ---\n';
 bundle += stripImportsExports(inlineScript);
 
-bundle += '\n})();\n';
+// Minify JS (before adding sprite data which contains base64)
+let minBundle = minifyJS(bundle);
 
-// Minify
-const minBundle = minifyJS(bundle);
+// Add sprite inlining after minification (base64 data is not minify-safe)
+minBundle += inlineSprites();
+
+minBundle += '\n})();\n';
 
 // --- Assemble final HTML ---
 const output = `<!DOCTYPE html>
