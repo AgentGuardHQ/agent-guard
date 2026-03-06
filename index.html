@@ -117,8 +117,9 @@
   </style>
 </head>
 <body>
-  <div id="game-container">
+  <div id="game-container" style="position:relative;">
     <canvas id="game" width="480" height="320"></canvas>
+    <div id="mute-btn" style="position:absolute;top:8px;right:8px;cursor:pointer;color:#fff;font-size:20px;z-index:10;opacity:0.7;">&#x1f50a;</div>
     <div id="touch-controls">
       <div class="dpad">
         <div class="dpad-blank"></div>
@@ -141,6 +142,13 @@
   <script type="module" src="game.js"></script>
   <script type="module">
     import { simulatePress, simulateRelease } from './engine/input.js';
+    import { unlock, toggleMute } from './audio/sound.js';
+
+    document.getElementById('mute-btn').addEventListener('click', () => {
+      unlock();
+      const muted = toggleMute();
+      document.getElementById('mute-btn').innerHTML = muted ? '&#x1f507;' : '&#x1f50a;';
+    });
 
     document.querySelectorAll('[data-key]').forEach(btn => {
       const key = btn.dataset.key;
@@ -148,6 +156,7 @@
       btn.addEventListener('touchstart', (e) => {
         e.preventDefault();
         btn.classList.add('pressed');
+        unlock();
         simulatePress(key);
       }, { passive: false });
 
@@ -166,6 +175,7 @@
       btn.addEventListener('mousedown', (e) => {
         e.preventDefault();
         btn.classList.add('pressed');
+        unlock();
         simulatePress(key);
       });
       btn.addEventListener('mouseup', (e) => {

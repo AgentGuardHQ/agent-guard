@@ -1,6 +1,7 @@
 // Player state and movement
 import { wasPressed } from '../engine/input.js';
 import { isWalkable, getTile } from './map.js';
+import { playFootstep } from '../audio/sound.js';
 
 const player = {
   x: 1,
@@ -33,6 +34,7 @@ export function updatePlayer(dt) {
     player.x = nx;
     player.y = ny;
     player.moveTimer = MOVE_COOLDOWN;
+    playFootstep();
     return getTile(nx, ny);
   }
 

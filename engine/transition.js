@@ -1,4 +1,5 @@
 // Battle transition - flash and fade effect when entering encounters
+import { playTransitionFlash } from '../audio/sound.js';
 
 let transition = null;
 
@@ -21,6 +22,7 @@ export function startTransition(wildMon) {
     totalTime: 0,
     done: false
   };
+  playTransitionFlash();
 }
 
 export function updateTransition(dt) {
@@ -32,6 +34,10 @@ export function updateTransition(dt) {
   if (transition.timer >= phase.duration) {
     transition.timer = 0;
     transition.phase++;
+
+    if (transition.phase < PHASES.length && PHASES[transition.phase].type === 'flash') {
+      playTransitionFlash();
+    }
 
     if (transition.phase >= PHASES.length) {
       transition.done = true;

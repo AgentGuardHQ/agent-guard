@@ -3,6 +3,11 @@ import { calcDamage } from './damage.js';
 import { wasPressed } from '../engine/input.js';
 import { setState, STATES } from '../engine/state.js';
 import { getPlayer } from '../world/player.js';
+import {
+  playMenuNav, playMenuConfirm, playMenuCancel,
+  playAttack, playFaint, playCaptureSuccess,
+  playCaptureFailure, playBattleVictory
+} from '../audio/sound.js';
 
 let battle = null;
 let movesData = [];
@@ -48,10 +53,11 @@ export function updateBattle(dt) {
   }
 
   if (battle.state === 'menu') {
-    if (wasPressed('ArrowLeft')) battle.menuIndex = Math.max(0, battle.menuIndex - 1);
-    if (wasPressed('ArrowRight')) battle.menuIndex = Math.min(2, battle.menuIndex + 1);
+    if (wasPressed('ArrowLeft')) { battle.menuIndex = Math.max(0, battle.menuIndex - 1); playMenuNav(); }
+    if (wasPressed('ArrowRight')) { battle.menuIndex = Math.min(2, battle.menuIndex + 1); playMenuNav(); }
 
     if (wasPressed('Enter') || wasPressed(' ')) {
+      playMenuConfirm();
       if (battle.menuIndex === 0) {
         // Fight
         battle.state = 'fight';
@@ -66,11 +72,12 @@ export function updateBattle(dt) {
     }
   } else if (battle.state === 'fight') {
     const moveCount = battle.playerMon.moves.length;
-    if (wasPressed('ArrowLeft')) battle.moveIndex = Math.max(0, battle.moveIndex - 1);
-    if (wasPressed('ArrowRight')) battle.moveIndex = Math.min(moveCount - 1, battle.moveIndex + 1);
-    if (wasPressed('Escape')) { battle.state = 'menu'; return; }
+    if (wasPressed('ArrowLeft')) { battle.moveIndex = Math.max(0, battle.moveIndex - 1); playMenuNav(); }
+    if (wasPressed('ArrowRight')) { battle.moveIndex = Math.min(moveCount - 1, battle.moveIndex + 1); playMenuNav(); }
+    if (wasPressed('Escape')) { playMenuCancel(); battle.state = 'menu'; return; }
 
     if (wasPressed('Enter') || wasPressed(' ')) {
+      playMenuConfirm();
       const moveId = battle.playerMon.moves[battle.moveIndex];
       const move = movesData.find(m => m.id === moveId);
       if (move) executeTurn(move);
@@ -84,6 +91,7 @@ function executeTurn(playerMove) {
   if (playerFirst) {
     doAttack(battle.playerMon, playerMove, battle.enemy, () => {
       if (battle.enemy.currentHP <= 0) {
+        playFaint();
         showMessage(`Wild ${battle.enemy.name} fainted!`, () => endBattle());
       } else {
         enemyTurn();
@@ -92,6 +100,7 @@ function executeTurn(playerMove) {
   } else {
     enemyTurn(() => {
       if (battle.playerMon.currentHP <= 0) {
+        playFaint();
         showMessage(`${battle.playerMon.name} fainted!`, () => {
           // Heal and return
           const player = getPlayer();
@@ -101,6 +110,7 @@ function executeTurn(playerMove) {
       } else {
         doAttack(battle.playerMon, playerMove, battle.enemy, () => {
           if (battle.enemy.currentHP <= 0) {
+            playFaint();
             showMessage(`Wild ${battle.enemy.name} fainted!`, () => endBattle());
           } else {
             battle.state = 'menu';
@@ -115,6 +125,7 @@ function executeTurn(playerMove) {
 function doAttack(attacker, move, defender, callback) {
   const dmg = calcDamage(attacker, move, defender);
   defender.currentHP -= dmg;
+  playAttack();
   showMessage(`${attacker.name} used ${move.name}! ${dmg} damage!`, callback);
 }
 
@@ -123,6 +134,7 @@ function enemyTurn(callback) {
   const move = movesData.find(m => m.id === moveId);
   doAttack(battle.enemy, move, battle.playerMon, () => {
     if (battle.playerMon.currentHP <= 0) {
+      playFaint();
       showMessage(`${battle.playerMon.name} fainted!`, () => {
         const player = getPlayer();
         player.party[0].currentHP = player.party[0].hp;
@@ -145,8 +157,10 @@ function attemptCapture() {
     const player = getPlayer();
     const captured = { ...battle.enemy, currentHP: battle.enemy.currentHP };
     player.party.push(captured);
+    playCaptureSuccess();
     showMessage(`Caught ${battle.enemy.name}!`, () => endBattle());
   } else {
+    playCaptureFailure();
     showMessage(`${battle.enemy.name} broke free!`, () => {
       enemyTurn();
     });
@@ -165,6 +179,9 @@ function endBattle() {
   const player = getPlayer();
   if (battle.playerMon.currentHP > 0) {
     player.party[0].currentHP = battle.playerMon.currentHP;
+  }
+  if (battle.enemy.currentHP <= 0) {
+    playBattleVictory();
   }
   battle = null;
   setState(STATES.EXPLORE);

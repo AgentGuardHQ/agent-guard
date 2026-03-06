@@ -1,8 +1,11 @@
 // Keyboard + touch input handler
+import { unlock } from '../audio/sound.js';
+
 const keys = {};
 let justPressed = {};
 
 window.addEventListener('keydown', (e) => {
+  unlock();
   if (!keys[e.key]) {
     justPressed[e.key] = true;
   }
@@ -16,6 +19,7 @@ window.addEventListener('keyup', (e) => {
 
 // Virtual button press (called by touch controls)
 export function simulatePress(key) {
+  unlock();
   if (!keys[key]) {
     justPressed[key] = true;
   }
