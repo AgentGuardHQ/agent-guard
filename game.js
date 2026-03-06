@@ -20,6 +20,7 @@ import { playDevEvent } from './audio/sound.js';
 import { saveGame, loadGame, applySave, hasSave, recordBrowserCache, importFromCLI, exportState } from './sync/save.js';
 import { initSyncClient, getSyncStatus } from './sync/client.js';
 import { eventBus, Events } from './engine/events.js';
+import { updateTitle, drawTitle } from './engine/title.js';
 
 let lastTime = 0;
 let saveTimer = 0;
@@ -147,7 +148,22 @@ function update(dt) {
     saveTimer = 0;
   }
 
-  if (state === STATES.EXPLORE) {
+  if (state === STATES.TITLE) {
+    const result = updateTitle(dt);
+    if (result === 'continue') {
+      // Save is already loaded during init
+      setState(STATES.EXPLORE);
+    } else if (result === 'new') {
+      // Reset player to starter
+      const player = getPlayer();
+      player.party = [];
+      const starter = { ...MONSTERS[0], currentHP: MONSTERS[0].hp };
+      player.party.push(starter);
+      player.x = 7;
+      player.y = 5;
+      setState(STATES.EXPLORE);
+    }
+  } else if (state === STATES.EXPLORE) {
     const tile = updatePlayer(dt);
     if (tile !== null) {
       const wildMon = checkEncounter(tile);
@@ -180,7 +196,11 @@ function render() {
 
   const ctx = document.getElementById('game').getContext('2d');
 
-  if (state === STATES.EXPLORE) {
+  if (state === STATES.TITLE) {
+    const ctx = document.getElementById('game').getContext('2d');
+    drawTitle(ctx);
+    return;
+  } else if (state === STATES.EXPLORE) {
     drawMap(getMap());
     drawPlayer(getPlayer());
 

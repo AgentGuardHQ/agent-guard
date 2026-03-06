@@ -2,6 +2,7 @@
 import { eventBus, Events } from './events.js';
 
 const STATES = {
+  TITLE: 'TITLE',
   EXPLORE: 'EXPLORE',
   BATTLE_TRANSITION: 'BATTLE_TRANSITION',
   BATTLE: 'BATTLE',
@@ -9,7 +10,7 @@ const STATES = {
   MENU: 'MENU'
 };
 
-let currentState = STATES.EXPLORE;
+let currentState = STATES.TITLE;
 
 export function getState() {
   return currentState;
