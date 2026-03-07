@@ -5,14 +5,18 @@
 // Usage:
 //   bugmon watch -- <command>           Wrap a command and cache bugs (passive)
 //   bugmon watch --cache -- <command>   Interactive mode — battle & cache BugMon
+//   bugmon demo [scenario]              Try a demo encounter
+//   bugmon init                         Install git hooks for evolution tracking
+//   bugmon resolve [--last | --all]     Mark bugs as resolved, earn XP
 //   bugmon party                        View your party
 //   bugmon dex                          View your BugDex
 //   bugmon stats                        View your bug hunter stats
+//   bugmon heal                         Restore party HP
 //   bugmon sync                         Start sync server (bridges CLI ↔ browser)
 //   bugmon help                         Show help
 
 import { watch } from './adapter.js';
-import { loadBugDex } from '../../ecosystem/storage.js';
+import { loadBugDex, saveBugDex } from '../../ecosystem/storage.js';
 import { getAllMonsters } from '../matcher.js';
 import { renderBugDex, renderStats, renderParty } from './renderer.js';
 
@@ -31,6 +35,7 @@ switch (command) {
     const flags = args.slice(1, dashDash);
     const interactive = flags.includes('--cache') || flags.includes('--catch') || flags.includes('-c');
     const openBrowser = flags.includes('--open') || flags.includes('-o');
+    const walk = flags.includes('--walk') || flags.includes('-w');
 
     const cmd = args[dashDash + 1];
     const cmdArgs = args.slice(dashDash + 2);
@@ -44,8 +49,50 @@ switch (command) {
       }
     }
 
-    const code = await watch(cmd, cmdArgs, { interactive, openBrowser });
+    const code = await watch(cmd, cmdArgs, { interactive, openBrowser, walk });
     process.exit(code);
+  }
+
+  case 'demo': {
+    const { demo } = await import('./demo.js');
+    await demo(args[1]);
+    break;
+  }
+
+  case 'init': {
+    const flags = args.slice(1);
+    const force = flags.includes('--force') || flags.includes('-f');
+    const { init } = await import('./init.js');
+    await init({ force });
+    break;
+  }
+
+  case 'resolve': {
+    const { resolve } = await import('./resolve.js');
+    await resolve(args.slice(1));
+    break;
+  }
+
+  case 'heal': {
+    const data = loadBugDex();
+    if (!data.party || data.party.length === 0) {
+      process.stderr.write('\n  \x1b[2mNo BugMon in your party to heal.\x1b[0m\n\n');
+      break;
+    }
+    let healed = 0;
+    for (const mon of data.party) {
+      if ((mon.currentHP ?? mon.hp) < mon.hp) {
+        mon.currentHP = mon.hp;
+        healed++;
+      }
+    }
+    saveBugDex(data);
+    if (healed > 0) {
+      process.stderr.write(`\n  \x1b[32m\x1b[1mYour party has been fully healed!\x1b[0m (${healed} BugMon restored)\n\n`);
+    } else {
+      process.stderr.write('\n  \x1b[2mYour party is already at full health.\x1b[0m\n\n');
+    }
+    break;
   }
 
   case 'party': {
@@ -119,33 +166,40 @@ function printHelp() {
   Every error is a wild BugMon encounter.
   Battle them, cache them, build your party.
 
-  \x1b[1mUsage:\x1b[0m
+  \x1b[1mPlay:\x1b[0m
     bugmon watch -- <command>             Wrap a command (passive mode)
     bugmon watch --cache -- <command>     Interactive: battle & cache BugMon!
-    bugmon watch --cache --open -- <cmd>  Same + offer to open in browser
-    bugmon scan [path]                    Scan files for bugs (eslint/tsc)
-    bugmon sync                           Start sync server (CLI ↔ browser)
-    bugmon party                          View your BugMon party
-    bugmon dex                            View your BugDex
-    bugmon stats                          View your bug hunter stats
-    bugmon help                           Show this help
+    bugmon watch --cache --walk -- <cmd>  Same + auto-walk syncs to browser
+    bugmon demo [scenario]               Try a demo encounter instantly
+
+  \x1b[1mProgress:\x1b[0m
+    bugmon resolve                       Mark last encounter as resolved (+XP)
+    bugmon resolve --all                 Resolve all unresolved encounters
+    bugmon heal                          Restore your party to full HP
+    bugmon party                         View your BugMon party
+    bugmon dex                           View your BugDex
+    bugmon stats                         View your bug hunter stats
+
+  \x1b[1mTools:\x1b[0m
+    bugmon init                          Install git hooks for evolution tracking
+    bugmon scan [path]                   Scan files for bugs (eslint/tsc)
+    bugmon sync                          Start sync server (CLI ↔ browser)
+    bugmon help                          Show this help
 
   \x1b[1mExamples:\x1b[0m
-    bugmon watch --cache -- npm run dev
-    bugmon watch --cache -- node server.js
-    bugmon watch -c -- npx tsc --noEmit
-    bugmon watch -- npm test
-    bugmon scan src/
-    bugmon sync
-    bugmon party
-    bugmon dex
+    bugmon demo                          Quick demo with a random error
+    bugmon watch --cache -- npm run dev  Battle bugs during development
+    bugmon watch -c -- node server.js    Same, shorter flags
+    bugmon watch -- npm test             Passive monitoring
+    bugmon resolve                       Mark last bug as fixed
+    bugmon init                          Set up evolution tracking
 
   \x1b[1mHow it works:\x1b[0m
     1. Run your dev command through bugmon watch
     2. When an error/exception hits, a wild BugMon appears
     3. In --cache mode, you battle it with your party lead
     4. Weaken it and cache it to add it to your team
-    5. Fix the real bug to earn resolve XP
+    5. Fix the real bug, then run "bugmon resolve" to earn XP
     6. Run "bugmon sync" to bridge your CLI and browser game
 
   \x1b[2mYou can also play the full game in the browser at the GitHub Pages site.\x1b[0m

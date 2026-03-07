@@ -8,9 +8,10 @@ import { parseErrors } from '../error-parser.js';
 import { parseStackTrace, getUserFrame } from '../stacktrace-parser.js';
 import { matchMonster } from '../matcher.js';
 import { recordEncounter } from '../../ecosystem/storage.js';
-import { renderEncounter, renderEncounterPrompt } from './renderer.js';
+import { renderEncounter, renderEncounterPrompt, renderBossEncounter } from './renderer.js';
 import { renderContributionPrompt, LOW_CONFIDENCE_THRESHOLD } from './contribute.js';
 import { interactiveCache } from './catch.js';
+import { checkBossEncounter, BOSS_TRIGGERS } from '../../ecosystem/bosses.js';
 
 /**
  * Run a command and intercept errors from stderr.
@@ -29,6 +30,18 @@ export function watch(command, args, options = {}) {
     let stderrBuffer = '';
     let errorQueue = [];
     let processing = false;
+    const errorCounts = new Map();
+    const triggeredBosses = new Set();
+    let autoWalker = null;
+
+    // Start auto-walk if requested
+    if (options.walk) {
+      import('./auto-walk.js').then(({ startAutoWalk }) => {
+        autoWalker = startAutoWalk({
+          onEncounter: () => {}, // encounters come from real errors
+        });
+      }).catch(() => {}); // best effort
+    }
 
     child.stderr.on('data', (chunk) => {
       const text = chunk.toString();
@@ -51,7 +64,7 @@ export function watch(command, args, options = {}) {
           // Process queue if not already doing so
           if (!processing) {
             processing = true;
-            processInteractiveQueue(errorQueue, options).then(() => {
+            processInteractiveQueue(errorQueue, options, { errorCounts, triggeredBosses, autoWalker }).then(() => {
               processing = false;
             });
           }
@@ -77,12 +90,16 @@ export function watch(command, args, options = {}) {
             }
           }
           if (errorQueue.length > 0 && !processing) {
-            await processInteractiveQueue(errorQueue, options);
+            await processInteractiveQueue(errorQueue, options, { errorCounts, triggeredBosses, autoWalker });
           }
         } else {
-          processErrors(stderrBuffer);
+          processErrors(stderrBuffer, { errorCounts, triggeredBosses });
         }
       }
+
+      // Stop auto-walk on exit
+      if (autoWalker) autoWalker.stop();
+
       resolve(code || 0);
     });
   });
@@ -92,14 +109,18 @@ export function watch(command, args, options = {}) {
  * Process the interactive error queue — pause for each encounter.
  * @param {Array} queue
  * @param {object} options
+ * @param {object} state - Shared state (errorCounts, triggeredBosses, autoWalker)
  */
-async function processInteractiveQueue(queue, options) {
+async function processInteractiveQueue(queue, options, state) {
   while (queue.length > 0) {
     const error = queue.shift();
 
     const frames = parseStackTrace(error.rawLines);
     const location = getUserFrame(frames);
     const { monster, confidence } = matchMonster(error);
+
+    // Track error type counts for boss triggers
+    state.errorCounts.set(error.type, (state.errorCounts.get(error.type) || 0) + 1);
 
     // Record in BugDex
     const { xpGained, isNew } = recordEncounter(
@@ -109,6 +130,30 @@ async function processInteractiveQueue(queue, options) {
       location?.line || null,
     );
 
+    // Check for boss trigger before showing normal encounter
+    const bossCheck = checkBossEncounter(state.errorCounts, error.message);
+    if (bossCheck && !state.triggeredBosses.has(bossCheck.boss.id)) {
+      state.triggeredBosses.add(bossCheck.boss.id);
+
+      // Pause auto-walk during boss battle
+      if (state.autoWalker) state.autoWalker.pause();
+
+      renderBossEncounter(bossCheck.boss);
+      const { interactiveBossBattle } = await import('./boss-battle.js');
+      await interactiveBossBattle(bossCheck.boss);
+
+      if (state.autoWalker) state.autoWalker.resume();
+
+      // Reset error counts for boss trigger types to prevent re-triggering
+      const trigger = BOSS_TRIGGERS[bossCheck.trigger];
+      if (trigger?.errorTypes) {
+        for (const et of trigger.errorTypes) {
+          state.errorCounts.set(et, 0);
+        }
+      }
+      continue;
+    }
+
     // Show the encounter card
     renderEncounter(monster, error, location, confidence);
 
@@ -116,7 +161,9 @@ async function processInteractiveQueue(queue, options) {
     if (isNew) parts.push('NEW BugDex entry!');
     process.stderr.write(`  ${parts.join(' | ')}\n`);
 
-    // Prompt for battle
+    // Prompt for battle — pause auto-walk during interactive battle
+    if (state.autoWalker) state.autoWalker.pause();
+
     renderEncounterPrompt(monster);
 
     const result = await interactiveCache(monster, {
@@ -124,6 +171,8 @@ async function processInteractiveQueue(queue, options) {
       file: location?.file,
       line: location?.line,
     });
+
+    if (state.autoWalker) state.autoWalker.resume();
 
     if (result.cached) {
       process.stderr.write(`  \x1b[33m+50 XP (cache bonus)\x1b[0m\n\n`);
@@ -144,8 +193,9 @@ async function processInteractiveQueue(queue, options) {
 /**
  * Process a block of stderr text, find errors, and render encounters (passive mode).
  * @param {string} text
+ * @param {object} state - Shared state (errorCounts, triggeredBosses)
  */
-function processErrors(text) {
+function processErrors(text, state) {
   const errors = parseErrors(text);
 
   for (const error of errors) {
@@ -156,6 +206,9 @@ function processErrors(text) {
     // Match to a BugMon
     const { monster, confidence } = matchMonster(error);
 
+    // Track error type counts for boss triggers
+    state.errorCounts.set(error.type, (state.errorCounts.get(error.type) || 0) + 1);
+
     // Record in BugDex
     const { xpGained, isNew } = recordEncounter(
       monster,
@@ -163,6 +216,22 @@ function processErrors(text) {
       location?.file || null,
       location?.line || null,
     );
+
+    // Check for boss trigger
+    const bossCheck = checkBossEncounter(state.errorCounts, error.message);
+    if (bossCheck && !state.triggeredBosses.has(bossCheck.boss.id)) {
+      state.triggeredBosses.add(bossCheck.boss.id);
+      renderBossEncounter(bossCheck.boss);
+
+      // Reset error counts for this trigger
+      const trigger = BOSS_TRIGGERS[bossCheck.trigger];
+      if (trigger?.errorTypes) {
+        for (const et of trigger.errorTypes) {
+          state.errorCounts.set(et, 0);
+        }
+      }
+      continue;
+    }
 
     // Render the encounter
     renderEncounter(monster, error, location, confidence);

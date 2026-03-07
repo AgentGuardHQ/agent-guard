@@ -302,6 +302,58 @@ export function renderEncounterPrompt(monster) {
   process.stderr.write(lines.join('\n') + '\n');
 }
 
+/**
+ * Render a boss encounter card — red theme, ASCII art, defeat condition.
+ */
+export function renderBossEncounter(boss) {
+  const W = 48;
+  const border = color('║', 'red');
+  const hr = '═'.repeat(W);
+
+  const row = (content) => `${border}${padVis(content, W)}${border}`;
+  const empty = () => row('');
+
+  const lines = [];
+  lines.push('');
+  lines.push(color(`╔${hr}╗`, 'red'));
+  lines.push(row(bold(color(`  ★ BOSS: ${boss.name} ★`, 'red'))));
+  lines.push(empty());
+
+  // ASCII art
+  if (boss.ascii) {
+    for (const artLine of boss.ascii) {
+      lines.push(row(`  ${artLine}`));
+    }
+    lines.push(empty());
+  }
+
+  // Type and HP bar
+  const typeColor = TYPE_COLORS[boss.type] || 'white';
+  const hpBar = renderHPBar(boss.hp, boss.hp, 10);
+  lines.push(row(`  Type: ${color(boss.type.toUpperCase(), typeColor)}    HP: ${hpBar} ${boss.hp}`));
+  lines.push(empty());
+
+  // Description
+  if (boss.description) {
+    const descLines = wordWrap(boss.description, W - 4);
+    for (const dl of descLines) {
+      lines.push(row(`  ${dim(dl)}`));
+    }
+    lines.push(empty());
+  }
+
+  // Defeat condition
+  if (boss.defeatCondition) {
+    lines.push(row(color(`  To defeat: ${boss.defeatCondition}`, 'cyan')));
+    lines.push(empty());
+  }
+
+  lines.push(color(`╚${hr}╝`, 'red'));
+  lines.push('');
+
+  process.stderr.write(lines.join('\n') + '\n');
+}
+
 function getXPForLevel(level) {
   // 0, 100, 300, 600, 1000, 1500, 2100, ...
   return level <= 1 ? 0 : (level * (level - 1)) / 2 * 100;

@@ -117,6 +117,54 @@ export function resolveEncounter(errorMessage) {
   return 0;
 }
 
+/**
+ * Resolve the most recent unresolved encounter (any error).
+ * @returns {number} XP gained (0 if nothing to resolve)
+ */
+export function resolveLastUnresolved() {
+  const data = loadBugDex();
+
+  for (let i = data.encounters.length - 1; i >= 0; i--) {
+    if (!data.encounters[i].resolved) {
+      data.encounters[i].resolved = true;
+      data.stats.totalResolved++;
+      data.stats.xp += XP_RESOLVED;
+      data.stats.level = calculateLevel(data.stats.xp);
+      saveBugDex(data);
+      return XP_RESOLVED;
+    }
+  }
+
+  return 0;
+}
+
+/**
+ * Resolve all unresolved encounters.
+ * @returns {{ count: number, xpGained: number }}
+ */
+export function resolveAllUnresolved() {
+  const data = loadBugDex();
+  let count = 0;
+  let xpGained = 0;
+
+  for (let i = data.encounters.length - 1; i >= 0; i--) {
+    if (!data.encounters[i].resolved) {
+      data.encounters[i].resolved = true;
+      count++;
+      xpGained += XP_RESOLVED;
+      data.stats.totalResolved++;
+    }
+  }
+
+  if (count > 0) {
+    data.stats.xp += xpGained;
+    data.stats.level = calculateLevel(data.stats.xp);
+    saveBugDex(data);
+  }
+
+  return { count, xpGained };
+}
+
 function calculateLevel(xp) {
   // Level thresholds: 0, 100, 300, 600, 1000, 1500, 2100, ...
   let level = 1;
