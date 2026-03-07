@@ -9,12 +9,22 @@ BugMon is a **CLI-first dev activity engine** with a browser game as the retenti
 The core loop:
 
 ```
-code → encounter → battle → cache → evolve → repeat
- ↑                                              |
- └──────────────────────────────────────────────┘
+dev starts CLI
+↓
+player auto-walks dungeon
+↓
+code errors spawn monsters
+↓
+battle occurs
+↓
+fix bug = defeat monster
+↓
+capture + xp → dex grows
+↑                       |
+└───────────────────────┘
 ```
 
-Commit code, your BugMon evolve. Merge a PR, unlock new forms. Fix bugs, encounter rare creatures. The CLI doesn't compete with your work — it runs alongside it.
+Commit code, your BugMon evolve. Merge a PR, unlock new forms. Fix bugs, encounter rare creatures. The CLI doesn't compete with your work — it runs alongside it. The key mechanic: **bugs become enemies**. Gameplay is triggered by actual dev friction.
 
 **Who is this for?** Developers at every stage of their coding journey. Whether you just wrote your first `Hello World` or you're debugging distributed systems, there's a BugMon that speaks to your experience.
 
@@ -22,7 +32,17 @@ Commit code, your BugMon evolve. Merge a PR, unlock new forms. Fix bugs, encount
 - **CLI** — `npm install -g bugmon` or `npx bugmon watch -- npm run dev` — the primary entry point
 - **Browser** — Play on GitHub Pages for RPG progression and visualization
 - **Contribute** — Add a BugMon in 2 minutes with a JSON edit, no code required
-- **VS Code extension** — Surface encounters in the editor (future)
+- **VS Code extension** — Surface encounters in the editor sidebar (future)
+
+### Product Strategy
+
+Think of BugMon as: **product wedge → engagement loop → expansion surface**.
+
+| Stage | What | Goal |
+|-------|------|------|
+| **Wedge** | CLI watcher + terminal battles | Get into the developer's workflow |
+| **Engagement** | Browser game + evolution + BugDex | Keep them coming back |
+| **Expansion** | IDE integration + AI debugging + social | Become indispensable |
 
 **Strategic priorities:**
 1. Make the **CLI the best way to discover BugMon** — reliable error detection, clean UX, instant setup
@@ -31,8 +51,24 @@ Commit code, your BugMon evolve. Merge a PR, unlock new forms. Fix bugs, encount
 4. Keep the bundle **meaningfully small** (target: 16 KB gzipped, cap: 32 KB)
 5. Make it **dead simple to contribute** — new BugMon, new moves, new art styles
 6. Grow through community contributions and developer word-of-mouth
+7. Layer in **real productivity value** — bug history, AI fix suggestions, team metrics
 
 **Pragmatic about dependencies:** Zero runtime deps is the goal for the browser game. But dev tooling should be good — tests, build tools, linters, whatever makes the product better. The constraint is on the *shipped bundle*, not the development experience.
+
+### Why It Can Work
+
+Developers love weird dev tools, terminal toys, and gamification of pain. Projects like `sl`, `lolcat`, `cmatrix`, and `pokemon-cli` went viral on novelty alone. BugMon has an extra advantage: **it hooks into real developer problems.** The error-to-monster pipeline means every bug is content.
+
+### Failure Modes to Avoid
+
+| Risk | Mitigation |
+|------|------------|
+| **Novelty wears off** — people try it once and forget | Progression systems (XP, leveling, rare monsters, dex completion, bosses) create reasons to return |
+| **Heavy graphics splits focus** — terminal is the natural habitat | Stay terminal-first; browser game is the *retention layer*, not the entry point |
+| **Mobile-first dilutes the product** — developers are on desktops | Desktop/terminal is the primary platform; mobile is a nice-to-have, not a priority |
+| **Large engine bloat** — contradicts the zero-dep philosophy | Enforce size budget religiously (`npm run budget`); every feature must fit within byte caps |
+| **No real utility** — just a toy | Phase 2 (productivity layer) adds AI fix suggestions, bug history, and metrics that are genuinely useful |
+| **Team/social features before solo is solid** — premature scaling | Complete V3-V5 (core QoL, battle depth, progression) before any multiplayer work |
 
 ### Legend
 
@@ -51,6 +87,16 @@ Every feature must fit within the byte budget. Run `npm run budget` to check.
 
 See `size-budget.json` for per-subsystem budgets and `CONSTRAINTS.md` for design rules.
 
+### Product Phase Map
+
+```
+Phase 1: Terminal Toy (viral stage)     ← V1 through V2.95 — DONE
+Phase 2: Productivity Layer             ← V3 through V5
+Phase 3: Social Layer                   ← V9 (new)
+Phase 4: IDE Integration                ← V10 (new)
+Phase 5: AI Debugging Companion         ← V11 (new)
+```
+
 ### Milestone Dependency Map
 
 ```
@@ -58,9 +104,12 @@ V1 ──> V1.1 ──> V2 ──> V2.5 ──> V2.9 ──> V2.95 ──> V3 �
                                                               |       |
                                                               v       +──> V8
                                                              V5
+                                                              |
+                                                              v
+                                                     V9 ──> V10 ──> V11
 ```
 
-*V2.95 (Evolution) was built ahead of schedule. V5 (XP/leveling) adds traditional RPG progression on top.*
+*V2.95 (Evolution) was built ahead of schedule. V5 (XP/leveling) adds traditional RPG progression on top. V9+ represents the expansion surface beyond the core game.*
 
 ---
 
@@ -273,14 +322,32 @@ The evolution system (dev-activity triggers) is done. This milestone adds the tr
 
 ---
 
-## CLI Distribution & Expansion `PLANNED`
+## V9 — Productivity Layer & Social `PLANNED`
 
-> **Theme:** Make BugMon the easiest dev tool to install and the hardest to stop using
+> **Depends on:** V5 | **Effort:** Extra Large | **Theme:** From toy to tool — make BugMon genuinely useful
 
-**Distribution:**
-- [ ] npm package — `npx bugmon` to play instantly in any terminal — `[M]` *Must-have*
-- [ ] VS Code extension — surface encounters in the editor sidebar — `[L]` *Should-have*
-- [ ] Browser extension — encounter BugMon while browsing, catches persist — `[L]` *Nice-to-have*
+This is where BugMon crosses from "fun novelty" to "thing developers actually keep running." The game becomes a lightweight developer observability layer.
+
+**Bug history & metrics:**
+- [ ] Error frequency tracking over time (per-type, per-file, per-session) — `[M]` *Must-have*
+- [ ] "Hot zones" — visualize which parts of the codebase spawn the most BugMon — `[M]` *Must-have*
+- [ ] Most defeated bug types report (common error patterns) — `[S]` *Must-have*
+- [ ] Weekly/monthly dev activity summaries as in-game rewards — `[S]` *Should-have*
+- [ ] Daily challenges ("Today: fix 5 NullPointers") with bonus XP — `[M]` *Should-have*
+- [ ] Commit streak bonuses (consecutive days → XP multiplier) — `[M]` *Should-have*
+- [ ] Performance mode — "speed run" timer for fixing bugs fastest — `[S]` *Nice-to-have*
+
+**AI fix suggestions (when a BugMon spawns from a real error):**
+- [ ] Context-aware fix hint based on error type + stack trace — `[M]` *Must-have*
+- [ ] Severity → monster strength scaling (TypeError = grunt, build failure = boss) — `[S]` *Must-have*
+- [ ] "AI spell" battle mechanic — cast a fix suggestion as an attack (if it compiles, critical hit) — `[L]` *Nice-to-have*
+
+**Shared BugDex & social:**
+- [ ] Upload/share monsters and sprites to community gallery — `[M]` *Should-have*
+- [ ] Team leaderboards (compare BugDex across a dev team) — `[M]` *Should-have*
+- [ ] GitHub Action that posts BugMon evolution announcements to PRs — `[M]` *Should-have*
+- [ ] Repo-specific encounter tables (different projects spawn different BugMon) — `[M]` *Should-have*
+- [ ] Social sharing — screenshot/share your team, evolution milestones, rare catches — `[S]` *Nice-to-have*
 
 **Error coverage expansion:**
 - [ ] Python tracebacks (`Traceback (most recent call last)`) — `[S]`
@@ -288,29 +355,64 @@ The evolution system (dev-activity triggers) is done. This milestone adds the tr
 - [ ] Rust compile errors (`error[E0308]`) — `[S]`
 - [ ] Java/Kotlin stack traces — `[S]`
 
-**Dev-activity expansion:**
-- [ ] Team leaderboards (compare BugDex across a dev team) — `[M]`
-- [ ] GitHub Action that posts BugMon evolution announcements to PRs — `[M]`
-- [ ] Repo-specific encounter tables (different projects spawn different BugMon) — `[M]`
-- [ ] Weekly/monthly dev activity summaries as in-game rewards — `[S]`
+## V10 — IDE Integration `PLANNED`
+
+> **Depends on:** V9 | **Effort:** Extra Large | **Theme:** The game moves into the editor
+
+The CLI proves the concept. The IDE extension makes it frictionless. BugMon becomes a side panel dungeon that runs while you code.
+
+**VS Code extension:**
+- [ ] Extension scaffold with side panel webview — `[L]` *Must-have*
+- [ ] Real-time error interception from diagnostics API — `[M]` *Must-have*
+- [ ] Inline BugMon encounters on error hover — `[M]` *Must-have*
+- [ ] Mini dungeon view in sidebar — `[L]` *Should-have*
+- [ ] Party/BugDex status bar item — `[S]` *Should-have*
+- [ ] Evolution notifications as VS Code toasts — `[S]` *Should-have*
+
+**JetBrains plugin:**
+- [ ] IntelliJ/WebStorm plugin with tool window — `[L]` *Nice-to-have*
+
+**npm distribution:**
+- [ ] npm package — `npx bugmon` to play instantly in any terminal — `[M]` *Must-have*
+
+## V11 — AI Debugging Companion `IDEA`
+
+> **Depends on:** V10 | **Effort:** Extra Large | **Theme:** Sentry meets roguelike
+
+The frontier. BugMon evolves from a game into a genuinely novel developer tool — an AI debugging companion with game mechanics.
+
+**AI battle spells:**
+- [ ] "Cast GPT Patch" — AI proposes a code fix as an attack; if it compiles, critical hit — `[L]`
+- [ ] Mana system — AI spells cost mana, regenerated by manual bug fixes — `[M]`
+- [ ] AI-suggested battle strategies based on error context — `[M]`
+
+**Multiplayer / team dungeons:**
+- [ ] Team repo = shared bug dungeon — `[L]`
+- [ ] Collaborative boss fights (large errors require multiple developers to fix) — `[L]`
+- [ ] Online trading (WebRTC or simple server) — `[L]`
+- [ ] Online battles (WebRTC) — `[L]`
+
+**Observability integration:**
+- [ ] Sentry/Datadog webhook → BugMon encounter pipeline — `[L]`
+- [ ] Production error monitoring as a passive BugMon spawner — `[L]`
+- [ ] Streamer mode — display party/stats overlay for streaming dev sessions — `[M]`
+
+---
 
 ## Stretch Goals
 
 **Distribution & virality:**
 - [ ] Console injection mode — drop BugMon into any website's dev tools console
 - [ ] Embeddable widget — `<script src="bugmon.js">` adds a mini-game to any site
-- [ ] Social sharing — screenshot/share your team, evolution milestones, rare catches
+- [ ] Browser extension — encounter BugMon while browsing, catches persist
 
 **Visual upgrades:**
 - [ ] Upgrade from pixel art to a more polished art style (SVG, vector, illustrated)
 - [ ] Animated battle sprites (idle bounce, attack flash, evolution particles)
 - [ ] Procedural monster sprite generation (canvas-drawn creatures by type/color)
-- [ ] Weather/time-of-day visual effects
 
 **Game features:**
 - [ ] Procedural BugMon generator (random stats, names, sprites)
-- [ ] Online trading (WebRTC or simple server)
-- [ ] Online battles (WebRTC)
 - [ ] Map editor
 - [ ] Mod support (load custom JSON data)
 - [ ] Achievements (catch all BugMon, win without taking damage, etc.)
