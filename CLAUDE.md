@@ -52,7 +52,7 @@ BugMon/
 ├── game/                   # Browser game (client-side)
 │   ├── game.js             # Game loop orchestration (entry point for JS)
 │   ├── engine/             # Core framework systems
-│   │   ├── state.js        # Game state machine (EXPLORE, BATTLE_TRANSITION, BATTLE, MENU)
+│   │   ├── state.js        # Game state machine (TITLE, EXPLORE, BATTLE_TRANSITION, BATTLE, EVOLVING, MENU)
 │   │   ├── input.js        # Unified keyboard + touch input
 │   │   ├── renderer.js     # Canvas 2D drawing
 │   │   ├── transition.js   # Battle transition animation
@@ -115,12 +115,14 @@ BugMon/
 │   ├── stack-overflow.js
 │   └── syntax-error.js
 │
-├── tests/                  # Test suite (24 test files)
+├── tests/                  # Test suite (31 test files)
 │   ├── run.js              # Test runner
-│   └── *.test.js           # Tests (battle-core, battle, bosses, bug-event, bugdex-spec,
+│   └── *.test.js           # Tests (battle-core, battle, bosses, bug-event, bugdex, bugdex-spec,
 │                           #   build, damage, data, encounters, error-parser, events,
-│                           #   evolution, game-damage, input, map, matcher, report, rng,
-│                           #   save, simulator, stacktrace-parser, state, storage, strategies)
+│                           #   evolution, evolution-animation, game-damage, input, map, matcher,
+│                           #   monsterGen, player, report, rng, save, simulator,
+│                           #   stacktrace-parser, state, storage, strategies, tiles, tracker,
+│                           #   transition)
 │
 ├── scripts/                # Build tooling
 │   ├── build.js            # Single-file builder (esbuild + terser → dist/index.html)
@@ -243,9 +245,11 @@ eventBus.emit(Events.BUGMON_FAINTED, { name: 'NullPointer' });
 
 ### Game State Machine
 Defined in `game/engine/state.js`. States:
+- **TITLE** — title screen with ASCII logo, starfield, and menu
 - **EXPLORE** — grid-based overworld movement
 - **BATTLE_TRANSITION** — flash + fade animation (860ms)
 - **BATTLE** — turn-based combat with menu system
+- **EVOLVING** — evolution animation sequence (flash, morph, reveal)
 - **MENU** — settings/party management (future)
 
 ### Battle System
@@ -338,11 +342,11 @@ Run `npm run budget` to check compliance locally.
 ## Testing
 
 ```bash
-npm test                               # Run all tests (24 test files)
+npm test                               # Run all tests (31 test files)
 npm run simulate -- --all --runs 100   # Round-robin roster balance analysis
 ```
 
-Test suite covers: battle-core, battle logic, bosses, bug events, bugdex-spec, build output, damage formula, data integrity, encounters, error parsing, event bus, evolution, game-damage, input, map, matcher, reporting, RNG, save, simulator, stacktrace parsing, state, storage, strategies.
+Test suite covers: battle-core, battle logic, bosses, bug events, bugdex, bugdex-spec, build output, damage formula, data integrity, encounters, error parsing, event bus, evolution, evolution-animation, game-damage, input, map, matcher, monsterGen, player, reporting, RNG, save, simulator, stacktrace parsing, state, storage, strategies, tiles, tracker, transition.
 
 ## Claude Code Skills
 
