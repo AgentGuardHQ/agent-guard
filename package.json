@@ -27,6 +27,11 @@
   },
   "scripts": {
     "test": "node tests/run.js",
+    "test:coverage": "c8 --check-coverage --lines 50 node tests/run.js",
+    "lint": "eslint game/ core/ ecosystem/ simulation/ tests/",
+    "lint:fix": "eslint --fix game/ core/ ecosystem/ simulation/ tests/",
+    "format": "prettier --check game/ core/ ecosystem/ simulation/",
+    "format:fix": "prettier --write game/ core/ ecosystem/ simulation/",
     "simulate": "node simulate.js",
     "simulate:quick": "node simulation/cli.js --battles 1000",
     "simulate:full": "node simulation/cli.js --battles 50000",
@@ -34,6 +39,7 @@
     "sync-data": "node scripts/sync-data.js",
     "build": "node scripts/build.js",
     "build:tiny": "node scripts/build.js --no-sprites",
+    "build:debug": "node scripts/build.js --sourcemap",
     "budget": "node scripts/build.js --no-sprites",
     "serve": "node scripts/dev-server.js",
     "dev": "node core/cli/bin.js"
@@ -49,7 +55,10 @@
   ],
   "license": "MIT",
   "devDependencies": {
+    "c8": "^11.0.0",
     "esbuild": "^0.27.3",
+    "eslint": "^10.0.3",
+    "prettier": "^3.8.1",
     "terser": "^5.46.0"
   }
 }

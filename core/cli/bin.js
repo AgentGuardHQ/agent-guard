@@ -20,12 +20,75 @@ import { watch } from './adapter.js';
 import { loadBugDex, saveBugDex } from '../../ecosystem/storage.js';
 import { getAllMonsters } from '../matcher.js';
 import { renderBugDex, renderStats, renderParty } from './renderer.js';
+import { formatHelp } from './args.js';
 
 const args = process.argv.slice(2);
 const command = args[0];
+const wantsHelp = args.includes('--help') || args.includes('-h');
+
+// Per-command help definitions
+const COMMANDS = {
+  watch: {
+    name: 'bugmon watch',
+    description: 'Wrap a command and catch BugMon from errors',
+    usage: 'bugmon watch [flags] -- <command> [args...]',
+    flags: [
+      { flag: '--cache, -c', description: 'Interactive mode — battle and cache BugMon' },
+      { flag: '--open, -o', description: 'Open the browser game on encounter' },
+      { flag: '--walk, -w', description: 'Auto-walk syncs movement to browser game' },
+    ],
+    examples: [
+      'bugmon watch -- npm test',
+      'bugmon watch --cache -- npm run dev',
+      'bugmon watch -c -w -- node server.js',
+    ],
+  },
+  demo: {
+    name: 'bugmon demo',
+    description: 'Run a demo BugMon encounter',
+    usage: 'bugmon demo [scenario]',
+    flags: [],
+    examples: ['bugmon demo', 'bugmon demo null-error', 'bugmon demo syntax-error'],
+  },
+  init: {
+    name: 'bugmon init',
+    description: 'Install git hooks for evolution tracking',
+    usage: 'bugmon init [flags]',
+    flags: [{ flag: '--force, -f', description: 'Overwrite existing hooks' }],
+    examples: ['bugmon init', 'bugmon init --force'],
+  },
+  resolve: {
+    name: 'bugmon resolve',
+    description: 'Mark encounters as resolved and earn XP',
+    usage: 'bugmon resolve [flags]',
+    flags: [
+      { flag: '--last', description: 'Resolve the most recent encounter (default)' },
+      { flag: '--all', description: 'Resolve all unresolved encounters' },
+    ],
+    examples: ['bugmon resolve', 'bugmon resolve --all'],
+  },
+  scan: {
+    name: 'bugmon scan',
+    description: 'Scan files for bugs using linters/compilers',
+    usage: 'bugmon scan [path]',
+    flags: [],
+    examples: ['bugmon scan', 'bugmon scan ./src'],
+  },
+  sync: {
+    name: 'bugmon sync',
+    description: 'Start WebSocket sync server (bridges CLI and browser game)',
+    usage: 'bugmon sync',
+    flags: [],
+    examples: ['bugmon sync'],
+  },
+};
 
 switch (command) {
   case 'watch': {
+    if (wantsHelp) {
+      console.log(formatHelp(COMMANDS.watch));
+      break;
+    }
     const dashDash = args.indexOf('--');
     if (dashDash === -1 || dashDash === args.length - 1) {
       printUsage('watch requires a command after --');
@@ -55,12 +118,14 @@ switch (command) {
   }
 
   case 'demo': {
+    if (wantsHelp) { console.log(formatHelp(COMMANDS.demo)); break; }
     const { demo } = await import('./demo.js');
     await demo(args[1]);
     break;
   }
 
   case 'init': {
+    if (wantsHelp) { console.log(formatHelp(COMMANDS.init)); break; }
     const flags = args.slice(1);
     const force = flags.includes('--force') || flags.includes('-f');
     const { init } = await import('./init.js');
@@ -69,6 +134,7 @@ switch (command) {
   }
 
   case 'resolve': {
+    if (wantsHelp) { console.log(formatHelp(COMMANDS.resolve)); break; }
     const { resolve } = await import('./resolve.js');
     await resolve(args.slice(1));
     break;
@@ -116,6 +182,7 @@ switch (command) {
   }
 
   case 'sync': {
+    if (wantsHelp) { console.log(formatHelp(COMMANDS.sync)); break; }
     const { startSyncServer } = await import('./sync-server.js');
     try {
       const { port, clients, stop } = await startSyncServer();
@@ -142,6 +209,7 @@ switch (command) {
   }
 
   case 'scan': {
+    if (wantsHelp) { console.log(formatHelp(COMMANDS.scan)); break; }
     const target = args[1] || '.';
     const { scan } = await import('./scan.js');
     await scan(target);

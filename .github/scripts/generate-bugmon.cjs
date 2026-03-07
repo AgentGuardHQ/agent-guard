@@ -45,6 +45,20 @@ const newMonster = {
 
 monsters.push(newMonster);
 
-fs.writeFileSync(monstersPath, JSON.stringify(monsters, null, 2) + '\n', 'utf8');
+// Write to temp file first, then atomically rename to prevent corruption
+const tmpPath = monstersPath + '.tmp';
+const newData = JSON.stringify(monsters, null, 2) + '\n';
+fs.writeFileSync(tmpPath, newData, 'utf8');
+
+// Validate the temp file is valid JSON before replacing
+try {
+  JSON.parse(fs.readFileSync(tmpPath, 'utf8'));
+} catch (err) {
+  fs.unlinkSync(tmpPath);
+  console.error('Generated file is not valid JSON — aborting.');
+  process.exit(1);
+}
+
+fs.renameSync(tmpPath, monstersPath);
 
 console.log(JSON.stringify(newMonster, null, 2));

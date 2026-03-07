@@ -23,7 +23,7 @@ if (typeof globalThis.localStorage === 'undefined') {
     getItem(key) { return store[key] ?? null; },
     setItem(key, value) { store[key] = String(value); },
     removeItem(key) { delete store[key]; },
-    clear() { for (const k in store) delete store[key]; },
+    clear() { for (const k in store) delete store[k]; },
   };
 }
 

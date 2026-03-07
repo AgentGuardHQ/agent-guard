@@ -200,4 +200,4 @@ function showHelp() {
   console.log();
 }
 
-module.exports = { showEncounter, showBugDex, showHelp };
+export { showEncounter, showBugDex, showHelp };
