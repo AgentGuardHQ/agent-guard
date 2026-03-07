@@ -8,8 +8,23 @@
   },
   "files": [
     "core/",
-    "ecosystem/"
+    "ecosystem/",
+    "hooks/",
+    "LICENSE",
+    "README.md"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jpleva91/BugMon.git"
+  },
+  "homepage": "https://github.com/jpleva91/BugMon#readme",
+  "bugs": {
+    "url": "https://github.com/jpleva91/BugMon/issues"
+  },
+  "author": "jpleva91",
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "test": "node tests/run.js",
     "simulate": "node simulate.js",
