@@ -80,4 +80,34 @@ suite('EventBus (game/engine/events.js)', () => {
   test('PASSIVE_ACTIVATED event constant is defined', () => {
     assert.strictEqual(Events.PASSIVE_ACTIVATED, 'PASSIVE_ACTIVATED');
   });
+
+  // Edge case tests
+  test('listener that throws halts remaining listeners (documents current behavior)', () => {
+    let secondFired = false;
+    eventBus.on('test_throw_event', () => { throw new Error('intentional'); });
+    eventBus.on('test_throw_event', () => { secondFired = true; });
+    try {
+      eventBus.emit('test_throw_event');
+    } catch {
+      // Expected
+    }
+    // Current behavior: errors propagate, halting remaining listeners
+    assert.strictEqual(secondFired, false);
+  });
+
+  test('emit with complex object data preserves references', () => {
+    const data = { nested: { array: [1, 2, 3] } };
+    let received = null;
+    eventBus.on('test_complex_data', (d) => { received = d; });
+    eventBus.emit('test_complex_data', data);
+    assert.strictEqual(received, data);
+    assert.strictEqual(received.nested.array[0], 1);
+  });
+
+  test('registering listener after emit does not retroactively fire', () => {
+    eventBus.emit('test_late_listener', { value: 'old' });
+    let received = null;
+    eventBus.on('test_late_listener', (d) => { received = d; });
+    assert.strictEqual(received, null);
+  });
 });

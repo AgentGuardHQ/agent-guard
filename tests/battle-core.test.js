@@ -277,4 +277,43 @@ suite('Battle Core (game/battle/battle-core.js)', () => {
     const passiveEvent = result.events.find(e => e.type === 'PASSIVE_ACTIVATED');
     assert.ok(!passiveEvent, 'should not have passive activation event');
   });
+
+  // Edge case tests
+  test('resolveMove with unknown type defaults to 1.0 effectiveness', () => {
+    const unknownTypeMon = { ...monA, type: 'alien' };
+    const unknownTypeMove = { id: 'zap', name: 'Zap', power: 10, type: 'alien' };
+    const result = resolveMove(unknownTypeMon, unknownTypeMove, monB, typeChart);
+    assert.strictEqual(result.effectiveness, 1.0);
+    assert.ok(result.damage >= 1);
+  });
+
+  test('simulateBattle reaches max turns with durable monsters', () => {
+    const tankA = { ...monA, hp: 99999, currentHP: 99999, defense: 100, attack: 1 };
+    const tankB = { ...monB, hp: 99999, currentHP: 99999, defense: 100, attack: 1 };
+    const result = simulateBattle(tankA, tankB, movesData, { effectiveness: typeChart });
+    assert.ok(result.turn >= 100, `Expected max turns, got ${result.turn}`);
+  });
+
+  test('attemptCache boundary: roll exactly equal to chance', () => {
+    const mon = { hp: 30, currentHP: 15 };
+    const chance = cacheChance(mon);
+    // Roll exactly at the threshold should fail (roll >= chance fails)
+    assert.strictEqual(attemptCache(mon, chance), false);
+    // Roll just under should succeed
+    assert.strictEqual(attemptCache(mon, chance - 0.001), true);
+  });
+
+  test('pickEnemyMove with single-move monster', () => {
+    const singleMoveEnemy = { moves: ['segfault'] };
+    // Any roll should return the only available move
+    assert.strictEqual(pickEnemyMove(singleMoveEnemy, movesData, 0.0).id, 'segfault');
+    assert.strictEqual(pickEnemyMove(singleMoveEnemy, movesData, 0.5).id, 'segfault');
+    assert.strictEqual(pickEnemyMove(singleMoveEnemy, movesData, 0.99).id, 'segfault');
+  });
+
+  test('createBattleState with monster that has passive field', () => {
+    const passiveMon = { ...monA, passive: { name: 'TestPassive', description: 'Test' } };
+    const state = createBattleState(passiveMon, monB);
+    assert.deepStrictEqual(state.playerMon.passive, { name: 'TestPassive', description: 'Test' });
+  });
 });

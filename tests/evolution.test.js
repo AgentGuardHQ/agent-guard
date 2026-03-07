@@ -174,4 +174,38 @@ suite('Evolution Logic (game/evolution/evolution.js)', () => {
       }
     }
   });
+
+  // Edge case tests
+  test('getEvolutionProgress returns 0% with no events', () => {
+    const nullPointer = monsters.find(m => m.name === 'NullPointer');
+    const progress = getEvolutionProgress(nullPointer, {});
+    assert.ok(progress);
+    assert.strictEqual(progress.current, 0);
+    assert.strictEqual(progress.percentage, 0);
+  });
+
+  test('checkEvolution triggers when events exceed required count', () => {
+    const nullPointer = monsters.find(m => m.name === 'NullPointer');
+    const events = { bugs_fixed: 500 };
+    const result = checkEvolution(nullPointer, events);
+    assert.ok(result, 'should still trigger with excess events');
+  });
+
+  test('applyEvolution with 1 HP preserves minimum HP', () => {
+    const oldMon = { hp: 30, currentHP: 1, name: 'OldMon' };
+    const evolvedForm = { hp: 50, name: 'NewMon' };
+    const party = [oldMon];
+    const newMon = applyEvolution(party, 0, evolvedForm);
+    assert.ok(newMon.currentHP >= 1, 'evolved form should have at least 1 HP');
+  });
+
+  test('base monsters with evolvesTo have matching trigger in evolution data', () => {
+    const monstersWithEvo = monsters.filter(m => m.evolvesTo);
+    for (const mon of monstersWithEvo) {
+      const match = findTrigger(mon.id);
+      assert.ok(match, `${mon.name} (ID ${mon.id}) has evolvesTo=${mon.evolvesTo} but no trigger in evolutions.json`);
+      assert.strictEqual(match.trigger.to, mon.evolvesTo,
+        `${mon.name} evolvesTo ${mon.evolvesTo} but trigger points to ${match.trigger.to}`);
+    }
+  });
 });

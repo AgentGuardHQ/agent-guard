@@ -119,4 +119,49 @@ suite('Save/load system (game/sync/save.js)', () => {
     const loaded = loadGame();
     assert.strictEqual(loaded.bugdex.stats.totalCached, 2);
   });
+
+  // Edge case tests
+  test('save with empty party', () => {
+    localStorage.clear();
+    const emptyParty = { x: 0, y: 0, dir: 'down', party: [] };
+    assert.strictEqual(saveGame(emptyParty), true);
+    const loaded = loadGame();
+    assert.deepStrictEqual(loaded.player.party, []);
+  });
+
+  test('save with max party size (6 monsters)', () => {
+    localStorage.clear();
+    const fullParty = {
+      x: 5, y: 5, dir: 'up',
+      party: Array.from({ length: 6 }, (_, i) => ({
+        id: i + 1, name: `Mon${i}`, type: 'backend', hp: 30, currentHP: 25,
+        attack: 8, defense: 4, speed: 6, moves: ['segfault'], color: '#e74c3c',
+        sprite: 'test', rarity: 'common',
+      })),
+    };
+    saveGame(fullParty);
+    const loaded = loadGame();
+    assert.strictEqual(loaded.player.party.length, 6);
+  });
+
+  test('multiple sequential saves overwrite correctly', () => {
+    localStorage.clear();
+    saveGame({ x: 1, y: 1, dir: 'down', party: [] });
+    saveGame({ x: 9, y: 9, dir: 'up', party: [] });
+    const loaded = loadGame();
+    assert.strictEqual(loaded.player.x, 9);
+    assert.strictEqual(loaded.player.y, 9);
+    assert.strictEqual(loaded.player.dir, 'up');
+  });
+
+  test('save data with multiple bugdex entries', () => {
+    localStorage.clear();
+    saveGame(MOCK_PLAYER);
+    recordBrowserCache({ id: 1 });
+    recordBrowserCache({ id: 2 });
+    recordBrowserCache({ id: 1 });
+    const loaded = loadGame();
+    assert.strictEqual(loaded.bugdex.seen[1], 2);
+    assert.strictEqual(loaded.bugdex.seen[2], 1);
+  });
 });

@@ -132,4 +132,56 @@ suite('Wild encounters (game/world/encounters.js)', () => {
     assert.ok(seen.has('rare'), 'rare should appear');
     assert.ok(seen.has('legendary'), 'legendary should appear');
   });
+
+  // Edge case tests
+  test('encounter with single monster in data', () => {
+    const singleMon = [{ id: 99, name: 'OnlyBug', type: 'backend', hp: 20, attack: 5, defense: 3, speed: 4, moves: ['m1'], rarity: 'common' }];
+    setMonstersData(singleMon);
+    let found = null;
+    for (let i = 0; i < 500; i++) {
+      found = checkEncounter(2);
+      if (found) break;
+    }
+    assert.ok(found);
+    assert.strictEqual(found.name, 'OnlyBug');
+    // Restore
+    setMonstersData(MOCK_MONSTERS);
+  });
+
+  test('encounter with only legendary monsters still works', () => {
+    const legendaryOnly = [
+      { id: 10, name: 'LegA', type: 'backend', hp: 50, attack: 15, defense: 8, speed: 10, moves: ['m1'], rarity: 'legendary' },
+      { id: 11, name: 'LegB', type: 'frontend', hp: 55, attack: 14, defense: 9, speed: 9, moves: ['m2'], rarity: 'legendary' },
+    ];
+    setMonstersData(legendaryOnly);
+    let found = null;
+    for (let i = 0; i < 500; i++) {
+      found = checkEncounter(2);
+      if (found) break;
+    }
+    assert.ok(found);
+    assert.strictEqual(found.rarity, 'legendary');
+    // Restore
+    setMonstersData(MOCK_MONSTERS);
+  });
+
+  test('encountered monster has all expected fields', () => {
+    setMonstersData(MOCK_MONSTERS);
+    let found = null;
+    for (let i = 0; i < 500; i++) {
+      found = checkEncounter(2);
+      if (found) break;
+    }
+    assert.ok(found);
+    assert.ok('id' in found);
+    assert.ok('name' in found);
+    assert.ok('type' in found);
+    assert.ok('hp' in found);
+    assert.ok('currentHP' in found);
+    assert.ok('attack' in found);
+    assert.ok('defense' in found);
+    assert.ok('speed' in found);
+    assert.ok('moves' in found);
+    assert.ok('rarity' in found);
+  });
 });

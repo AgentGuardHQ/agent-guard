@@ -66,6 +66,11 @@ async function main() {
   await import('./tiles.test.js');
   await import('./transition.test.js');
   await import('./evolution-animation.test.js');
+  await import('./headless-battle.test.js');
+  await import('./title.test.js');
+  await import('./sound.test.js');
+  await import('./sprites.test.js');
+  await import('./sync-client.test.js');
 
   console.log('\n' + '='.repeat(40));
   if (totalFailed === 0) {
