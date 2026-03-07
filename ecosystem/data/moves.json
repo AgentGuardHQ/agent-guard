@@ -77,6 +77,7 @@
   { "id": "fewshotlearn",         "name": "FewShotLearn",         "power": 11, "type": "ai" },
 
   { "id": "hotfix",               "name": "Hotfix",               "power": 12, "type": "devops", "category": "heal" },
+  { "id": "ctrlz",                "name": "Ctrl+Z",               "power": 10, "type": "architecture", "category": "heal" },
 
   { "id": "techdebt",             "name": "TechDebt",             "power": 9,  "type": "testing" }
 ]

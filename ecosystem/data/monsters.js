@@ -359,7 +359,8 @@ export const MONSTERS = [
     moves: [
       'couplingstrike',
       'dependencyweb',
-      'refactorresist'
+      'refactorresist',
+      'ctrlz'
     ],
     color: '#8e44ad',
     sprite: 'monolith',
@@ -386,7 +387,8 @@ export const MONSTERS = [
     moves: [
       'dependencyrule',
       'interfacesegregation',
-      'abstractionshield'
+      'abstractionshield',
+      'ctrlz'
     ],
     color: '#9b59b6',
     sprite: 'cleanarchitecture',

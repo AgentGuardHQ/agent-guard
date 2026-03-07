@@ -423,6 +423,13 @@ export const MOVES = [
     category: 'heal'
   },
   {
+    id: 'ctrlz',
+    name: 'Ctrl+Z',
+    power: 10,
+    type: 'architecture',
+    category: 'heal'
+  },
+  {
     id: 'techdebt',
     name: 'TechDebt',
     power: 9,
