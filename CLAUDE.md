@@ -45,6 +45,7 @@ BugMon/
 │       ├── contribute.js    # Contribution prompt
 │       ├── encounter.js     # CLI encounter logic
 │       ├── renderer.js      # Terminal renderer (ANSI)
+│       ├── scan.js          # Error scanning feature
 │       ├── sync-server.js   # WebSocket sync server (zero deps)
 │       └── bugmon-legacy.js # Legacy CLI version
 │
@@ -85,7 +86,7 @@ BugMon/
 │   ├── data/               # Game content (JSON source + JS modules)
 │   │   ├── monsters.json   # 30 BugMon definitions (stats, moves, types, evolutions)
 │   │   ├── monsters.js     # Inlined JS module (imported by game)
-│   │   ├── moves.json      # 69 move definitions
+│   │   ├── moves.json      # 70 move definitions
 │   │   ├── moves.js        # Inlined JS module
 │   │   ├── types.json      # 7 types + effectiveness chart
 │   │   ├── types.js        # Inlined JS module
@@ -114,11 +115,12 @@ BugMon/
 │   ├── stack-overflow.js
 │   └── syntax-error.js
 │
-├── tests/                  # Test suite (16 test files)
+├── tests/                  # Test suite (24 test files)
 │   ├── run.js              # Test runner
-│   └── *.test.js           # Tests (battle-core, battle, bug-event, build, damage, data,
-│                           #   error-parser, events, evolution, map, matcher, report,
-│                           #   rng, simulator, stacktrace-parser, strategies)
+│   └── *.test.js           # Tests (battle-core, battle, bosses, bug-event, bugdex-spec,
+│                           #   build, damage, data, encounters, error-parser, events,
+│                           #   evolution, game-damage, input, map, matcher, report, rng,
+│                           #   save, simulator, stacktrace-parser, state, storage, strategies)
 │
 ├── scripts/                # Build tooling
 │   ├── build.js            # Single-file builder (esbuild + terser → dist/index.html)
@@ -195,6 +197,7 @@ npm run simulate -- --all
 # Legacy simulation (seeded RNG)
 npm run simulate:quick   # 1,000 battles
 npm run simulate:full    # 50,000 battles
+npm run simulate:compare # Compare battle strategies
 
 # Build single-file distribution
 npm run build            # Full build with inline sprites
@@ -335,11 +338,11 @@ Run `npm run budget` to check compliance locally.
 ## Testing
 
 ```bash
-npm test                               # Run all tests (16 test files)
+npm test                               # Run all tests (24 test files)
 npm run simulate -- --all --runs 100   # Round-robin roster balance analysis
 ```
 
-Test suite covers: battle-core, battle logic, bug events, build output, damage formula, data integrity, error parsing, event bus, evolution, map, matcher, reporting, RNG, simulator, stacktrace parsing, strategies.
+Test suite covers: battle-core, battle logic, bosses, bug events, bugdex-spec, build output, damage formula, data integrity, encounters, error parsing, event bus, evolution, game-damage, input, map, matcher, reporting, RNG, save, simulator, stacktrace parsing, state, storage, strategies.
 
 ## Claude Code Skills
 
