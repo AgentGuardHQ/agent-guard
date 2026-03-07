@@ -72,6 +72,11 @@ async function main() {
   await import('./sync-client.test.js');
   await import('./battleEngine.test.js');
   await import('./game-loop.test.js');
+  await import('./sync-protocol.test.js');
+  await import('./renderer.test.js');
+  await import('./auto-walk.test.js');
+  await import('./catch.test.js');
+  await import('./integration.test.js');
 
   console.log('\n' + '='.repeat(40));
   if (totalFailed === 0) {
