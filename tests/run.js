@@ -90,6 +90,8 @@ async function main() {
   await import('./domain-evolution.test.js');
   await import('./domain-events.test.js');
   await import('./event-store.test.js');
+  await import('./invariants.test.js');
+  await import('./invariant-mapper.test.js');
 
   console.log('\n' + '='.repeat(40));
   if (totalFailed === 0) {
