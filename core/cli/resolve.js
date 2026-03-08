@@ -3,7 +3,12 @@
 //   bugmon resolve --last   Resolve the most recent unresolved encounter
 //   bugmon resolve --all    Resolve all unresolved encounters
 
-import { loadBugDex, saveBugDex, resolveLastUnresolved, resolveAllUnresolved } from '../../ecosystem/storage.js';
+import {
+  loadBugDex,
+  saveBugDex,
+  resolveLastUnresolved,
+  resolveAllUnresolved,
+} from '../../ecosystem/storage.js';
 
 const ESC = '\x1b[';
 const RESET = `${ESC}0m`;
@@ -26,7 +31,9 @@ export async function resolve(args) {
     }
 
     process.stderr.write('\n');
-    process.stderr.write(`  ${GREEN}${BOLD}Resolved ${count} bug${count > 1 ? 's' : ''}!${RESET}\n`);
+    process.stderr.write(
+      `  ${GREEN}${BOLD}Resolved ${count} bug${count > 1 ? 's' : ''}!${RESET}\n`
+    );
     process.stderr.write(`  ${YELLOW}+${xpGained} XP${RESET}\n`);
     const data = loadBugDex();
     process.stderr.write(`  ${DIM}Level ${data.stats.level} | ${data.stats.xp} total XP${RESET}\n`);

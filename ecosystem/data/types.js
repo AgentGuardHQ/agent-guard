@@ -1,15 +1,7 @@
 // Type data — inlined from types.json
 // To regenerate: node scripts/sync-data.js
 export const TYPES = {
-  types: [
-    'frontend',
-    'backend',
-    'devops',
-    'testing',
-    'architecture',
-    'security',
-    'ai'
-  ],
+  types: ['frontend', 'backend', 'devops', 'testing', 'architecture', 'security', 'ai'],
   typeColors: {
     frontend: '#3498db',
     backend: '#e74c3c',
@@ -17,7 +9,7 @@ export const TYPES = {
     testing: '#2ecc71',
     architecture: '#9b59b6',
     security: '#e94560',
-    ai: '#00d2ff'
+    ai: '#00d2ff',
   },
   effectiveness: {
     frontend: {
@@ -27,7 +19,7 @@ export const TYPES = {
       testing: 1.5,
       architecture: 0.5,
       security: 1,
-      ai: 0.5
+      ai: 0.5,
     },
     backend: {
       frontend: 0.5,
@@ -36,7 +28,7 @@ export const TYPES = {
       testing: 1,
       architecture: 1.5,
       security: 0.5,
-      ai: 1
+      ai: 1,
     },
     devops: {
       frontend: 1,
@@ -45,7 +37,7 @@ export const TYPES = {
       testing: 1.5,
       architecture: 1,
       security: 1.5,
-      ai: 0.5
+      ai: 0.5,
     },
     testing: {
       frontend: 0.5,
@@ -54,7 +46,7 @@ export const TYPES = {
       testing: 1,
       architecture: 1.5,
       security: 1,
-      ai: 1.5
+      ai: 1.5,
     },
     architecture: {
       frontend: 1.5,
@@ -63,7 +55,7 @@ export const TYPES = {
       testing: 0.5,
       architecture: 1,
       security: 1.5,
-      ai: 1
+      ai: 1,
     },
     security: {
       frontend: 1,
@@ -72,7 +64,7 @@ export const TYPES = {
       testing: 1,
       architecture: 0.5,
       security: 1,
-      ai: 1.5
+      ai: 1.5,
     },
     ai: {
       frontend: 1.5,
@@ -81,7 +73,7 @@ export const TYPES = {
       testing: 0.5,
       architecture: 1,
       security: 0.5,
-      ai: 1
-    }
-  }
+      ai: 1,
+    },
+  },
 };

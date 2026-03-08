@@ -168,7 +168,7 @@ export function resolveAllUnresolved() {
 function calculateLevel(xp) {
   // Level thresholds: 0, 100, 300, 600, 1000, 1500, 2100, ...
   let level = 1;
-  while (((level + 1) * level) / 2 * 100 <= xp) {
+  while ((((level + 1) * level) / 2) * 100 <= xp) {
     level++;
   }
   return level;

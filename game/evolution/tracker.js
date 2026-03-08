@@ -3,9 +3,19 @@
 const STORAGE_KEY = 'bugmon_dev_events';
 
 const defaultEvents = {
-  commits: 0, prs_merged: 0, bugs_fixed: 0, tests_passing: 0, refactors: 0,
-  code_reviews: 0, conflicts_resolved: 0, ci_passes: 0, deploys: 0, docs_written: 0,
-  lint_fixes: 0, type_errors_fixed: 0, security_fixes: 0
+  commits: 0,
+  prs_merged: 0,
+  bugs_fixed: 0,
+  tests_passing: 0,
+  refactors: 0,
+  code_reviews: 0,
+  conflicts_resolved: 0,
+  ci_passes: 0,
+  deploys: 0,
+  docs_written: 0,
+  lint_fixes: 0,
+  type_errors_fixed: 0,
+  security_fixes: 0,
 };
 
 let events = { ...defaultEvents };
@@ -13,12 +23,17 @@ let events = { ...defaultEvents };
 export function initTracker() {
   const saved = localStorage.getItem(STORAGE_KEY);
   if (saved) {
-    try { events = { ...defaultEvents, ...JSON.parse(saved) }; }
-    catch { events = { ...defaultEvents }; }
+    try {
+      events = { ...defaultEvents, ...JSON.parse(saved) };
+    } catch {
+      events = { ...defaultEvents };
+    }
   }
 }
 
-function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(events)); }
+function save() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
+}
 
 export function logEvent(eventType) {
   if (!(eventType in events)) return false;
@@ -27,7 +42,9 @@ export function logEvent(eventType) {
   return true;
 }
 
-export function getEvents() { return { ...events }; }
+export function getEvents() {
+  return { ...events };
+}
 
 export async function importFromFile() {
   try {
@@ -43,5 +60,7 @@ export async function importFromFile() {
     }
     if (imported) save();
     return imported;
-  } catch { return false; }
+  } catch {
+    return false;
+  }
 }

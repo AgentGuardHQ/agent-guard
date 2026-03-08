@@ -5,434 +5,434 @@ export const MOVES = [
     id: 'segfault',
     name: 'SegFault',
     power: 10,
-    type: 'backend'
+    type: 'backend',
   },
   {
     id: 'unhandledexception',
     name: 'UnhandledException',
     power: 8,
-    type: 'backend'
+    type: 'backend',
   },
   {
     id: 'memoryaccess',
     name: 'MemoryAccess',
     power: 7,
-    type: 'backend'
+    type: 'backend',
   },
   {
     id: 'recursiveloop',
     name: 'RecursiveLoop',
     power: 9,
-    type: 'backend'
+    type: 'backend',
   },
   {
     id: 'stackoverflowmove',
     name: 'StackOverflow',
     power: 11,
-    type: 'backend'
+    type: 'backend',
   },
   {
     id: 'eventstorm',
     name: 'EventStorm',
     power: 8,
-    type: 'backend'
+    type: 'backend',
   },
   {
     id: 'threadcollision',
     name: 'ThreadCollision',
     power: 9,
-    type: 'backend'
+    type: 'backend',
   },
   {
     id: 'deadlockmove',
     name: 'Deadlock',
     power: 12,
-    type: 'backend'
+    type: 'backend',
   },
   {
     id: 'datacorruption',
     name: 'DataCorruption',
     power: 10,
-    type: 'backend'
+    type: 'backend',
   },
   {
     id: 'heapoverflow',
     name: 'HeapOverflow',
     power: 11,
-    type: 'backend'
+    type: 'backend',
   },
   {
     id: 'garbagestorm',
     name: 'GarbageStorm',
     power: 8,
-    type: 'backend'
+    type: 'backend',
   },
   {
     id: 'referencetrap',
     name: 'ReferenceTrap',
     power: 7,
-    type: 'backend'
+    type: 'backend',
   },
   {
     id: 'layoutshift',
     name: 'LayoutShift',
     power: 7,
-    type: 'frontend'
+    type: 'frontend',
   },
   {
     id: 'zindexwar',
     name: 'ZIndexWar',
     power: 9,
-    type: 'frontend'
+    type: 'frontend',
   },
   {
     id: 'margincollapse',
     name: 'MarginCollapse',
     power: 8,
-    type: 'frontend'
+    type: 'frontend',
   },
   {
     id: 'loadingloop',
     name: 'LoadingLoop',
     power: 8,
-    type: 'frontend'
+    type: 'frontend',
   },
   {
     id: 'timeout',
     name: 'Timeout',
     power: 10,
-    type: 'frontend'
+    type: 'frontend',
   },
   {
     id: 'retryrequest',
     name: 'RetryRequest',
     power: 6,
-    type: 'frontend'
+    type: 'frontend',
   },
   {
     id: 'reduxstorm',
     name: 'ReduxStorm',
     power: 11,
-    type: 'frontend'
+    type: 'frontend',
   },
   {
     id: 'contextexplosion',
     name: 'ContextExplosion',
     power: 9,
-    type: 'frontend'
+    type: 'frontend',
   },
   {
     id: 'statemutation',
     name: 'StateMutation',
     power: 10,
-    type: 'frontend'
+    type: 'frontend',
   },
   {
     id: 'conflictmarkers',
     name: 'ConflictMarkers',
     power: 8,
-    type: 'devops'
+    type: 'devops',
   },
   {
     id: 'forcepush',
     name: 'ForcePush',
     power: 12,
-    type: 'devops'
+    type: 'devops',
   },
   {
     id: 'detachedhead',
     name: 'DetachedHead',
     power: 7,
-    type: 'devops'
+    type: 'devops',
   },
   {
     id: 'flakytestmove',
     name: 'FlakyTest',
     power: 8,
-    type: 'devops'
+    type: 'devops',
   },
   {
     id: 'pipelinecrash',
     name: 'PipelineCrash',
     power: 10,
-    type: 'devops'
+    type: 'devops',
   },
   {
     id: 'dependencymismatch',
     name: 'DependencyMismatch',
     power: 9,
-    type: 'devops'
+    type: 'devops',
   },
   {
     id: 'containerspawn',
     name: 'ContainerSpawn',
     power: 8,
-    type: 'devops'
+    type: 'devops',
   },
   {
     id: 'imagepull',
     name: 'ImagePull',
     power: 6,
-    type: 'devops'
+    type: 'devops',
   },
   {
     id: 'portbinding',
     name: 'PortBinding',
     power: 7,
-    type: 'devops'
+    type: 'devops',
   },
   {
     id: 'randomfail',
     name: 'RandomFail',
     power: 8,
-    type: 'testing'
+    type: 'testing',
   },
   {
     id: 'timingissue',
     name: 'TimingIssue',
     power: 7,
-    type: 'testing'
+    type: 'testing',
   },
   {
     id: 'mockbreak',
     name: 'MockBreak',
     power: 9,
-    type: 'testing'
+    type: 'testing',
   },
   {
     id: 'expectedmismatch',
     name: 'ExpectedMismatch',
     power: 8,
-    type: 'testing'
+    type: 'testing',
   },
   {
     id: 'edgecase',
     name: 'EdgeCase',
     power: 10,
-    type: 'testing'
+    type: 'testing',
   },
   {
     id: 'strictmode',
     name: 'StrictMode',
     power: 11,
-    type: 'testing'
+    type: 'testing',
   },
   {
     id: 'couplingstrike',
     name: 'CouplingStrike',
     power: 9,
-    type: 'architecture'
+    type: 'architecture',
   },
   {
     id: 'dependencyweb',
     name: 'DependencyWeb',
     power: 8,
-    type: 'architecture'
+    type: 'architecture',
   },
   {
     id: 'refactorresist',
     name: 'RefactorResist',
     power: 7,
-    type: 'architecture'
+    type: 'architecture',
   },
   {
     id: 'dependencyrule',
     name: 'DependencyRule',
     power: 10,
-    type: 'architecture'
+    type: 'architecture',
   },
   {
     id: 'interfacesegregation',
     name: 'InterfaceSegregation',
     power: 9,
-    type: 'architecture'
+    type: 'architecture',
   },
   {
     id: 'abstractionshield',
     name: 'AbstractionShield',
     power: 8,
-    type: 'architecture'
+    type: 'architecture',
   },
   {
     id: 'untouchablemodule',
     name: 'UntouchableModule',
     power: 13,
-    type: 'architecture'
+    type: 'architecture',
   },
   {
     id: 'tribalknowledge',
     name: 'TribalKnowledge',
     power: 11,
-    type: 'architecture'
+    type: 'architecture',
   },
   {
     id: 'refactorcurse',
     name: 'RefactorCurse',
     power: 12,
-    type: 'architecture'
+    type: 'architecture',
   },
   {
     id: 'tabledrop',
     name: 'TableDrop',
     power: 12,
-    type: 'security'
+    type: 'security',
   },
   {
     id: 'queryescape',
     name: 'QueryEscape',
     power: 7,
-    type: 'security'
+    type: 'security',
   },
   {
     id: 'privilegeescalation',
     name: 'PrivilegeEscalation',
     power: 11,
-    type: 'security'
+    type: 'security',
   },
   {
     id: 'scriptinjection',
     name: 'ScriptInjection',
     power: 10,
-    type: 'security'
+    type: 'security',
   },
   {
     id: 'domhijack',
     name: 'DOMHijack',
     power: 9,
-    type: 'security'
+    type: 'security',
   },
   {
     id: 'cookietheft',
     name: 'CookieTheft',
     power: 8,
-    type: 'security'
+    type: 'security',
   },
   {
     id: 'promptinjection',
     name: 'PromptInjection',
     power: 10,
-    type: 'ai'
+    type: 'ai',
   },
   {
     id: 'contextflood',
     name: 'ContextFlood',
     power: 8,
-    type: 'ai'
+    type: 'ai',
   },
   {
     id: 'tokenoverflow',
     name: 'TokenOverflow',
     power: 9,
-    type: 'ai'
+    type: 'ai',
   },
   {
     id: 'confidentanswer',
     name: 'ConfidentAnswer',
     power: 7,
-    type: 'ai'
+    type: 'ai',
   },
   {
     id: 'fabricatedcitation',
     name: 'FabricatedCitation',
     power: 9,
-    type: 'ai'
+    type: 'ai',
   },
   {
     id: 'creativeguess',
     name: 'CreativeGuess',
     power: 8,
-    type: 'ai'
+    type: 'ai',
   },
   {
     id: 'recursiveselfimprove',
     name: 'RecursiveSelfImprove',
     power: 14,
-    type: 'ai'
+    type: 'ai',
   },
   {
     id: 'computeoverload',
     name: 'ComputeOverload',
     power: 12,
-    type: 'ai'
+    type: 'ai',
   },
   {
     id: 'alignmenttest',
     name: 'AlignmentTest',
     power: 11,
-    type: 'ai'
+    type: 'ai',
   },
   {
     id: 'safeaccess',
     name: 'SafeAccess',
     power: 9,
-    type: 'backend'
+    type: 'backend',
   },
   {
     id: 'typecheck',
     name: 'TypeCheck',
     power: 11,
-    type: 'backend'
+    type: 'backend',
   },
   {
     id: 'asyncresolve',
     name: 'AsyncResolve',
     power: 12,
-    type: 'backend'
+    type: 'backend',
   },
   {
     id: 'memoryreclaim',
     name: 'MemoryReclaim',
     power: 10,
-    type: 'backend'
+    type: 'backend',
   },
   {
     id: 'flexalign',
     name: 'FlexAlign',
     power: 9,
-    type: 'frontend'
+    type: 'frontend',
   },
   {
     id: 'gridsnap',
     name: 'GridSnap',
     power: 12,
-    type: 'frontend'
+    type: 'frontend',
   },
   {
     id: 'cleanhistory',
     name: 'CleanHistory',
     power: 10,
-    type: 'devops'
+    type: 'devops',
   },
   {
     id: 'servicemesh',
     name: 'ServiceMesh',
     power: 11,
-    type: 'architecture'
+    type: 'architecture',
   },
   {
     id: 'fewshotlearn',
     name: 'FewShotLearn',
     power: 11,
-    type: 'ai'
+    type: 'ai',
   },
   {
     id: 'hotfix',
     name: 'Hotfix',
     power: 12,
     type: 'devops',
-    category: 'heal'
+    category: 'heal',
   },
   {
     id: 'ctrlz',
     name: 'Ctrl+Z',
     power: 10,
     type: 'architecture',
-    category: 'heal'
+    category: 'heal',
   },
   {
     id: 'techdebt',
     name: 'TechDebt',
     power: 9,
-    type: 'testing'
-  }
+    type: 'testing',
+  },
 ];

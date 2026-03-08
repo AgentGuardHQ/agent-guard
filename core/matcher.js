@@ -56,7 +56,7 @@ export function matchMonster(error) {
 
   // Ultimate fallback
   if (!bestMatch) {
-    bestMatch = allMonsters.find(m => m.name === 'FlakyTest') || allMonsters[0];
+    bestMatch = allMonsters.find((m) => m.name === 'FlakyTest') || allMonsters[0];
     bestScore = 1;
   }
 
@@ -74,7 +74,7 @@ function matchByErrorType(errorType, allMonsters) {
   if (!monsterType) return null;
 
   // Pick a random monster of the matching type for variety
-  const candidates = allMonsters.filter(m => m.type === monsterType);
+  const candidates = allMonsters.filter((m) => m.type === monsterType);
   if (candidates.length === 0) return null;
   return candidates[Math.floor(Math.random() * candidates.length)];
 }

@@ -44,13 +44,21 @@ export function drawPlayer(player) {
   const cy = py + TILE / 2;
   ctx.beginPath();
   if (player.dir === 'up') {
-    ctx.moveTo(cx, py + 2); ctx.lineTo(cx - 4, py + 10); ctx.lineTo(cx + 4, py + 10);
+    ctx.moveTo(cx, py + 2);
+    ctx.lineTo(cx - 4, py + 10);
+    ctx.lineTo(cx + 4, py + 10);
   } else if (player.dir === 'down') {
-    ctx.moveTo(cx, py + TILE - 2); ctx.lineTo(cx - 4, py + TILE - 10); ctx.lineTo(cx + 4, py + TILE - 10);
+    ctx.moveTo(cx, py + TILE - 2);
+    ctx.lineTo(cx - 4, py + TILE - 10);
+    ctx.lineTo(cx + 4, py + TILE - 10);
   } else if (player.dir === 'left') {
-    ctx.moveTo(px + 2, cy); ctx.lineTo(px + 10, cy - 4); ctx.lineTo(px + 10, cy + 4);
+    ctx.moveTo(px + 2, cy);
+    ctx.lineTo(px + 10, cy - 4);
+    ctx.lineTo(px + 10, cy + 4);
   } else {
-    ctx.moveTo(px + TILE - 2, cy); ctx.lineTo(px + TILE - 10, cy - 4); ctx.lineTo(px + TILE - 10, cy + 4);
+    ctx.moveTo(px + TILE - 2, cy);
+    ctx.lineTo(px + TILE - 10, cy - 4);
+    ctx.lineTo(px + TILE - 10, cy + 4);
   }
   ctx.fill();
 }
@@ -102,7 +110,7 @@ export function drawBattle(battle, movesData, typeColors) {
   } else if (battle.state === 'fight') {
     const moves = playerMon.moves;
     moves.forEach((moveId, i) => {
-      const move = movesData.find(m => m.id === moveId);
+      const move = movesData.find((m) => m.id === moveId);
       if (move) {
         if (typeColors && move.type) {
           ctx.fillStyle = typeColors[move.type] || '#fff';

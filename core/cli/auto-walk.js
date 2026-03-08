@@ -95,7 +95,7 @@ export function startAutoWalk(options = {}) {
       }
 
       // Check for encounter in tall grass (10% chance like the game)
-      if (tile === 2 && Math.random() < 0.10) {
+      if (tile === 2 && Math.random() < 0.1) {
         sessionState.encounters++;
         if (options.onEncounter) {
           options.onEncounter({ x: nx, y: ny, tile });

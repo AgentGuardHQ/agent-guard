@@ -15,5 +15,5 @@ export {
   simulateBattle,
   calcDamage,
   isHealMove,
-  calcHealing
+  calcHealing,
 } from '../../domain/battle.js';

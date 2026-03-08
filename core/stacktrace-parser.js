@@ -125,7 +125,7 @@ export function parseStackTrace(lines) {
  * @returns {{file: string, line: number, column: number, fn: string|null} | null}
  */
 export function getUserFrame(frames) {
-  return frames.find(f => !isInternalFrame(f.file)) || frames[0] || null;
+  return frames.find((f) => !isInternalFrame(f.file)) || frames[0] || null;
 }
 
 /**
