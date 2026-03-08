@@ -127,6 +127,13 @@ BugMon/
 │       ├── classifier.js   # Parsed error → BugEvent classification
 │       └── species-mapper.js # BugEvent → BugMon species mapping
 │
+├── spec/                   # Artifact-first development specs
+│   ├── system.md           # System spec (boundaries, invariants)
+│   ├── TEMPLATE-feature.md # Feature spec template
+│   ├── TEMPLATE-interface.md # Interface contract template
+│   ├── features/           # Feature specs (fill before implementing)
+│   └── interfaces/         # Interface contracts (module boundaries)
+│
 ├── simulation/             # Headless battle simulation
 ├── tests/                  # Test suite (52 test files)
 ├── scripts/                # Build tooling
@@ -166,6 +173,7 @@ npm run budget           # Check size budget compliance
 npm run sync-data
 
 # Code quality
+npm run contracts:check  # Verify module contracts
 npm run lint             # Run ESLint
 npm run lint:fix         # Run ESLint with auto-fix
 npm run format           # Check formatting (Prettier)
@@ -232,6 +240,31 @@ Type multipliers: 0.5x (not effective), 1.0x (neutral), 1.5x (super effective).
 - **Prettier** enforced via `.prettierrc` for consistent formatting
 - Run `npm run lint` and `npm run format` before committing
 
+## Artifact-First Development
+
+When adding new features or domain modules, follow this order:
+
+1. **Spec** — Write a feature spec in `docs/` using `docs/FEATURE_SPEC_TEMPLATE.md`
+2. **Contract** — Define module contracts in `domain/contracts.js` (exports, invariants, dependencies)
+3. **Shapes** — Define input/output shapes in `domain/shapes.js` if new data structures are introduced
+4. **Implementation** — Write the code. Use `assertShape()` at module boundaries.
+5. **Verification** — Run `npm run contracts:check` and `npm test`
+
+### When to Use Contracts
+- Any new module in `domain/` MUST have a contract entry in `domain/contracts.js`
+- Any new pipeline stage MUST define input/output shapes in `domain/shapes.js`
+- Any new data format in `ecosystem/data/` MUST have a validation function (see `ecosystem/bugdex-spec.js`)
+
+### When NOT to Use Contracts
+- Bug fixes to existing modules (unless they change the interface)
+- Internal helper functions (only exported APIs need contracts)
+- Sprite/asset additions
+
+### Key Files
+- `domain/shapes.js` — Runtime shape definitions with `validateShape()` and `assertShape()`
+- `domain/contracts.js` — Module contract registry with `validateContract()`
+- `scripts/check-contracts.js` — Verifies all modules match their contracts (`npm run contracts:check`)
+
 ## Data Formats
 
 ### monsters.json
@@ -273,6 +306,49 @@ npm test                               # Run all tests (52 test files)
 npm run test:coverage                  # Run with coverage (c8, 50% line threshold)
 npm run simulate -- --all --runs 100   # Round-robin roster balance analysis
 ```
+
+## Artifact-First Development
+
+When implementing new features or systems, agents must produce structured artifacts before writing code. This enforces staged reasoning and produces more consistent, architecturally sound implementations.
+
+### The Pipeline
+
+```
+prompt → spec artifact → interface contract → implementation → verification
+```
+
+Never skip directly to implementation. Each stage constrains the next.
+
+### Artifact Types
+
+| Artifact | Location | Purpose |
+|----------|----------|---------|
+| System spec | `spec/system.md` | Defines system boundaries, invariants, constraints |
+| Feature spec | `spec/features/<name>.md` | Requirements, events produced/consumed, dependencies |
+| Interface contract | `spec/interfaces/<name>.md` | Module exports, types, anti-dependencies |
+| Templates | `spec/TEMPLATE-feature.md`, `spec/TEMPLATE-interface.md` | Starting point for new artifacts |
+
+### Workflow for New Features
+
+1. **Spec first**: Copy `spec/TEMPLATE-feature.md` to `spec/features/<name>.md`. Fill in requirements, events, interface contract, layer placement, and constraints.
+2. **Interface definition**: If the feature introduces a new module, copy `spec/TEMPLATE-interface.md` to `spec/interfaces/<name>.md`. Define exports, types, invariants, and anti-dependencies.
+3. **Review**: Verify the spec is consistent with `spec/system.md` invariants and the canonical event model in `domain/events.js`.
+4. **Implement**: Write code that fulfills the spec. The spec constrains naming, API surface, layer placement, and event usage.
+5. **Verify**: Run tests. Confirm the implementation matches the interface contract.
+
+### Why This Matters
+
+- Agents reason better in stages than in a single leap
+- Specs prevent architectural drift and naming inconsistency
+- Interface contracts act as boundaries between agents working on different modules
+- The canonical event model (`domain/events.js`) is the architectural spine — specs must reference it
+
+### Rules
+
+- Feature specs must list all events produced and consumed
+- Interface contracts must declare anti-dependencies (what the module must NOT import)
+- Domain layer modules must remain pure — no DOM, no Node.js APIs
+- Specs are living documents — update them when implementations evolve
 
 ## When Adding New Content
 

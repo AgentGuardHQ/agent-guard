@@ -90,6 +90,25 @@ async function main() {
   await import('./domain-evolution.test.js');
   await import('./domain-events.test.js');
   await import('./event-store.test.js');
+  await import('./invariants.test.js');
+  await import('./invariant-mapper.test.js');
+  await import('./combo.test.js');
+  await import('./run-session.test.js');
+  await import('./run-history.test.js');
+
+  // Pipeline tests
+  await import('./pipeline/test-roles.js');
+  await import('./pipeline/test-stages.js');
+  await import('./pipeline/test-orchestrator.js');
+
+  // AgentGuard — Runtime Assurance Architecture tests
+  await import('./policy-loader.test.js');
+  await import('./policy-evaluator.test.js');
+  await import('./aab.test.js');
+  await import('./invariant-checker.test.js');
+  await import('./evidence-pack.test.js');
+  await import('./rta-engine.test.js');
+  await import('./runtime-monitor.test.js');
 
   // Replay system tests
   await import('./session-store.test.js');

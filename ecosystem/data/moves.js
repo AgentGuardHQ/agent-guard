@@ -435,4 +435,28 @@ export const MOVES = [
     power: 9,
     type: 'testing',
   },
+  {
+    id: 'invariantbreak',
+    name: 'InvariantBreak',
+    power: 11,
+    type: 'testing',
+  },
+  {
+    id: 'unauthorizedexec',
+    name: 'UnauthorizedExec',
+    power: 12,
+    type: 'security',
+  },
+  {
+    id: 'scopebreak',
+    name: 'ScopeBreak',
+    power: 9,
+    type: 'security',
+  },
+  {
+    id: 'layerbreach',
+    name: 'LayerBreach',
+    power: 10,
+    type: 'architecture',
+  }
 ];

@@ -8,11 +8,12 @@ import { parseErrors } from '../error-parser.js';
 import { parseStackTrace, getUserFrame } from '../stacktrace-parser.js';
 import { matchMonster } from '../matcher.js';
 import { recordEncounter } from '../../ecosystem/storage.js';
-import { renderEncounter, renderEncounterPrompt, renderBossEncounter } from './renderer.js';
+import { renderEncounter, renderEncounterPrompt, renderBossEncounter, renderComboBreak, renderRunSummary } from './renderer.js';
 import { renderContributionPrompt, LOW_CONFIDENCE_THRESHOLD } from './contribute.js';
 import { interactiveCache } from './catch.js';
 import { checkBossEncounter, BOSS_TRIGGERS } from '../../ecosystem/bosses.js';
 import { createRecorder } from './recorder.js';
+import { createRun, addEncounter, addBossDefeat, endRun } from '../../domain/run-session.js';
 
 /**
  * Run a command and intercept errors from stderr.
@@ -38,11 +39,14 @@ export function watch(command, args, options = {}) {
     process.stderr.write(`  \x1b[2mRecording session: ${recorder.sessionId}\x1b[0m\n`);
 
     let stderrBuffer = '';
-    let errorQueue = [];
+    const errorQueue = [];
     let processing = false;
     const errorCounts = new Map();
     const triggeredBosses = new Set();
     let autoWalker = null;
+
+    // Create a run session for this watch invocation
+    let currentRun = createRun({ repo: options.repo || null });
 
     // Start auto-walk if requested
     if (options.walk) {
@@ -76,12 +80,8 @@ export function watch(command, args, options = {}) {
           // Process queue if not already doing so
           if (!processing) {
             processing = true;
-            processInteractiveQueue(errorQueue, options, {
-              errorCounts,
-              triggeredBosses,
-              autoWalker,
-              recorder,
-            }).then(() => {
+            processInteractiveQueue(errorQueue, options, { errorCounts, triggeredBosses, autoWalker, recorder, currentRun }).then((updatedRun) => {
+              if (updatedRun) currentRun = updatedRun;
               processing = false;
             });
           }
@@ -107,16 +107,17 @@ export function watch(command, args, options = {}) {
             }
           }
           if (errorQueue.length > 0 && !processing) {
-            await processInteractiveQueue(errorQueue, options, {
-              errorCounts,
-              triggeredBosses,
-              autoWalker,
-              recorder,
-            });
+            await processInteractiveQueue(errorQueue, options, { errorCounts, triggeredBosses, autoWalker, recorder, currentRun });
           }
         } else {
-          processErrors(stderrBuffer, { errorCounts, triggeredBosses, recorder });
+          currentRun = processErrors(stderrBuffer, { errorCounts, triggeredBosses, recorder, currentRun });
         }
+      }
+
+      // End the run and show summary
+      if (currentRun && currentRun.encounters.length > 0) {
+        const finalRun = endRun(currentRun, 'completed');
+        renderRunSummary(finalRun.summary);
       }
 
       // Stop auto-walk on exit
@@ -156,6 +157,21 @@ async function processInteractiveQueue(queue, options, state) {
       state.recorder.recordEncounter(monster, error);
     }
 
+    // Track encounter in the run session (breaks combo)
+    if (state.currentRun) {
+      const encounterResult = addEncounter(state.currentRun, {
+        monsterId: monster.id,
+        monsterName: monster.name,
+        error: error.message.slice(0, 200),
+        file: location?.file || null,
+        line: location?.line || null,
+      });
+      state.currentRun = encounterResult.run;
+      if (encounterResult.brokeStreak >= 2) {
+        renderComboBreak(encounterResult.brokeStreak);
+      }
+    }
+
     // Record in BugDex
     const { xpGained, isNew } = recordEncounter(
       monster,
@@ -177,7 +193,16 @@ async function processInteractiveQueue(queue, options, state) {
 
       renderBossEncounter(bossCheck.boss);
       const { interactiveBossBattle } = await import('./boss-battle.js');
-      await interactiveBossBattle(bossCheck.boss);
+      const bossResult = await interactiveBossBattle(bossCheck.boss);
+
+      // Track boss defeat in run
+      if (state.currentRun && bossResult?.defeated) {
+        state.currentRun = addBossDefeat(state.currentRun, {
+          bossId: bossCheck.boss.id,
+          bossName: bossCheck.boss.name,
+          xp: 200,
+        });
+      }
 
       if (state.autoWalker) state.autoWalker.resume();
 
@@ -238,6 +263,8 @@ async function processInteractiveQueue(queue, options, state) {
       );
     }
   }
+
+  return state.currentRun;
 }
 
 /**
@@ -263,6 +290,21 @@ function processErrors(text, state) {
     if (state.recorder) {
       state.recorder.recordError(error, location);
       state.recorder.recordEncounter(monster, error);
+    }
+
+    // Track encounter in the run session
+    if (state.currentRun) {
+      const encounterResult = addEncounter(state.currentRun, {
+        monsterId: monster.id,
+        monsterName: monster.name,
+        error: error.message.slice(0, 200),
+        file: location?.file || null,
+        line: location?.line || null,
+      });
+      state.currentRun = encounterResult.run;
+      if (encounterResult.brokeStreak >= 2) {
+        renderComboBreak(encounterResult.brokeStreak);
+      }
     }
 
     // Record in BugDex
@@ -303,4 +345,6 @@ function processErrors(text, state) {
       renderContributionPrompt();
     }
   }
+
+  return state.currentRun;
 }
