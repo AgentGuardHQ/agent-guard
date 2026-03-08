@@ -35,13 +35,15 @@ export const MODULE_CONTRACTS = {
     exports: {
       shouldEncounter: { params: ['tile', 'rand'], returns: 'boolean' },
       pickWeightedRandom: { params: ['monsters', 'rand'], returns: 'object' },
-      checkEncounter: { params: ['tile', 'monsters', 'rand'], returns: 'object|null' },
+      scaleEncounter: { params: ['monster', 'context'], returns: 'object' },
+      checkEncounter: { params: ['tile', 'monsters', 'rand', 'context'], returns: 'object|null' },
     },
     invariants: [
       'Encounters only trigger on tile type 2 (tall grass)',
       'Encounter rate is 10%',
       'Rarity weights: common=10, uncommon=5, rare=2, legendary=1',
       'Deterministic with injected RNG',
+      'Difficulty scales with player level (+10% HP per level) and session encounters (+2% per 5, capped at +20%)',
     ],
     dependencies: [],
   },

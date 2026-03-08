@@ -1,7 +1,7 @@
 import assert from 'node:assert';
 import { test, suite } from './run.js';
 import {
-  shouldEncounter, pickWeightedRandom, checkEncounter, RARITY_WEIGHTS
+  shouldEncounter, pickWeightedRandom, checkEncounter, scaleEncounter, RARITY_WEIGHTS
 } from '../domain/encounters.js';
 
 suite('Domain Encounters (domain/encounters.js)', () => {
@@ -79,5 +79,74 @@ suite('Domain Encounters (domain/encounters.js)', () => {
   test('checkEncounter returns null when random roll is too high', () => {
     const result = checkEncounter(2, monsters, () => 0.5);
     assert.strictEqual(result, null);
+  });
+
+  test('checkEncounter applies scaling when context is provided', () => {
+    const result = checkEncounter(2, monsters, () => 0, { playerLevel: 3 });
+    assert.ok(result);
+    // Level 3 = 1 + (3-1)*0.1 = 1.2x scale. Common hp=20 → floor(20*1.2) = 24
+    assert.strictEqual(result.hp, 24);
+    assert.strictEqual(result.currentHP, 24);
+  });
+
+  test('checkEncounter returns unscaled when no context', () => {
+    const result = checkEncounter(2, monsters, () => 0);
+    assert.ok(result);
+    assert.strictEqual(result.hp, 20);
+    assert.strictEqual(result.currentHP, 20);
+  });
+
+  // --- scaleEncounter ---
+  test('scaleEncounter returns unmodified stats at level 1 with 0 encounters', () => {
+    const mon = { id: 1, name: 'Test', hp: 30, currentHP: 30 };
+    const scaled = scaleEncounter(mon, { playerLevel: 1, encounterCount: 0 });
+    assert.strictEqual(scaled.hp, 30);
+    assert.strictEqual(scaled.currentHP, 30);
+  });
+
+  test('scaleEncounter returns unmodified stats with empty context', () => {
+    const mon = { id: 1, name: 'Test', hp: 30, currentHP: 30 };
+    const scaled = scaleEncounter(mon);
+    assert.strictEqual(scaled.hp, 30);
+    assert.strictEqual(scaled.currentHP, 30);
+  });
+
+  test('scaleEncounter increases HP at higher player levels', () => {
+    const mon = { id: 1, name: 'Test', hp: 20, currentHP: 20 };
+    // Level 5 = 1 + (5-1)*0.1 = 1.4x → floor(20*1.4) = 28
+    const scaled = scaleEncounter(mon, { playerLevel: 5 });
+    assert.strictEqual(scaled.hp, 28);
+    assert.strictEqual(scaled.currentHP, 28);
+  });
+
+  test('scaleEncounter increases HP with encounter count', () => {
+    const mon = { id: 1, name: 'Test', hp: 100, currentHP: 100 };
+    // 10 encounters = floor(10/5)*0.02 = 0.04 → 1.04x → floor(100*1.04) = 104
+    const scaled = scaleEncounter(mon, { encounterCount: 10 });
+    assert.strictEqual(scaled.hp, 104);
+    assert.strictEqual(scaled.currentHP, 104);
+  });
+
+  test('scaleEncounter caps session scaling at +20%', () => {
+    const mon = { id: 1, name: 'Test', hp: 100, currentHP: 100 };
+    // 200 encounters = floor(200/5)*0.02 = 0.80 → capped at 0.20 → 1.2x → 120
+    const scaled = scaleEncounter(mon, { encounterCount: 200 });
+    assert.strictEqual(scaled.hp, 120);
+    assert.strictEqual(scaled.currentHP, 120);
+  });
+
+  test('scaleEncounter does not mutate input', () => {
+    const mon = { id: 1, name: 'Test', hp: 20, currentHP: 20 };
+    scaleEncounter(mon, { playerLevel: 5 });
+    assert.strictEqual(mon.hp, 20);
+    assert.strictEqual(mon.currentHP, 20);
+  });
+
+  test('scaleEncounter uses hp as fallback when currentHP missing', () => {
+    const mon = { id: 1, name: 'Test', hp: 20 };
+    const scaled = scaleEncounter(mon, { playerLevel: 3 });
+    // 1.2x → floor(20*1.2) = 24
+    assert.strictEqual(scaled.hp, 24);
+    assert.strictEqual(scaled.currentHP, 24);
   });
 });
