@@ -24,7 +24,11 @@ export function updateTransition(dt) {
   if (transition.timer >= TRANSITION_PHASES[transition.phase]) {
     transition.timer = 0;
     transition.phase++;
-    if (transition.phase < TRANSITION_PHASES.length && TRANSITION_TYPES[transition.phase] === 'flash') playTransitionFlash();
+    if (
+      transition.phase < TRANSITION_PHASES.length &&
+      TRANSITION_TYPES[transition.phase] === 'flash'
+    )
+      playTransitionFlash();
     if (transition.phase >= TRANSITION_PHASES.length) {
       transition.done = true;
       const mon = transition.wildMon;

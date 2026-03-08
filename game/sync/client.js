@@ -3,9 +3,15 @@
 // Uses WebSocket for real-time bidirectional sync between CLI and browser
 
 import {
-  SYNC_PORT, RECONNECT_INTERVAL, MAX_RECONNECT_ATTEMPTS,
-  MSG_PULL_CLI_STATE, MSG_BROWSER_STATE, MSG_PONG,
-  MSG_CLI_STATE, MSG_CLI_EVENT, MSG_PING,
+  SYNC_PORT,
+  RECONNECT_INTERVAL,
+  MAX_RECONNECT_ATTEMPTS,
+  MSG_PULL_CLI_STATE,
+  MSG_BROWSER_STATE,
+  MSG_PONG,
+  MSG_CLI_STATE,
+  MSG_CLI_EVENT,
+  MSG_PING,
 } from '../../ecosystem/sync-protocol.js';
 
 const SYNC_URL = `ws://localhost:${SYNC_PORT}`;
@@ -34,9 +40,7 @@ export function getSyncStatus() {
     connected,
     serverUrl: SYNC_URL,
     reconnectAttempts,
-    hint: connected
-      ? 'Synced with CLI'
-      : 'Not connected. Run "bugmon sync" in your terminal.',
+    hint: connected ? 'Synced with CLI' : 'Not connected. Run "bugmon sync" in your terminal.',
   };
 }
 

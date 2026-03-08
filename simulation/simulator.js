@@ -3,7 +3,15 @@
 import { createRNG } from './rng.js';
 import { runBattle } from './headlessBattle.js';
 
-export function simulate(monsters, movesData, typeChart, strategy, numBattles, baseSeed, strategyName) {
+export function simulate(
+  monsters,
+  movesData,
+  typeChart,
+  strategy,
+  numBattles,
+  baseSeed,
+  strategyName
+) {
   const stats = {};
 
   // Init stats for each monster
@@ -22,7 +30,7 @@ export function simulate(monsters, movesData, typeChart, strategy, numBattles, b
       totalDamageDealt: 0,
       totalDamageTaken: 0,
       totalTurns: 0,
-      matchups: {} // per-opponent breakdown
+      matchups: {}, // per-opponent breakdown
     };
   }
 
@@ -35,7 +43,10 @@ export function simulate(monsters, movesData, typeChart, strategy, numBattles, b
       const monB = monsters[j];
 
       // Run multiple battles per matchup for statistical significance
-      const battlesPerMatchup = Math.max(1, Math.floor(numBattles / (monsters.length * (monsters.length - 1) / 2)));
+      const battlesPerMatchup = Math.max(
+        1,
+        Math.floor(numBattles / ((monsters.length * (monsters.length - 1)) / 2))
+      );
 
       for (let k = 0; k < battlesPerMatchup; k++) {
         const seed = baseSeed + battleIndex;
@@ -83,7 +94,7 @@ export function simulate(monsters, movesData, typeChart, strategy, numBattles, b
   return {
     stats,
     totalBattles: battleIndex,
-    strategy: strategyName || 'custom'
+    strategy: strategyName || 'custom',
   };
 }
 
@@ -91,7 +102,17 @@ export function simulate(monsters, movesData, typeChart, strategy, numBattles, b
  * Compare two strategies head-to-head across all matchups.
  * Strategy A controls monster A, strategy B controls monster B.
  */
-export function compareStrategies(monsters, movesData, typeChart, strategyA, strategyB, numBattles, baseSeed, nameA, nameB) {
+export function compareStrategies(
+  monsters,
+  movesData,
+  typeChart,
+  strategyA,
+  strategyB,
+  numBattles,
+  baseSeed,
+  nameA,
+  nameB
+) {
   const winsA = { total: 0, battles: 0 };
   const winsB = { total: 0, battles: 0 };
   let battleIndex = 0;
@@ -102,7 +123,10 @@ export function compareStrategies(monsters, movesData, typeChart, strategyA, str
     for (let j = i + 1; j < monsters.length; j++) {
       const monA = monsters[i];
       const monB = monsters[j];
-      const battlesPerMatchup = Math.max(1, Math.floor(numBattles / (monsters.length * (monsters.length - 1) / 2)));
+      const battlesPerMatchup = Math.max(
+        1,
+        Math.floor(numBattles / ((monsters.length * (monsters.length - 1)) / 2))
+      );
 
       let aWins = 0;
       let bWins = 0;
@@ -128,7 +152,7 @@ export function compareStrategies(monsters, movesData, typeChart, strategyA, str
         aWins,
         bWins,
         draws: battlesPerMatchup - aWins - bWins,
-        total: battlesPerMatchup
+        total: battlesPerMatchup,
       });
     }
   }
@@ -140,14 +164,21 @@ export function compareStrategies(monsters, movesData, typeChart, strategyA, str
     winsB: winsB.total,
     totalBattles: battleIndex,
     draws: battleIndex - winsA.total - winsB.total,
-    matchups
+    matchups,
   };
 }
 
 /**
  * Run a full strategy comparison matrix — every strategy vs every other.
  */
-export function compareAllStrategies(monsters, movesData, typeChart, strategies, numBattles, baseSeed) {
+export function compareAllStrategies(
+  monsters,
+  movesData,
+  typeChart,
+  strategies,
+  numBattles,
+  baseSeed
+) {
   const names = Object.keys(strategies);
   const results = [];
 
@@ -156,14 +187,19 @@ export function compareAllStrategies(monsters, movesData, typeChart, strategies,
       const nameA = names[i];
       const nameB = names[j];
       const result = compareStrategies(
-        monsters, movesData, typeChart,
-        strategies[nameA].fn, strategies[nameB].fn,
-        numBattles, baseSeed + (i * names.length + j) * 100000,
-        strategies[nameA].name, strategies[nameB].name
+        monsters,
+        movesData,
+        typeChart,
+        strategies[nameA].fn,
+        strategies[nameB].fn,
+        numBattles,
+        baseSeed + (i * names.length + j) * 100000,
+        strategies[nameA].name,
+        strategies[nameB].name
       );
       results.push(result);
     }
   }
 
-  return { results, strategyNames: names.map(n => strategies[n].name) };
+  return { results, strategyNames: names.map((n) => strategies[n].name) };
 }

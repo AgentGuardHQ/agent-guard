@@ -3,21 +3,30 @@
 // No battle logic here — all computation is delegated to the domain engine.
 
 import {
-  createBattleState, executeTurn,
-  cacheChance, attemptCache, pickEnemyMove,
-  isHealMove, resolveMove, applyDamage, applyHealing
+  createBattleState,
+  executeTurn,
+  cacheChance,
+  attemptCache,
+  pickEnemyMove,
+  isHealMove,
+  resolveMove,
+  applyDamage,
+  applyHealing,
 } from '../../domain/battle.js';
-import {
-  MOVE_USED, PASSIVE_ACTIVATED, BUGMON_FAINTED
-} from '../../domain/events.js';
+import { MOVE_USED, PASSIVE_ACTIVATED, BUGMON_FAINTED } from '../../domain/events.js';
 import { wasPressed } from '../engine/input.js';
 import { setState, STATES } from '../engine/state.js';
 import { getPlayer } from '../world/player.js';
 import { eventBus, Events } from '../engine/events.js';
 import {
-  playMenuNav, playMenuConfirm, playMenuCancel,
-  playAttack, playFaint, playCaptureSuccess,
-  playCaptureFailure, playBattleVictory
+  playMenuNav,
+  playMenuConfirm,
+  playMenuCancel,
+  playAttack,
+  playFaint,
+  playCaptureSuccess,
+  playCaptureFailure,
+  playBattleVictory,
 } from '../audio/sound.js';
 import { checkPartyEvolutions, applyEvolution } from '../evolution/evolution.js';
 import { startEvolutionAnimation } from '../evolution/animation.js';
@@ -28,8 +37,12 @@ let typeData = null;
 let messageTimer = 0;
 const MESSAGE_DURATION = 1500;
 
-export function setMovesData(data) { movesData = data; }
-export function setTypeData(data) { typeData = data; }
+export function setMovesData(data) {
+  movesData = data;
+}
+export function setTypeData(data) {
+  typeData = data;
+}
 
 export function startBattle(wildMon) {
   const player = getPlayer();
@@ -41,7 +54,7 @@ export function startBattle(wildMon) {
     menuIndex: 0,
     moveIndex: 0,
     message: '',
-    nextAction: null
+    nextAction: null,
   };
   eventBus.emit(Events.BATTLE_STARTED, {
     playerMon: battle.playerMon.name,
@@ -50,7 +63,9 @@ export function startBattle(wildMon) {
   return battle;
 }
 
-export function getBattle() { return battle; }
+export function getBattle() {
+  return battle;
+}
 
 export function updateBattle(dt) {
   if (!battle) return;
@@ -66,8 +81,14 @@ export function updateBattle(dt) {
   }
 
   if (battle.state === 'menu') {
-    if (wasPressed('ArrowLeft')) { battle.menuIndex = Math.max(0, battle.menuIndex - 1); playMenuNav(); }
-    if (wasPressed('ArrowRight')) { battle.menuIndex = Math.min(2, battle.menuIndex + 1); playMenuNav(); }
+    if (wasPressed('ArrowLeft')) {
+      battle.menuIndex = Math.max(0, battle.menuIndex - 1);
+      playMenuNav();
+    }
+    if (wasPressed('ArrowRight')) {
+      battle.menuIndex = Math.min(2, battle.menuIndex + 1);
+      playMenuNav();
+    }
 
     if (wasPressed('Enter') || wasPressed(' ')) {
       playMenuConfirm();
@@ -82,14 +103,24 @@ export function updateBattle(dt) {
     }
   } else if (battle.state === 'fight') {
     const moveCount = battle.playerMon.moves.length;
-    if (wasPressed('ArrowLeft')) { battle.moveIndex = Math.max(0, battle.moveIndex - 1); playMenuNav(); }
-    if (wasPressed('ArrowRight')) { battle.moveIndex = Math.min(moveCount - 1, battle.moveIndex + 1); playMenuNav(); }
-    if (wasPressed('Escape')) { playMenuCancel(); battle.state = 'menu'; return; }
+    if (wasPressed('ArrowLeft')) {
+      battle.moveIndex = Math.max(0, battle.moveIndex - 1);
+      playMenuNav();
+    }
+    if (wasPressed('ArrowRight')) {
+      battle.moveIndex = Math.min(moveCount - 1, battle.moveIndex + 1);
+      playMenuNav();
+    }
+    if (wasPressed('Escape')) {
+      playMenuCancel();
+      battle.state = 'menu';
+      return;
+    }
 
     if (wasPressed('Enter') || wasPressed(' ')) {
       playMenuConfirm();
       const moveId = battle.playerMon.moves[battle.moveIndex];
-      const move = movesData.find(m => m.id === moveId);
+      const move = movesData.find((m) => m.id === moveId);
       if (move) doExecuteTurn(move);
     }
   }
@@ -215,16 +246,18 @@ function doEnemyCounterAttack() {
     { ...battle.playerMon, speed: 0 },
     { ...battle.enemy, speed: 999 }
   );
-  const playerMove = movesData.find(m => m.id === battle.playerMon.moves[0]);
+  const playerMove = movesData.find((m) => m.id === battle.playerMon.moves[0]);
   const result = executeTurn(fakeState, playerMove, enemyMove, typeChart);
 
   // Only apply enemy's damage to player
   battle.playerMon = { ...battle.playerMon, currentHP: result.state.playerMon.currentHP };
 
   // Filter to enemy-side events only
-  const enemyEvents = result.events.filter(e =>
-    e.side === 'enemy' || (e.type === BUGMON_FAINTED && e.side === 'player') ||
-    (e.type === PASSIVE_ACTIVATED && e.side === 'enemy')
+  const enemyEvents = result.events.filter(
+    (e) =>
+      e.side === 'enemy' ||
+      (e.type === BUGMON_FAINTED && e.side === 'player') ||
+      (e.type === PASSIVE_ACTIVATED && e.side === 'enemy')
   );
 
   if (enemyEvents.length > 0) {

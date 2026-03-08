@@ -5,7 +5,14 @@ import { getState, setState, STATES } from './engine/state.js';
 import { getMap } from './world/map.js';
 import { getPlayer, updatePlayer } from './world/player.js';
 import { setMonstersData, checkEncounter } from './world/encounters.js';
-import { setMovesData, setTypeData, startBattle, getBattle, updateBattle, movesData } from './battle/battleEngine.js';
+import {
+  setMovesData,
+  setTypeData,
+  startBattle,
+  getBattle,
+  updateBattle,
+  movesData,
+} from './battle/battleEngine.js';
 import { preloadAll } from './sprites/sprites.js';
 import { initTileTextures } from './sprites/tiles.js';
 import { MONSTERS } from '../ecosystem/data/monsters.js';
@@ -14,8 +21,18 @@ import { TYPES } from '../ecosystem/data/types.js';
 import { EVOLUTIONS } from '../ecosystem/data/evolutions.js';
 import { startTransition, updateTransition, drawTransitionOverlay } from './engine/transition.js';
 import { initTracker } from './evolution/tracker.js';
-import { setEvolutionData, setMonstersDataForEvolution, clearPendingEvolution, getEvolutionProgress } from './evolution/evolution.js';
-import { startEvolutionAnimation, updateEvolutionAnimation, drawEvolutionAnimation, clearEvolutionAnimation } from './evolution/animation.js';
+import {
+  setEvolutionData,
+  setMonstersDataForEvolution,
+  clearPendingEvolution,
+  getEvolutionProgress,
+} from './evolution/evolution.js';
+import {
+  startEvolutionAnimation,
+  updateEvolutionAnimation,
+  drawEvolutionAnimation,
+  clearEvolutionAnimation,
+} from './evolution/animation.js';
 import { saveGame, loadGame, applySave, hasSave, recordBrowserCache } from './sync/save.js';
 import { eventBus, Events } from './engine/events.js';
 import { updateTitle, drawTitle } from './engine/title.js';
@@ -63,7 +80,7 @@ async function init() {
     autoSave();
   });
   eventBus.on(Events.CACHE_SUCCESS, (data) => {
-    const mon = MONSTERS.find(m => m.name === data.name);
+    const mon = MONSTERS.find((m) => m.name === data.name);
     if (mon) recordBrowserCache(mon);
   });
 
@@ -71,7 +88,9 @@ async function init() {
   requestAnimationFrame(loop);
 }
 
-function autoSave() { saveGame(getPlayer()); }
+function autoSave() {
+  saveGame(getPlayer());
+}
 
 function loop(timestamp) {
   const dt = timestamp - lastTime;
@@ -176,4 +195,4 @@ function render() {
   }
 }
 
-init().catch(err => console.error('BugMon failed to start:', err));
+init().catch((err) => console.error('BugMon failed to start:', err));

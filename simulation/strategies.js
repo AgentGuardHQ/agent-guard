@@ -2,9 +2,7 @@
 // Each strategy is a function: (attacker, defender, movesData, typeChart, rng) => move
 
 function getMoves(mon, movesData) {
-  return mon.moves
-    .map(id => movesData.find(m => m.id === id))
-    .filter(Boolean);
+  return mon.moves.map((id) => movesData.find((m) => m.id === id)).filter(Boolean);
 }
 
 function getEffectiveness(moveType, defenderType, typeChart) {
@@ -74,7 +72,7 @@ export function hpAwareStrategy(attacker, defender, movesData, typeChart, rng) {
 
   // If HP below 30%, try to heal
   if (hpRatio < 0.3) {
-    const healMove = moves.find(m => m.category === 'heal');
+    const healMove = moves.find((m) => m.category === 'heal');
     if (healMove) return healMove;
   }
 
@@ -88,7 +86,7 @@ export function defensiveStrategy(attacker, defender, movesData, typeChart, rng)
 
   // Heal when below 50% HP
   if (hpRatio < 0.5) {
-    const healMove = moves.find(m => m.category === 'heal');
+    const healMove = moves.find((m) => m.category === 'heal');
     if (healMove) return healMove;
   }
 
@@ -135,5 +133,5 @@ export const STRATEGIES = {
   mixed: { fn: mixedStrategy, name: 'Mixed (70/30)' },
   hpAware: { fn: hpAwareStrategy, name: 'HP Aware' },
   defensive: { fn: defensiveStrategy, name: 'Defensive' },
-  adaptive: { fn: adaptiveStrategy, name: 'Adaptive' }
+  adaptive: { fn: adaptiveStrategy, name: 'Adaptive' },
 };

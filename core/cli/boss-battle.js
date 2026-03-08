@@ -37,15 +37,20 @@ export async function interactiveBossBattle(boss) {
   const enemy = { ...boss, currentHP: boss.hp };
 
   const rl = createInterface({ input: process.stdin, output: process.stderr });
-  const ask = (prompt) => new Promise(resolve => rl.question(prompt, resolve));
+  const ask = (prompt) => new Promise((resolve) => rl.question(prompt, resolve));
 
   const ESC = '\x1b[';
   const RESET = `${ESC}0m`;
   const BOLD = `${ESC}1m`;
   const DIM = `${ESC}2m`;
   const FG = {
-    red: `${ESC}31m`, green: `${ESC}32m`, yellow: `${ESC}33m`,
-    blue: `${ESC}34m`, cyan: `${ESC}36m`, white: `${ESC}37m`, gray: `${ESC}90m`,
+    red: `${ESC}31m`,
+    green: `${ESC}32m`,
+    yellow: `${ESC}33m`,
+    blue: `${ESC}34m`,
+    cyan: `${ESC}36m`,
+    white: `${ESC}37m`,
+    gray: `${ESC}90m`,
   };
   const c = (text, fg) => `${FG[fg] || ''}${text}${RESET}`;
   const b = (text) => `${BOLD}${text}${RESET}`;
@@ -60,15 +65,16 @@ export async function interactiveBossBattle(boss) {
   };
 
   const playerMoves = playerMon.moves
-    .map(id => movesData.find(m => m.id === id))
+    .map((id) => movesData.find((m) => m.id === id))
     .filter(Boolean);
   const enemyMoves = (enemy.moves || [])
-    .map(id => movesData.find(m => m.id === id))
+    .map((id) => movesData.find((m) => m.id === id))
     .filter(Boolean);
   // If boss has no matching moves in data, give it generic attacks
-  const effectiveEnemyMoves = enemyMoves.length > 0 ? enemyMoves : [
-    { id: 'boss-strike', name: 'Boss Strike', power: 12, type: enemy.type },
-  ];
+  const effectiveEnemyMoves =
+    enemyMoves.length > 0
+      ? enemyMoves
+      : [{ id: 'boss-strike', name: 'Boss Strike', power: 12, type: enemy.type }];
 
   const effectiveness = typeData.effectiveness;
 
@@ -76,7 +82,12 @@ export async function interactiveBossBattle(boss) {
 
   process.stderr.write('\n');
   process.stderr.write(c('  ╔══════════════════════════════════════════════╗\n', 'red'));
-  process.stderr.write(c('  ║', 'red') + b(c(`  BOSS BATTLE! ${enemy.name}`, 'red')) + c('              ║\n'.slice(0, 1), 'red') + '\n');
+  process.stderr.write(
+    c('  ║', 'red') +
+      b(c(`  BOSS BATTLE! ${enemy.name}`, 'red')) +
+      c('              ║\n'.slice(0, 1), 'red') +
+      '\n'
+  );
   process.stderr.write(c('  ╚══════════════════════════════════════════════╝\n', 'red'));
 
   if (enemy.description) {
@@ -86,8 +97,12 @@ export async function interactiveBossBattle(boss) {
   // Battle loop
   while (true) {
     process.stderr.write('\n');
-    process.stderr.write(`  ${b(c(enemy.name, 'red'))} ${c(`[${enemy.type}]`, 'gray')}  ${hpBar(enemy.currentHP, enemy.hp)}\n`);
-    process.stderr.write(`  ${b(playerMon.name)} ${c(`[${playerMon.type}]`, 'gray')}  ${hpBar(playerMon.currentHP, playerMon.hp)}\n`);
+    process.stderr.write(
+      `  ${b(c(enemy.name, 'red'))} ${c(`[${enemy.type}]`, 'gray')}  ${hpBar(enemy.currentHP, enemy.hp)}\n`
+    );
+    process.stderr.write(
+      `  ${b(playerMon.name)} ${c(`[${playerMon.type}]`, 'gray')}  ${hpBar(playerMon.currentHP, playerMon.hp)}\n`
+    );
     process.stderr.write('\n');
 
     // Show action menu (no cache option for bosses)
@@ -113,7 +128,9 @@ export async function interactiveBossBattle(boss) {
         let effLabel = '';
         if (eff > 1) effLabel = c(' (super effective)', 'green');
         else if (eff < 1) effLabel = c(' (not effective)', 'red');
-        process.stderr.write(`  ${c(`[${i + 1}]`, 'yellow')} ${move.name} ${c(`[${move.type}]`, 'gray')} PWR:${move.power}${effLabel}\n`);
+        process.stderr.write(
+          `  ${c(`[${i + 1}]`, 'yellow')} ${move.name} ${c(`[${move.type}]`, 'gray')} PWR:${move.power}${effLabel}\n`
+        );
       });
       process.stderr.write(`  ${c('[0]', 'yellow')} Back\n`);
       process.stderr.write('\n');
@@ -129,8 +146,14 @@ export async function interactiveBossBattle(boss) {
       // Determine order
       const playerFirst = playerMon.speed >= enemy.speed;
       const turnOrder = playerFirst
-        ? [{ side: 'player', move: playerMove }, { side: 'enemy', move: enemyMove }]
-        : [{ side: 'enemy', move: enemyMove }, { side: 'player', move: playerMove }];
+        ? [
+            { side: 'player', move: playerMove },
+            { side: 'enemy', move: enemyMove },
+          ]
+        : [
+            { side: 'enemy', move: enemyMove },
+            { side: 'player', move: playerMove },
+          ];
 
       process.stderr.write('\n');
 
@@ -168,7 +191,9 @@ export async function interactiveBossBattle(boss) {
 
           // Show defeat condition as guidance
           if (enemy.defeatCondition) {
-            process.stderr.write(`\n  ${c('To truly defeat this boss:', 'cyan')} ${enemy.defeatCondition}\n`);
+            process.stderr.write(
+              `\n  ${c('To truly defeat this boss:', 'cyan')} ${enemy.defeatCondition}\n`
+            );
           }
           process.stderr.write('\n');
 
@@ -208,7 +233,10 @@ function calcDamage(attacker, move, defender, typeChart) {
   const mult = typeChart?.[move.type]?.[defender.type] ?? 1;
   const crit = Math.random() < 1 / 16 ? 1.5 : 1;
 
-  const damage = Math.max(1, Math.floor((power + attack - Math.floor(defense / 2) + randomBonus) * mult * crit));
+  const damage = Math.max(
+    1,
+    Math.floor((power + attack - Math.floor(defense / 2) + randomBonus) * mult * crit)
+  );
 
   let effText = '';
   if (mult > 1) effText = ' \x1b[32m(super effective!)\x1b[0m';
@@ -219,7 +247,7 @@ function calcDamage(attacker, move, defender, typeChart) {
 }
 
 function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function getParty() {
@@ -228,7 +256,7 @@ function getParty() {
 
   const dataDir = join(__dirname, '..', '..', 'ecosystem', 'data');
   const monsters = JSON.parse(readFileSync(join(dataDir, 'monsters.json'), 'utf8'));
-  const starters = monsters.filter(m => m.rarity === 'common');
+  const starters = monsters.filter((m) => m.rarity === 'common');
   const starter = starters[Math.floor(Math.random() * starters.length)];
   const party = [{ ...starter, currentHP: starter.hp }];
 
@@ -246,7 +274,7 @@ function savePartyHP(playerMon) {
 
 function calculateLevel(xp) {
   let level = 1;
-  while (((level + 1) * level) / 2 * 100 <= xp) {
+  while ((((level + 1) * level) / 2) * 100 <= xp) {
     level++;
   }
   return level;

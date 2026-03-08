@@ -43,9 +43,7 @@ export async function claudeHook() {
     if (!monster) process.exit(0);
 
     // Record the encounter
-    const { xpGained, isNew, data: dexData } = recordEncounter(
-      monster, error.message, null, null
-    );
+    const { xpGained, isNew, data: dexData } = recordEncounter(monster, error.message, null, null);
 
     // Count BugDex completion
     const allMonsters = getAllMonsters();
@@ -58,9 +56,13 @@ export async function claudeHook() {
     const typeTag = `[${monster.type}]`;
 
     process.stdout.write('\n');
-    process.stdout.write(`  \x1b[1m\x1b[31mWild ${monster.name} appeared!\x1b[0m ${typeTag} HP:${monster.hp}${newTag}\n`);
+    process.stdout.write(
+      `  \x1b[1m\x1b[31mWild ${monster.name} appeared!\x1b[0m ${typeTag} HP:${monster.hp}${newTag}\n`
+    );
     process.stdout.write(`  \x1b[2m${error.message.slice(0, 80)}\x1b[0m\n`);
-    process.stdout.write(`  \x1b[32m+${xpGained} XP\x1b[0m | BugDex: ${seenCount}/${totalCount} | Lv.${dexData.stats.level}\n`);
+    process.stdout.write(
+      `  \x1b[32m+${xpGained} XP\x1b[0m | BugDex: ${seenCount}/${totalCount} | Lv.${dexData.stats.level}\n`
+    );
     process.stdout.write('\n');
   } catch {
     // Swallow all errors — hooks must never fail
@@ -72,7 +74,9 @@ function readStdin() {
   return new Promise((resolve) => {
     let input = '';
     process.stdin.setEncoding('utf8');
-    process.stdin.on('data', (chunk) => { input += chunk; });
+    process.stdin.on('data', (chunk) => {
+      input += chunk;
+    });
     process.stdin.on('end', () => resolve(input));
     process.stdin.on('error', () => resolve(''));
     // If stdin is a TTY (manual testing), don't hang

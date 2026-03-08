@@ -43,8 +43,12 @@ export async function scan(target) {
     return;
   }
 
-  process.stderr.write(`\n  \x1b[2mNo linting tools found (eslint, tsc) and no syntax errors detected.\x1b[0m\n`);
-  process.stderr.write(`  \x1b[2mInstall eslint or add a tsconfig.json for deeper scanning.\x1b[0m\n\n`);
+  process.stderr.write(
+    `\n  \x1b[2mNo linting tools found (eslint, tsc) and no syntax errors detected.\x1b[0m\n`
+  );
+  process.stderr.write(
+    `  \x1b[2mInstall eslint or add a tsconfig.json for deeper scanning.\x1b[0m\n\n`
+  );
 }
 
 /**
@@ -59,8 +63,12 @@ function tryRun(cmd, args) {
 
     let output = '';
 
-    child.stdout.on('data', (chunk) => { output += chunk.toString(); });
-    child.stderr.on('data', (chunk) => { output += chunk.toString(); });
+    child.stdout.on('data', (chunk) => {
+      output += chunk.toString();
+    });
+    child.stderr.on('data', (chunk) => {
+      output += chunk.toString();
+    });
 
     child.on('error', () => resolve(null));
     child.on('close', () => resolve(output));
@@ -83,12 +91,7 @@ function processOutput(text) {
   for (const error of errors) {
     const { monster, confidence } = matchMonster(error);
 
-    const { xpGained, isNew } = recordEncounter(
-      monster,
-      error.message,
-      null,
-      null,
-    );
+    const { xpGained, isNew } = recordEncounter(monster, error.message, null, null);
 
     renderEncounter(monster, error, null, confidence);
 

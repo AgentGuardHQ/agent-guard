@@ -12,6 +12,7 @@
 //   bugmon dex                          View your BugDex
 //   bugmon stats                        View your bug hunter stats
 //   bugmon heal                         Restore party HP
+//   bugmon replay [session-id]          Replay a debugging session timeline
 //   bugmon sync                         Start sync server (bridges CLI ↔ browser)
 //   bugmon claude-init                   Set up Claude Code integration
 //   bugmon help                         Show help
@@ -74,6 +75,24 @@ const COMMANDS = {
     flags: [],
     examples: ['bugmon scan', 'bugmon scan ./src'],
   },
+  replay: {
+    name: 'bugmon replay',
+    description: 'Replay a debugging session timeline (flight recorder)',
+    usage: 'bugmon replay [session-id] [flags]',
+    flags: [
+      { flag: '--last, -l', description: 'Replay the most recent session' },
+      { flag: '--step, -s', description: 'Step through events one at a time' },
+      { flag: '--stats', description: 'Show session statistics only' },
+      { flag: '--filter <kind>', description: 'Filter events by kind (e.g. ErrorObserved)' },
+    ],
+    examples: [
+      'bugmon replay',
+      'bugmon replay --last',
+      'bugmon replay 1709913600-a3f2',
+      'bugmon replay --last --step',
+      'bugmon replay --last --stats',
+    ],
+  },
   sync: {
     name: 'bugmon sync',
     description: 'Start WebSocket sync server (bridges CLI and browser game)',
@@ -97,7 +116,8 @@ switch (command) {
 
     // Parse flags before --
     const flags = args.slice(1, dashDash);
-    const interactive = flags.includes('--cache') || flags.includes('--catch') || flags.includes('-c');
+    const interactive =
+      flags.includes('--cache') || flags.includes('--catch') || flags.includes('-c');
     const openBrowser = flags.includes('--open') || flags.includes('-o');
     const walk = flags.includes('--walk') || flags.includes('-w');
 
@@ -108,7 +128,9 @@ switch (command) {
       // Show starter info on first run
       const dex = loadBugDex();
       if (!dex.party || dex.party.length === 0) {
-        process.stderr.write('\n  \x1b[1m\x1b[33mFirst time? You\'ll get a starter BugMon for your party!\x1b[0m\n');
+        process.stderr.write(
+          "\n  \x1b[1m\x1b[33mFirst time? You'll get a starter BugMon for your party!\x1b[0m\n"
+        );
         process.stderr.write('  \x1b[2mFix errors to cache the BugMon that appear.\x1b[0m\n\n');
       }
     }
@@ -118,14 +140,20 @@ switch (command) {
   }
 
   case 'demo': {
-    if (wantsHelp) { console.log(formatHelp(COMMANDS.demo)); break; }
+    if (wantsHelp) {
+      console.log(formatHelp(COMMANDS.demo));
+      break;
+    }
     const { demo } = await import('./demo.js');
     await demo(args[1]);
     break;
   }
 
   case 'init': {
-    if (wantsHelp) { console.log(formatHelp(COMMANDS.init)); break; }
+    if (wantsHelp) {
+      console.log(formatHelp(COMMANDS.init));
+      break;
+    }
     const flags = args.slice(1);
     const force = flags.includes('--force') || flags.includes('-f');
     const { init } = await import('./init.js');
@@ -134,7 +162,10 @@ switch (command) {
   }
 
   case 'resolve': {
-    if (wantsHelp) { console.log(formatHelp(COMMANDS.resolve)); break; }
+    if (wantsHelp) {
+      console.log(formatHelp(COMMANDS.resolve));
+      break;
+    }
     const { resolve } = await import('./resolve.js');
     await resolve(args.slice(1));
     break;
@@ -155,7 +186,9 @@ switch (command) {
     }
     saveBugDex(data);
     if (healed > 0) {
-      process.stderr.write(`\n  \x1b[32m\x1b[1mYour party has been fully healed!\x1b[0m (${healed} BugMon restored)\n\n`);
+      process.stderr.write(
+        `\n  \x1b[32m\x1b[1mYour party has been fully healed!\x1b[0m (${healed} BugMon restored)\n\n`
+      );
     } else {
       process.stderr.write('\n  \x1b[2mYour party is already at full health.\x1b[0m\n\n');
     }
@@ -182,7 +215,10 @@ switch (command) {
   }
 
   case 'sync': {
-    if (wantsHelp) { console.log(formatHelp(COMMANDS.sync)); break; }
+    if (wantsHelp) {
+      console.log(formatHelp(COMMANDS.sync));
+      break;
+    }
     const { startSyncServer } = await import('./sync-server.js');
     try {
       const { port, clients, stop } = await startSyncServer();
@@ -208,8 +244,21 @@ switch (command) {
     break;
   }
 
+  case 'replay': {
+    if (wantsHelp) {
+      console.log(formatHelp(COMMANDS.replay));
+      break;
+    }
+    const { replay } = await import('./replay.js');
+    await replay(args.slice(1));
+    break;
+  }
+
   case 'scan': {
-    if (wantsHelp) { console.log(formatHelp(COMMANDS.scan)); break; }
+    if (wantsHelp) {
+      console.log(formatHelp(COMMANDS.scan));
+      break;
+    }
     const target = args[1] || '.';
     const { scan } = await import('./scan.js');
     await scan(target);
@@ -271,6 +320,12 @@ function printHelp() {
     bugmon party                         View your BugMon party
     bugmon dex                           View your BugDex
     bugmon stats                         View your bug hunter stats
+
+  \x1b[1mReplay:\x1b[0m
+    bugmon replay                        List recorded sessions
+    bugmon replay --last                 Replay most recent session
+    bugmon replay <session-id> --step    Step through events interactively
+    bugmon replay <session-id> --stats   View session statistics
 
   \x1b[1mTools:\x1b[0m
     bugmon init                          Install git hooks for evolution tracking

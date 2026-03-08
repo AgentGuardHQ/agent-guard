@@ -15,7 +15,10 @@ export function startEvolutionAnimation(fromMon, toMon) {
 export function updateEvolutionAnimation(dt) {
   if (!evoAnim || evoAnim.done) return false;
   evoAnim.timer += dt;
-  if (evoAnim.timer >= TOTAL) { evoAnim.done = true; return true; }
+  if (evoAnim.timer >= TOTAL) {
+    evoAnim.done = true;
+    return true;
+  }
   return false;
 }
 
@@ -24,7 +27,9 @@ export function drawEvolutionAnimation(ctx, w, h) {
   ctx.fillStyle = '#0a0a1a';
   ctx.fillRect(0, 0, w, h);
 
-  const cx = w / 2, cy = h / 2 - 20, sz = 96;
+  const cx = w / 2,
+    cy = h / 2 - 20,
+    sz = 96;
   const t = evoAnim.timer;
   const { fromMon, toMon } = evoAnim;
 
@@ -60,7 +65,8 @@ export function drawEvolutionAnimation(ctx, w, h) {
 
 function drawMon(ctx, mon, cx, cy, size, alpha) {
   ctx.globalAlpha = alpha;
-  const x = cx - size / 2, y = cy - size / 2;
+  const x = cx - size / 2,
+    y = cy - size / 2;
   if (!mon.sprite || !drawSprite(ctx, mon.sprite, x, y, size, size)) {
     ctx.fillStyle = mon.color;
     ctx.fillRect(x, y, size, size);
@@ -76,5 +82,9 @@ function drawText(ctx, text, x, y) {
   ctx.textAlign = 'left';
 }
 
-export function getEvolutionAnimation() { return evoAnim; }
-export function clearEvolutionAnimation() { evoAnim = null; }
+export function getEvolutionAnimation() {
+  return evoAnim;
+}
+export function clearEvolutionAnimation() {
+  evoAnim = null;
+}
