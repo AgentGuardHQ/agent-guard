@@ -34,9 +34,7 @@ export async function claudeInit(args = []) {
   const hookScript = resolve(__dirname, 'claude-hook.js');
 
   // Determine settings file location
-  const settingsDir = isGlobal
-    ? join(homedir(), '.claude')
-    : join(process.cwd(), '.claude');
+  const settingsDir = isGlobal ? join(homedir(), '.claude') : join(process.cwd(), '.claude');
   const settingsPath = join(settingsDir, 'settings.json');
   const settingsLabel = isGlobal ? '~/.claude/settings.json' : '.claude/settings.json';
 
@@ -58,14 +56,18 @@ export async function claudeInit(args = []) {
     try {
       settings = JSON.parse(readFileSync(settingsPath, 'utf8'));
     } catch {
-      process.stderr.write(`  ${YELLOW}Warning:${RESET} Could not parse ${settingsLabel}, creating fresh config.\n`);
+      process.stderr.write(
+        `  ${YELLOW}Warning:${RESET} Could not parse ${settingsLabel}, creating fresh config.\n`
+      );
       settings = {};
     }
   }
 
   // Check if already installed
   if (hasBugMonHook(settings)) {
-    process.stderr.write(`  ${YELLOW}Already configured.${RESET} BugMon hook found in ${settingsLabel}.\n`);
+    process.stderr.write(
+      `  ${YELLOW}Already configured.${RESET} BugMon hook found in ${settingsLabel}.\n`
+    );
     process.stderr.write(`  ${DIM}Use --remove to uninstall.${RESET}\n\n`);
     return;
   }
@@ -79,10 +81,12 @@ export async function claudeInit(args = []) {
 
   settings.hooks.PostToolUse.push({
     matcher: 'Bash',
-    hooks: [{
-      type: 'command',
-      command: hookCommand,
-    }],
+    hooks: [
+      {
+        type: 'command',
+        command: hookCommand,
+      },
+    ],
   });
 
   // Write settings
@@ -90,7 +94,9 @@ export async function claudeInit(args = []) {
 
   process.stderr.write(`  ${GREEN}✓${RESET}  Hook installed in ${CYAN}${settingsLabel}${RESET}\n`);
   process.stderr.write(`  ${DIM}Command: ${hookCommand}${RESET}\n\n`);
-  process.stderr.write(`  ${GREEN}${BOLD}Done!${RESET} BugMon encounters will trigger on errors in Claude Code.\n`);
+  process.stderr.write(
+    `  ${GREEN}${BOLD}Done!${RESET} BugMon encounters will trigger on errors in Claude Code.\n`
+  );
   process.stderr.write(`  ${DIM}Run "bugmon dex" to view your collection.${RESET}\n`);
   process.stderr.write(`  ${DIM}Use "bugmon claude-init --remove" to uninstall.${RESET}\n\n`);
 }
@@ -100,7 +106,9 @@ export async function claudeInit(args = []) {
  */
 function removeHook(settingsPath, settingsLabel) {
   if (!existsSync(settingsPath)) {
-    process.stderr.write(`  ${DIM}No settings file found at ${settingsLabel}. Nothing to remove.${RESET}\n\n`);
+    process.stderr.write(
+      `  ${DIM}No settings file found at ${settingsLabel}. Nothing to remove.${RESET}\n\n`
+    );
     return;
   }
 
@@ -113,7 +121,9 @@ function removeHook(settingsPath, settingsLabel) {
   }
 
   if (!hasBugMonHook(settings)) {
-    process.stderr.write(`  ${DIM}No BugMon hook found in ${settingsLabel}. Nothing to remove.${RESET}\n\n`);
+    process.stderr.write(
+      `  ${DIM}No BugMon hook found in ${settingsLabel}. Nothing to remove.${RESET}\n\n`
+    );
     return;
   }
 
@@ -135,7 +145,9 @@ function removeHook(settingsPath, settingsLabel) {
   writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf8');
 
   process.stderr.write(`  ${GREEN}✓${RESET}  Hook removed from ${CYAN}${settingsLabel}${RESET}\n`);
-  process.stderr.write(`  ${DIM}BugMon encounters will no longer trigger in Claude Code.${RESET}\n\n`);
+  process.stderr.write(
+    `  ${DIM}BugMon encounters will no longer trigger in Claude Code.${RESET}\n\n`
+  );
 }
 
 /**

@@ -77,7 +77,9 @@ export async function resolve(args) {
     }
 
     process.stderr.write('\n');
-    process.stderr.write(`  ${GREEN}${BOLD}Resolved ${count} bug${count > 1 ? 's' : ''}!${RESET}\n`);
+    process.stderr.write(
+      `  ${GREEN}${BOLD}Resolved ${count} bug${count > 1 ? 's' : ''}!${RESET}\n`
+    );
     process.stderr.write(`  ${YELLOW}+${xpGained} XP${RESET}\n`);
     if (totalBonusXP > 0) {
       const cc = lastTier ? (COMBO_COLORS[lastTier.label] || YELLOW) : YELLOW;

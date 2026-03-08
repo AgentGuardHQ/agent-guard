@@ -24,7 +24,9 @@ function hasFlag(name) {
 
 async function loadData() {
   const root = new URL('../', import.meta.url);
-  const monsters = JSON.parse(await readFile(new URL('ecosystem/data/monsters.json', root), 'utf-8'));
+  const monsters = JSON.parse(
+    await readFile(new URL('ecosystem/data/monsters.json', root), 'utf-8')
+  );
   const moves = JSON.parse(await readFile(new URL('ecosystem/data/moves.json', root), 'utf-8'));
   const types = JSON.parse(await readFile(new URL('ecosystem/data/types.json', root), 'utf-8'));
   return { monsters, moves, types };
@@ -39,7 +41,10 @@ async function runCompare() {
   const compareIdx = args.indexOf('--compare');
   const afterCompare = [];
   for (let i = compareIdx + 1; i < args.length; i++) {
-    if (args[i].startsWith('--')) { i++; continue; } // skip --flag and its value
+    if (args[i].startsWith('--')) {
+      i++;
+      continue;
+    } // skip --flag and its value
     afterCompare.push(args[i]);
   }
 
@@ -51,29 +56,48 @@ async function runCompare() {
       process.exit(1);
     }
 
-    console.log(`Comparing "${STRATEGIES[keyA].name}" vs "${STRATEGIES[keyB].name}" (${numBattles} battles, seed: ${seed})...`);
+    console.log(
+      `Comparing "${STRATEGIES[keyA].name}" vs "${STRATEGIES[keyB].name}" (${numBattles} battles, seed: ${seed})...`
+    );
     console.log('');
 
     const startTime = performance.now();
     const result = compareStrategies(
-      monsters, moves, types.effectiveness,
-      STRATEGIES[keyA].fn, STRATEGIES[keyB].fn,
-      numBattles, seed,
-      STRATEGIES[keyA].name, STRATEGIES[keyB].name
+      monsters,
+      moves,
+      types.effectiveness,
+      STRATEGIES[keyA].fn,
+      STRATEGIES[keyB].fn,
+      numBattles,
+      seed,
+      STRATEGIES[keyA].name,
+      STRATEGIES[keyB].name
     );
     const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
 
-    const report = generateComparisonReport({ results: [result], strategyNames: [STRATEGIES[keyA].name, STRATEGIES[keyB].name] });
+    const report = generateComparisonReport({
+      results: [result],
+      strategyNames: [STRATEGIES[keyA].name, STRATEGIES[keyB].name],
+    });
     console.log(report);
     console.log(`  Completed in ${elapsed}s`);
     console.log('');
   } else {
     // Compare all strategies against each other
-    console.log(`Comparing all ${Object.keys(STRATEGIES).length} strategies (${numBattles} battles each, seed: ${seed})...`);
+    console.log(
+      `Comparing all ${Object.keys(STRATEGIES).length} strategies (${numBattles} battles each, seed: ${seed})...`
+    );
     console.log('');
 
     const startTime = performance.now();
-    const result = compareAllStrategies(monsters, moves, types.effectiveness, STRATEGIES, numBattles, seed);
+    const result = compareAllStrategies(
+      monsters,
+      moves,
+      types.effectiveness,
+      STRATEGIES,
+      numBattles,
+      seed
+    );
     const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
 
     const report = generateComparisonReport(result);
@@ -101,7 +125,15 @@ async function runSimulate() {
   console.log('');
 
   const startTime = performance.now();
-  const result = simulate(monsters, moves, types.effectiveness, strategy.fn, numBattles, seed, strategy.name);
+  const result = simulate(
+    monsters,
+    moves,
+    types.effectiveness,
+    strategy.fn,
+    numBattles,
+    seed,
+    strategy.name
+  );
   const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
 
   const report = generateReport(result);
@@ -118,7 +150,7 @@ async function main() {
   }
 }
 
-main().catch(err => {
+main().catch((err) => {
   console.error('Simulation failed:', err);
   process.exit(1);
 });

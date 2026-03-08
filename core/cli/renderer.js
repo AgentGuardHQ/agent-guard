@@ -7,55 +7,13 @@ import { RESET, BOLD, DIM, TYPE_COLORS, color, bold, dim, padVis } from './color
 // ── ASCII art per type ──
 
 const TYPE_ART = {
-  frontend: [
-    ' ┌─────┐ ',
-    ' │ </> │ ',
-    ' │ ┌─┐ │ ',
-    ' │ └─┘ │ ',
-    ' └─────┘ ',
-  ],
-  backend: [
-    ' ┌─[==]─┐',
-    ' │ ░░░░ │',
-    ' │ ▓▓▓▓ │',
-    ' │ ░░░░ │',
-    ' └──────┘',
-  ],
-  devops: [
-    ' *─────* ',
-    ' │ >>> │ ',
-    ' │ === │ ',
-    ' │ <<< │ ',
-    ' *─────* ',
-  ],
-  testing: [
-    ' ╭──v──╮ ',
-    ' │ x v │ ',
-    ' │ v x │ ',
-    ' │ x v │ ',
-    ' ╰──x──╯ ',
-  ],
-  architecture: [
-    ' ╔═╦═╦═╗ ',
-    ' ║ ║ ║ ║ ',
-    ' ╠═╬═╬═╣ ',
-    ' ║ ║ ║ ║ ',
-    ' ╚═╩═╩═╝ ',
-  ],
-  security: [
-    ' ┌──*──┐ ',
-    ' │ /|\\ │ ',
-    ' │/ | \\│ ',
-    ' │\\ | /│ ',
-    ' └──*──┘ ',
-  ],
-  ai: [
-    ' ╭─────╮ ',
-    ' │ 0 1 │ ',
-    ' │ 1 0 │ ',
-    ' │ 0 1 │ ',
-    ' ╰─────╯ ',
-  ],
+  frontend: [' ┌─────┐ ', ' │ </> │ ', ' │ ┌─┐ │ ', ' │ └─┘ │ ', ' └─────┘ '],
+  backend: [' ┌─[==]─┐', ' │ ░░░░ │', ' │ ▓▓▓▓ │', ' │ ░░░░ │', ' └──────┘'],
+  devops: [' *─────* ', ' │ >>> │ ', ' │ === │ ', ' │ <<< │ ', ' *─────* '],
+  testing: [' ╭──v──╮ ', ' │ x v │ ', ' │ v x │ ', ' │ x v │ ', ' ╰──x──╯ '],
+  architecture: [' ╔═╦═╦═╗ ', ' ║ ║ ║ ║ ', ' ╠═╬═╬═╣ ', ' ║ ║ ║ ║ ', ' ╚═╩═╩═╝ '],
+  security: [' ┌──*──┐ ', ' │ /|\\ │ ', ' │/ | \\│ ', ' │\\ | /│ ', ' └──*──┘ '],
+  ai: [' ╭─────╮ ', ' │ 0 1 │ ', ' │ 1 0 │ ', ' │ 0 1 │ ', ' ╰─────╯ '],
 };
 
 // ── Renderers ──
@@ -88,7 +46,9 @@ export function renderEncounter(monster, error, location, confidence) {
 
   // Type and HP bar
   const hpBar = renderHPBar(monster.hp, monster.hp, 10);
-  lines.push(row(`  Type: ${color(monster.type.toUpperCase(), typeColor)}    HP: ${hpBar} ${monster.hp}`));
+  lines.push(
+    row(`  Type: ${color(monster.type.toUpperCase(), typeColor)}    HP: ${hpBar} ${monster.hp}`)
+  );
   lines.push(empty());
 
   // Error message (word-wrapped)
@@ -134,7 +94,9 @@ export function renderBugDex(dexData, allMonsters) {
   lines.push(bold(color('  ║           B U G D E X               ║', 'cyan')));
   lines.push(bold(color('  ╚══════════════════════════════════════╝', 'cyan')));
   lines.push('');
-  lines.push(`  Discovered: ${bold(`${discovered}/${total}`)} (${Math.round(discovered / total * 100)}%)`);
+  lines.push(
+    `  Discovered: ${bold(`${discovered}/${total}`)} (${Math.round((discovered / total) * 100)}%)`
+  );
   lines.push('');
 
   for (const monster of allMonsters) {
@@ -145,9 +107,13 @@ export function renderBugDex(dexData, allMonsters) {
       const name = monster.name.padEnd(20);
       const type = color(monster.type.padEnd(10), typeColor);
       const encounters = dim(`x${count}`);
-      lines.push(`  ${color('#' + String(monster.id).padStart(2, '0'), 'gray')} ${bold(name)} ${type} ${encounters}`);
+      lines.push(
+        `  ${color('#' + String(monster.id).padStart(2, '0'), 'gray')} ${bold(name)} ${type} ${encounters}`
+      );
     } else {
-      lines.push(`  ${color('#' + String(monster.id).padStart(2, '0'), 'gray')} ${dim('???'.padEnd(20))} ${dim('???'.padEnd(10))}`);
+      lines.push(
+        `  ${color('#' + String(monster.id).padStart(2, '0'), 'gray')} ${dim('???'.padEnd(20))} ${dim('???'.padEnd(10))}`
+      );
     }
   }
 
@@ -211,7 +177,9 @@ function wordWrap(text, maxWidth) {
  */
 export function renderParty(party) {
   if (!party || party.length === 0) {
-    process.stdout.write('\n  No BugMon in your party yet.\n  Run "bugmon watch --cache -- <command>" to start caching!\n\n');
+    process.stdout.write(
+      '\n  No BugMon in your party yet.\n  Run "bugmon watch --cache -- <command>" to start caching!\n\n'
+    );
     return;
   }
 
@@ -245,7 +213,9 @@ export function renderEncounterPrompt(monster) {
   lines.push('');
   lines.push(color('  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', typeColor));
   lines.push(`  ${bold(`A wild ${color(monster.name, typeColor)} appeared!`)}`);
-  lines.push(`  Type: ${color(monster.type.toUpperCase(), typeColor)}  HP: ${monster.hp}  ATK: ${monster.attack}  SPD: ${monster.speed}`);
+  lines.push(
+    `  Type: ${color(monster.type.toUpperCase(), typeColor)}  HP: ${monster.hp}  ATK: ${monster.attack}  SPD: ${monster.speed}`
+  );
   lines.push(color('  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', typeColor));
   lines.push('');
   process.stderr.write(lines.join('\n') + '\n');
@@ -279,7 +249,9 @@ export function renderBossEncounter(boss) {
   // Type and HP bar
   const typeColor = TYPE_COLORS[boss.type] || 'white';
   const hpBar = renderHPBar(boss.hp, boss.hp, 10);
-  lines.push(row(`  Type: ${color(boss.type.toUpperCase(), typeColor)}    HP: ${hpBar} ${boss.hp}`));
+  lines.push(
+    row(`  Type: ${color(boss.type.toUpperCase(), typeColor)}    HP: ${hpBar} ${boss.hp}`)
+  );
   lines.push(empty());
 
   // Description
@@ -385,5 +357,5 @@ function formatDurationLocal(ms) {
 
 function getXPForLevel(level) {
   // 0, 100, 300, 600, 1000, 1500, 2100, ...
-  return level <= 1 ? 0 : (level * (level - 1)) / 2 * 100;
+  return level <= 1 ? 0 : ((level * (level - 1)) / 2) * 100;
 }

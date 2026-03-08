@@ -110,6 +110,11 @@ async function main() {
   await import('./rta-engine.test.js');
   await import('./runtime-monitor.test.js');
 
+  // Replay system tests
+  await import('./session-store.test.js');
+  await import('./recorder.test.js');
+  await import('./replay.test.js');
+
   // Source registry and adapters
   await import('./source-registry.test.js');
   await import('./sources.test.js');

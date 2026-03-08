@@ -36,20 +36,20 @@ const TYPE_SEVERITY = {
   'null-reference': SEVERITY.MEDIUM,
   'type-mismatch': SEVERITY.LOW,
   'type-error': SEVERITY.LOW,
-  'syntax': SEVERITY.MEDIUM,
+  syntax: SEVERITY.MEDIUM,
   'undefined-reference': SEVERITY.LOW,
   'stack-overflow': SEVERITY.HIGH,
   'range-error': SEVERITY.MEDIUM,
-  'network': SEVERITY.MEDIUM,
+  network: SEVERITY.MEDIUM,
   'file-not-found': SEVERITY.LOW,
-  'permission': SEVERITY.MEDIUM,
-  'import': SEVERITY.LOW,
+  permission: SEVERITY.MEDIUM,
+  import: SEVERITY.LOW,
   'unhandled-promise': SEVERITY.MEDIUM,
   'broken-pipe': SEVERITY.HIGH,
   'memory-leak': SEVERITY.HIGH,
-  'regex': SEVERITY.LOW,
-  'assertion': SEVERITY.MEDIUM,
-  'deprecated': SEVERITY.MINOR,
+  regex: SEVERITY.LOW,
+  assertion: SEVERITY.MEDIUM,
+  deprecated: SEVERITY.MINOR,
   'merge-conflict': SEVERITY.MEDIUM,
   'security-finding': SEVERITY.HIGH,
   'ci-failure': SEVERITY.MEDIUM,
@@ -57,8 +57,8 @@ const TYPE_SEVERITY = {
   'lint-warning': SEVERITY.MINOR,
   'test-failure': SEVERITY.MEDIUM,
   'key-error': SEVERITY.LOW,
-  'concurrency': SEVERITY.HIGH,
-  'generic': SEVERITY.LOW,
+  concurrency: SEVERITY.HIGH,
+  generic: SEVERITY.LOW,
 };
 
 // Session-scoped frequency counter
@@ -110,20 +110,20 @@ export const ERROR_TO_MONSTER_TYPE = {
   'null-reference': 'backend',
   'type-mismatch': 'backend',
   'type-error': 'backend',
-  'syntax': 'frontend',
+  syntax: 'frontend',
   'undefined-reference': 'backend',
   'stack-overflow': 'backend',
   'range-error': 'backend',
-  'network': 'backend',
+  network: 'backend',
   'file-not-found': 'devops',
-  'permission': 'security',
-  'import': 'devops',
+  permission: 'security',
+  import: 'devops',
   'unhandled-promise': 'testing',
   'broken-pipe': 'backend',
   'memory-leak': 'backend',
-  'regex': 'testing',
-  'assertion': 'testing',
-  'deprecated': 'architecture',
+  regex: 'testing',
+  assertion: 'testing',
+  deprecated: 'architecture',
   'merge-conflict': 'devops',
   'security-finding': 'security',
   'ci-failure': 'devops',
@@ -131,8 +131,8 @@ export const ERROR_TO_MONSTER_TYPE = {
   'lint-warning': 'testing',
   'test-failure': 'testing',
   'key-error': 'backend',
-  'concurrency': 'backend',
-  'generic': 'testing',
+  concurrency: 'backend',
+  generic: 'testing',
 };
 
 /**
@@ -169,7 +169,7 @@ export function bugEventToMonster(bugEvent, monstersData) {
   if (!bestMatch) {
     const monsterType = ERROR_TO_MONSTER_TYPE[bugEvent.type];
     if (monsterType) {
-      const candidates = monstersData.filter(m => m.type === monsterType);
+      const candidates = monstersData.filter((m) => m.type === monsterType);
       if (candidates.length > 0) {
         bestMatch = candidates[Math.floor(Math.random() * candidates.length)];
         bestScore = 5;
@@ -179,7 +179,7 @@ export function bugEventToMonster(bugEvent, monstersData) {
 
   // Ultimate fallback
   if (!bestMatch) {
-    bestMatch = monstersData.find(m => m.name === 'FlakyTest') || monstersData[0];
+    bestMatch = monstersData.find((m) => m.name === 'FlakyTest') || monstersData[0];
     bestScore = 1;
   }
 

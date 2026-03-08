@@ -9,7 +9,7 @@ const player = {
   dir: 'down',
   party: [],
   moving: false,
-  moveTimer: 0
+  moveTimer: 0,
 };
 
 const MOVE_COOLDOWN = 150; // ms between moves
@@ -25,10 +25,19 @@ export function updatePlayer(dt) {
   let nx = player.x;
   let ny = player.y;
 
-  if (wasPressed('ArrowUp')) { ny--; player.dir = 'up'; }
-  else if (wasPressed('ArrowDown')) { ny++; player.dir = 'down'; }
-  else if (wasPressed('ArrowLeft')) { nx--; player.dir = 'left'; }
-  else if (wasPressed('ArrowRight')) { nx++; player.dir = 'right'; }
+  if (wasPressed('ArrowUp')) {
+    ny--;
+    player.dir = 'up';
+  } else if (wasPressed('ArrowDown')) {
+    ny++;
+    player.dir = 'down';
+  } else if (wasPressed('ArrowLeft')) {
+    nx--;
+    player.dir = 'left';
+  } else if (wasPressed('ArrowRight')) {
+    nx++;
+    player.dir = 'right';
+  }
 
   if ((nx !== player.x || ny !== player.y) && isWalkable(nx, ny)) {
     player.x = nx;

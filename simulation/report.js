@@ -26,7 +26,17 @@ export function generateReport(simResult) {
   lines.push('  OVERALL WIN RATES');
   lines.push('  -----------------');
   lines.push('');
-  lines.push('  ' + pad('Name', 20) + pad('Type', 10) + pad('Win%', 8) + pad('W', 6) + pad('L', 6) + pad('Avg Dmg', 10) + pad('Avg Turns', 10) + 'Status');
+  lines.push(
+    '  ' +
+      pad('Name', 20) +
+      pad('Type', 10) +
+      pad('Win%', 8) +
+      pad('W', 6) +
+      pad('L', 6) +
+      pad('Avg Dmg', 10) +
+      pad('Avg Turns', 10) +
+      'Status'
+  );
   lines.push('  ' + '-'.repeat(78));
 
   for (const s of entries) {
@@ -38,18 +48,30 @@ export function generateReport(simResult) {
     else if (parseFloat(winRate) <= UNDERPOWERED_THRESHOLD) status = '▼ underpowered';
     else status = '✓ balanced';
 
-    lines.push('  ' + pad(s.name, 20) + pad(s.type, 10) + pad(winRate + '%', 8) + pad(String(s.wins), 6) + pad(String(s.losses), 6) + pad(avgDmg, 10) + pad(avgTurns, 10) + status);
+    lines.push(
+      '  ' +
+        pad(s.name, 20) +
+        pad(s.type, 10) +
+        pad(winRate + '%', 8) +
+        pad(String(s.wins), 6) +
+        pad(String(s.losses), 6) +
+        pad(avgDmg, 10) +
+        pad(avgTurns, 10) +
+        status
+    );
   }
 
   lines.push('');
 
   // Balance health score
-  const balanced = entries.filter(s => {
+  const balanced = entries.filter((s) => {
     const wr = (s.wins / s.totalBattles) * 100;
     return wr > UNDERPOWERED_THRESHOLD && wr < OVERPOWERED_THRESHOLD;
   }).length;
   const healthPct = Math.round((balanced / entries.length) * 100);
-  lines.push(`  Balance Health: ${healthPct}% (${balanced}/${entries.length} BugMon in balanced range)`);
+  lines.push(
+    `  Balance Health: ${healthPct}% (${balanced}/${entries.length} BugMon in balanced range)`
+  );
   lines.push('');
 
   // Type effectiveness analysis
@@ -76,7 +98,12 @@ export function generateReport(simResult) {
       const total = m.wins + m.losses + m.draws;
       if (total > 0 && m.wins > m.losses) {
         const dominance = ((m.wins / total) * 100).toFixed(0);
-        matchups.push({ winner: s.name, loser: opp, dominance: parseFloat(dominance), record: `${m.wins}-${m.losses}` });
+        matchups.push({
+          winner: s.name,
+          loser: opp,
+          dominance: parseFloat(dominance),
+          record: `${m.wins}-${m.losses}`,
+        });
       }
     }
   }
@@ -93,16 +120,24 @@ export function generateReport(simResult) {
   const sorted = [...entries];
 
   sorted.sort((a, b) => b.attack - a.attack);
-  lines.push(`  Highest ATK:   ${sorted[0].name} (${sorted[0].attack}) — ${((sorted[0].wins / sorted[0].totalBattles) * 100).toFixed(1)}% win rate`);
+  lines.push(
+    `  Highest ATK:   ${sorted[0].name} (${sorted[0].attack}) — ${((sorted[0].wins / sorted[0].totalBattles) * 100).toFixed(1)}% win rate`
+  );
 
   sorted.sort((a, b) => b.defense - a.defense);
-  lines.push(`  Highest DEF:   ${sorted[0].name} (${sorted[0].defense}) — ${((sorted[0].wins / sorted[0].totalBattles) * 100).toFixed(1)}% win rate`);
+  lines.push(
+    `  Highest DEF:   ${sorted[0].name} (${sorted[0].defense}) — ${((sorted[0].wins / sorted[0].totalBattles) * 100).toFixed(1)}% win rate`
+  );
 
   sorted.sort((a, b) => b.speed - a.speed);
-  lines.push(`  Highest SPD:   ${sorted[0].name} (${sorted[0].speed}) — ${((sorted[0].wins / sorted[0].totalBattles) * 100).toFixed(1)}% win rate`);
+  lines.push(
+    `  Highest SPD:   ${sorted[0].name} (${sorted[0].speed}) — ${((sorted[0].wins / sorted[0].totalBattles) * 100).toFixed(1)}% win rate`
+  );
 
   sorted.sort((a, b) => b.hp - a.hp);
-  lines.push(`  Highest HP:    ${sorted[0].name} (${sorted[0].hp}) — ${((sorted[0].wins / sorted[0].totalBattles) * 100).toFixed(1)}% win rate`);
+  lines.push(
+    `  Highest HP:    ${sorted[0].name} (${sorted[0].hp}) — ${((sorted[0].wins / sorted[0].totalBattles) * 100).toFixed(1)}% win rate`
+  );
   lines.push('');
 
   lines.push('==========================================================');
@@ -128,12 +163,29 @@ export function generateComparisonReport(comparisonResult) {
   lines.push('  HEAD-TO-HEAD RESULTS');
   lines.push('  --------------------');
   lines.push('');
-  lines.push('  ' + pad('Strategy A', 18) + pad('Strategy B', 18) + pad('A Wins', 10) + pad('B Wins', 10) + pad('Draws', 8) + 'A Win%');
+  lines.push(
+    '  ' +
+      pad('Strategy A', 18) +
+      pad('Strategy B', 18) +
+      pad('A Wins', 10) +
+      pad('B Wins', 10) +
+      pad('Draws', 8) +
+      'A Win%'
+  );
   lines.push('  ' + '-'.repeat(72));
 
   for (const r of results) {
     const aRate = ((r.winsA / r.totalBattles) * 100).toFixed(1);
-    lines.push('  ' + pad(r.strategyA, 18) + pad(r.strategyB, 18) + pad(String(r.winsA), 10) + pad(String(r.winsB), 10) + pad(String(r.draws), 8) + aRate + '%');
+    lines.push(
+      '  ' +
+        pad(r.strategyA, 18) +
+        pad(r.strategyB, 18) +
+        pad(String(r.winsA), 10) +
+        pad(String(r.winsB), 10) +
+        pad(String(r.draws), 8) +
+        aRate +
+        '%'
+    );
   }
   lines.push('');
 
@@ -162,12 +214,22 @@ export function generateComparisonReport(comparisonResult) {
     .map(([name, t]) => ({ name, ...t, rate: t.battles > 0 ? t.wins / t.battles : 0 }))
     .sort((a, b) => b.rate - a.rate);
 
-  lines.push('  ' + pad('Rank', 6) + pad('Strategy', 18) + pad('Win%', 8) + pad('W', 8) + pad('L', 8) + 'D');
+  lines.push(
+    '  ' + pad('Rank', 6) + pad('Strategy', 18) + pad('Win%', 8) + pad('W', 8) + pad('L', 8) + 'D'
+  );
   lines.push('  ' + '-'.repeat(54));
 
   ranked.forEach((r, i) => {
     const rate = (r.rate * 100).toFixed(1);
-    lines.push('  ' + pad(String(i + 1), 6) + pad(r.name, 18) + pad(rate + '%', 8) + pad(String(r.wins), 8) + pad(String(r.losses), 8) + String(r.draws));
+    lines.push(
+      '  ' +
+        pad(String(i + 1), 6) +
+        pad(r.name, 18) +
+        pad(rate + '%', 8) +
+        pad(String(r.wins), 8) +
+        pad(String(r.losses), 8) +
+        String(r.draws)
+    );
   });
 
   lines.push('');

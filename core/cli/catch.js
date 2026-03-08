@@ -37,7 +37,7 @@ export async function interactiveCache(wildMonster, errorInfo) {
   const enemy = { ...wildMonster, currentHP: wildMonster.hp };
 
   const rl = createInterface({ input: process.stdin, output: process.stderr });
-  const ask = (prompt) => new Promise(resolve => rl.question(prompt, resolve));
+  const ask = (prompt) => new Promise((resolve) => rl.question(prompt, resolve));
 
   const hpBar = (current, max) => {
     const ratio = max > 0 ? current / max : 0;
@@ -49,11 +49,9 @@ export async function interactiveCache(wildMonster, errorInfo) {
   };
 
   const playerMoves = playerMon.moves
-    .map(id => movesData.find(m => m.id === id))
+    .map((id) => movesData.find((m) => m.id === id))
     .filter(Boolean);
-  const enemyMoves = enemy.moves
-    .map(id => movesData.find(m => m.id === id))
-    .filter(Boolean);
+  const enemyMoves = enemy.moves.map((id) => movesData.find((m) => m.id === id)).filter(Boolean);
 
   const effectiveness = typeData.effectiveness;
 
@@ -61,26 +59,39 @@ export async function interactiveCache(wildMonster, errorInfo) {
 
   process.stderr.write('\n');
   process.stderr.write(c('  ╔══════════════════════════════════════════════╗\n', 'yellow'));
-  process.stderr.write(c('  ║', 'yellow') + b(`  BATTLE! ${playerMon.name} vs Wild ${enemy.name}`) + c('         ║\n'.slice(0, 1), 'yellow') + '\n');
+  process.stderr.write(
+    c('  ║', 'yellow') +
+      b(`  BATTLE! ${playerMon.name} vs Wild ${enemy.name}`) +
+      c('         ║\n'.slice(0, 1), 'yellow') +
+      '\n'
+  );
   process.stderr.write(c('  ╚══════════════════════════════════════════════╝\n', 'yellow'));
 
   if (errorInfo?.message) {
     process.stderr.write(`  ${DIM}Bug: ${errorInfo.message.slice(0, 60)}${RESET}\n`);
     if (errorInfo.file) {
-      process.stderr.write(`  ${c('>>', 'cyan')} ${c(errorInfo.file + (errorInfo.line ? ':' + errorInfo.line : ''), 'cyan')}\n`);
+      process.stderr.write(
+        `  ${c('>>', 'cyan')} ${c(errorInfo.file + (errorInfo.line ? ':' + errorInfo.line : ''), 'cyan')}\n`
+      );
     }
   }
 
   // Battle loop
   while (true) {
     process.stderr.write('\n');
-    process.stderr.write(`  ${b(enemy.name)} ${c(`[${enemy.type}]`, 'gray')}  ${hpBar(enemy.currentHP, enemy.hp)}\n`);
-    process.stderr.write(`  ${b(playerMon.name)} ${c(`[${playerMon.type}]`, 'gray')}  ${hpBar(playerMon.currentHP, playerMon.hp)}\n`);
+    process.stderr.write(
+      `  ${b(enemy.name)} ${c(`[${enemy.type}]`, 'gray')}  ${hpBar(enemy.currentHP, enemy.hp)}\n`
+    );
+    process.stderr.write(
+      `  ${b(playerMon.name)} ${c(`[${playerMon.type}]`, 'gray')}  ${hpBar(playerMon.currentHP, playerMon.hp)}\n`
+    );
     process.stderr.write('\n');
 
     // Show action menu
     process.stderr.write(`  ${b('What will you do?')}\n`);
-    process.stderr.write(`  ${c('[1]', 'yellow')} Fight   ${c('[2]', 'yellow')} Cache   ${c('[3]', 'yellow')} Run\n`);
+    process.stderr.write(
+      `  ${c('[1]', 'yellow')} Fight   ${c('[2]', 'yellow')} Cache   ${c('[3]', 'yellow')} Run\n`
+    );
     process.stderr.write('\n');
 
     const action = await ask('  > ');
@@ -106,7 +117,9 @@ export async function interactiveCache(wildMonster, errorInfo) {
           await sleep(400);
         }
         process.stderr.write('\n');
-        process.stderr.write(`\n  ${c('★', 'yellow')} ${b(`Cached! ${enemy.name} stored successfully!`)} ${c('★', 'yellow')}\n`);
+        process.stderr.write(
+          `\n  ${c('★', 'yellow')} ${b(`Cached! ${enemy.name} stored successfully!`)} ${c('★', 'yellow')}\n`
+        );
 
         // Add to party
         addToParty(enemy);
@@ -129,7 +142,9 @@ export async function interactiveCache(wildMonster, errorInfo) {
         let effLabel = '';
         if (eff > 1) effLabel = c(' (super effective)', 'green');
         else if (eff < 1) effLabel = c(' (not effective)', 'red');
-        process.stderr.write(`  ${c(`[${i + 1}]`, 'yellow')} ${move.name} ${c(`[${move.type}]`, 'gray')} PWR:${move.power}${effLabel}\n`);
+        process.stderr.write(
+          `  ${c(`[${i + 1}]`, 'yellow')} ${move.name} ${c(`[${move.type}]`, 'gray')} PWR:${move.power}${effLabel}\n`
+        );
       });
       process.stderr.write(`  ${c('[0]', 'yellow')} Back\n`);
       process.stderr.write('\n');
@@ -147,10 +162,14 @@ export async function interactiveCache(wildMonster, errorInfo) {
       // Determine order
       const playerFirst = playerMon.speed >= enemy.speed;
       const turnOrder = playerFirst
-        ? [{ side: 'player', attacker: playerMon, move: playerMove, defender: enemy },
-           { side: 'enemy', attacker: enemy, move: enemyMove, defender: playerMon }]
-        : [{ side: 'enemy', attacker: enemy, move: enemyMove, defender: playerMon },
-           { side: 'player', attacker: playerMon, move: playerMove, defender: enemy }];
+        ? [
+            { side: 'player', attacker: playerMon, move: playerMove, defender: enemy },
+            { side: 'enemy', attacker: enemy, move: enemyMove, defender: playerMon },
+          ]
+        : [
+            { side: 'enemy', attacker: enemy, move: enemyMove, defender: playerMon },
+            { side: 'player', attacker: playerMon, move: playerMove, defender: enemy },
+          ];
 
       process.stderr.write('\n');
 
@@ -211,7 +230,10 @@ function calcDamage(attacker, move, defender, typeChart) {
   const mult = typeChart?.[move.type]?.[defender.type] ?? 1;
   const crit = Math.random() < 1 / 16 ? 1.5 : 1;
 
-  const damage = Math.max(1, Math.floor((power + attack - Math.floor(defense / 2) + randomBonus) * mult * crit));
+  const damage = Math.max(
+    1,
+    Math.floor((power + attack - Math.floor(defense / 2) + randomBonus) * mult * crit)
+  );
 
   let effText = '';
   if (mult > 1) effText = ' \x1b[32m(super effective!)\x1b[0m';
@@ -222,7 +244,7 @@ function calcDamage(attacker, move, defender, typeChart) {
 }
 
 function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
@@ -238,7 +260,7 @@ function getParty() {
   const monsters = JSON.parse(readFileSync(join(dataDir, 'monsters.json'), 'utf8'));
 
   // Pick a random common starter
-  const starters = monsters.filter(m => m.rarity === 'common');
+  const starters = monsters.filter((m) => m.rarity === 'common');
   const starter = starters[Math.floor(Math.random() * starters.length)];
   const party = [{ ...starter, currentHP: starter.hp }];
 

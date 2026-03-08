@@ -12,6 +12,7 @@ import { renderEncounter, renderEncounterPrompt, renderBossEncounter, renderComb
 import { renderContributionPrompt, LOW_CONFIDENCE_THRESHOLD } from './contribute.js';
 import { interactiveCache } from './catch.js';
 import { checkBossEncounter, BOSS_TRIGGERS } from '../../ecosystem/bosses.js';
+import { createRecorder } from './recorder.js';
 import { createRun, addEncounter, addBossDefeat, endRun } from '../../domain/run-session.js';
 
 /**
@@ -33,6 +34,10 @@ export function watch(command, args, options = {}) {
       shell: process.platform === 'win32',
     });
 
+    // Start recording session (flight recorder)
+    const recorder = createRecorder(command, args);
+    process.stderr.write(`  \x1b[2mRecording session: ${recorder.sessionId}\x1b[0m\n`);
+
     let stderrBuffer = '';
     const errorQueue = [];
     let processing = false;
@@ -45,11 +50,13 @@ export function watch(command, args, options = {}) {
 
     // Start auto-walk if requested
     if (options.walk) {
-      import('./auto-walk.js').then(({ startAutoWalk }) => {
-        autoWalker = startAutoWalk({
-          onEncounter: () => {}, // encounters come from real errors
-        });
-      }).catch(() => {}); // best effort
+      import('./auto-walk.js')
+        .then(({ startAutoWalk }) => {
+          autoWalker = startAutoWalk({
+            onEncounter: () => {}, // encounters come from real errors
+          });
+        })
+        .catch(() => {}); // best effort
     }
 
     child.stderr.on('data', (chunk) => {
@@ -66,14 +73,14 @@ export function watch(command, args, options = {}) {
           // Queue new errors we haven't processed yet
           for (const err of errors) {
             const key = `${err.type}:${err.message}`;
-            if (!errorQueue.find(e => `${e.type}:${e.message}` === key)) {
+            if (!errorQueue.find((e) => `${e.type}:${e.message}` === key)) {
               errorQueue.push(err);
             }
           }
           // Process queue if not already doing so
           if (!processing) {
             processing = true;
-            processInteractiveQueue(errorQueue, options, { errorCounts, triggeredBosses, autoWalker, currentRun }).then((updatedRun) => {
+            processInteractiveQueue(errorQueue, options, { errorCounts, triggeredBosses, autoWalker, recorder, currentRun }).then((updatedRun) => {
               if (updatedRun) currentRun = updatedRun;
               processing = false;
             });
@@ -95,15 +102,15 @@ export function watch(command, args, options = {}) {
           const errors = parseErrors(stderrBuffer);
           for (const err of errors) {
             const key = `${err.type}:${err.message}`;
-            if (!errorQueue.find(e => `${e.type}:${e.message}` === key)) {
+            if (!errorQueue.find((e) => `${e.type}:${e.message}` === key)) {
               errorQueue.push(err);
             }
           }
           if (errorQueue.length > 0 && !processing) {
-            await processInteractiveQueue(errorQueue, options, { errorCounts, triggeredBosses, autoWalker, currentRun });
+            await processInteractiveQueue(errorQueue, options, { errorCounts, triggeredBosses, autoWalker, recorder, currentRun });
           }
         } else {
-          currentRun = processErrors(stderrBuffer, { errorCounts, triggeredBosses, currentRun });
+          currentRun = processErrors(stderrBuffer, { errorCounts, triggeredBosses, recorder, currentRun });
         }
       }
 
@@ -115,6 +122,12 @@ export function watch(command, args, options = {}) {
 
       // Stop auto-walk on exit
       if (autoWalker) autoWalker.stop();
+
+      // End recording session
+      recorder.end(code || 0);
+      process.stderr.write(
+        `  \x1b[2mSession recorded: bugmon replay ${recorder.sessionId}\x1b[0m\n`
+      );
 
       resolve(code || 0);
     });
@@ -138,6 +151,12 @@ async function processInteractiveQueue(queue, options, state) {
     // Track error type counts for boss triggers
     state.errorCounts.set(error.type, (state.errorCounts.get(error.type) || 0) + 1);
 
+    // Record error in flight recorder
+    if (state.recorder) {
+      state.recorder.recordError(error, location);
+      state.recorder.recordEncounter(monster, error);
+    }
+
     // Track encounter in the run session (breaks combo)
     if (state.currentRun) {
       const encounterResult = addEncounter(state.currentRun, {
@@ -158,13 +177,16 @@ async function processInteractiveQueue(queue, options, state) {
       monster,
       error.message,
       location?.file || null,
-      location?.line || null,
+      location?.line || null
     );
 
     // Check for boss trigger before showing normal encounter
     const bossCheck = checkBossEncounter(state.errorCounts, error.message);
     if (bossCheck && !state.triggeredBosses.has(bossCheck.boss.id)) {
       state.triggeredBosses.add(bossCheck.boss.id);
+
+      // Record boss encounter in flight recorder
+      if (state.recorder) state.recorder.recordBoss(bossCheck.boss);
 
       // Pause auto-walk during boss battle
       if (state.autoWalker) state.autoWalker.pause();
@@ -214,6 +236,17 @@ async function processInteractiveQueue(queue, options, state) {
 
     if (state.autoWalker) state.autoWalker.resume();
 
+    // Record battle result in flight recorder
+    if (state.recorder) {
+      if (result.cached) {
+        state.recorder.recordBattle('victory', { cached: true });
+      } else if (result.fled) {
+        state.recorder.recordBattle('fled');
+      } else if (result.playerFainted) {
+        state.recorder.recordBattle('defeat');
+      }
+    }
+
     if (result.cached) {
       process.stderr.write(`  \x1b[33m+50 XP (cache bonus)\x1b[0m\n\n`);
     }
@@ -225,7 +258,9 @@ async function processInteractiveQueue(queue, options, state) {
 
     // Offer to open in browser
     if (options.openBrowser && location?.file) {
-      process.stderr.write(`  \x1b[2mOpen in browser: file://${location.file}${location.line ? '#L' + location.line : ''}\x1b[0m\n\n`);
+      process.stderr.write(
+        `  \x1b[2mOpen in browser: file://${location.file}${location.line ? '#L' + location.line : ''}\x1b[0m\n\n`
+      );
     }
   }
 
@@ -251,6 +286,12 @@ function processErrors(text, state) {
     // Track error type counts for boss triggers
     state.errorCounts.set(error.type, (state.errorCounts.get(error.type) || 0) + 1);
 
+    // Record error in flight recorder
+    if (state.recorder) {
+      state.recorder.recordError(error, location);
+      state.recorder.recordEncounter(monster, error);
+    }
+
     // Track encounter in the run session
     if (state.currentRun) {
       const encounterResult = addEncounter(state.currentRun, {
@@ -271,13 +312,14 @@ function processErrors(text, state) {
       monster,
       error.message,
       location?.file || null,
-      location?.line || null,
+      location?.line || null
     );
 
     // Check for boss trigger
     const bossCheck = checkBossEncounter(state.errorCounts, error.message);
     if (bossCheck && !state.triggeredBosses.has(bossCheck.boss.id)) {
       state.triggeredBosses.add(bossCheck.boss.id);
+      if (state.recorder) state.recorder.recordBoss(bossCheck.boss);
       renderBossEncounter(bossCheck.boss);
 
       // Reset error counts for this trigger

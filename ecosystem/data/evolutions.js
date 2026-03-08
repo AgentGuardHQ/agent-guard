@@ -8,16 +8,16 @@ export const EVOLUTIONS = {
       stages: [
         {
           monsterId: 2,
-          name: 'CallbackHell'
+          name: 'CallbackHell',
         },
         {
           monsterId: 23,
-          name: 'PromiseChain'
+          name: 'PromiseChain',
         },
         {
           monsterId: 24,
-          name: 'AsyncAwait'
-        }
+          name: 'AsyncAwait',
+        },
       ],
       triggers: [
         {
@@ -25,20 +25,20 @@ export const EVOLUTIONS = {
           to: 23,
           condition: {
             event: 'commits',
-            count: 10
+            count: 10,
           },
-          description: 'Make 10 commits'
+          description: 'Make 10 commits',
         },
         {
           from: 23,
           to: 24,
           condition: {
             event: 'prs_merged',
-            count: 3
+            count: 3,
           },
-          description: 'Merge 3 pull requests'
-        }
-      ]
+          description: 'Merge 3 pull requests',
+        },
+      ],
     },
     {
       id: 'null_chain',
@@ -46,16 +46,16 @@ export const EVOLUTIONS = {
       stages: [
         {
           monsterId: 1,
-          name: 'NullPointer'
+          name: 'NullPointer',
         },
         {
           monsterId: 21,
-          name: 'OptionalChaining'
+          name: 'OptionalChaining',
         },
         {
           monsterId: 22,
-          name: 'TypeSafety'
-        }
+          name: 'TypeSafety',
+        },
       ],
       triggers: [
         {
@@ -63,20 +63,20 @@ export const EVOLUTIONS = {
           to: 21,
           condition: {
             event: 'bugs_fixed',
-            count: 5
+            count: 5,
           },
-          description: 'Fix 5 bugs'
+          description: 'Fix 5 bugs',
         },
         {
           from: 21,
           to: 22,
           condition: {
             event: 'tests_passing',
-            count: 10
+            count: 10,
           },
-          description: 'Pass 10 test runs'
-        }
-      ]
+          description: 'Pass 10 test runs',
+        },
+      ],
     },
     {
       id: 'divsoup_chain',
@@ -84,16 +84,16 @@ export const EVOLUTIONS = {
       stages: [
         {
           monsterId: 5,
-          name: 'DivSoup'
+          name: 'DivSoup',
         },
         {
           monsterId: 25,
-          name: 'Flexbox'
+          name: 'Flexbox',
         },
         {
           monsterId: 26,
-          name: 'CSSGrid'
-        }
+          name: 'CSSGrid',
+        },
       ],
       triggers: [
         {
@@ -101,20 +101,20 @@ export const EVOLUTIONS = {
           to: 25,
           condition: {
             event: 'refactors',
-            count: 5
+            count: 5,
           },
-          description: 'Perform 5 refactors'
+          description: 'Perform 5 refactors',
         },
         {
           from: 25,
           to: 26,
           condition: {
             event: 'code_reviews',
-            count: 5
+            count: 5,
           },
-          description: 'Complete 5 code reviews'
-        }
-      ]
+          description: 'Complete 5 code reviews',
+        },
+      ],
     },
     {
       id: 'merge_chain',
@@ -122,12 +122,12 @@ export const EVOLUTIONS = {
       stages: [
         {
           monsterId: 8,
-          name: 'MergeConflict'
+          name: 'MergeConflict',
         },
         {
           monsterId: 27,
-          name: 'RebaseMaster'
-        }
+          name: 'RebaseMaster',
+        },
       ],
       triggers: [
         {
@@ -135,11 +135,11 @@ export const EVOLUTIONS = {
           to: 27,
           condition: {
             event: 'conflicts_resolved',
-            count: 5
+            count: 5,
           },
-          description: 'Resolve 5 merge conflicts'
-        }
-      ]
+          description: 'Resolve 5 merge conflicts',
+        },
+      ],
     },
     {
       id: 'monolith_chain',
@@ -147,12 +147,12 @@ export const EVOLUTIONS = {
       stages: [
         {
           monsterId: 13,
-          name: 'Monolith'
+          name: 'Monolith',
         },
         {
           monsterId: 28,
-          name: 'Microservice'
-        }
+          name: 'Microservice',
+        },
       ],
       triggers: [
         {
@@ -160,11 +160,11 @@ export const EVOLUTIONS = {
           to: 28,
           condition: {
             event: 'deploys',
-            count: 5
+            count: 5,
           },
-          description: 'Deploy 5 times'
-        }
-      ]
+          description: 'Deploy 5 times',
+        },
+      ],
     },
     {
       id: 'leak_chain',
@@ -172,12 +172,12 @@ export const EVOLUTIONS = {
       stages: [
         {
           monsterId: 4,
-          name: 'MemoryLeak'
+          name: 'MemoryLeak',
         },
         {
           monsterId: 29,
-          name: 'GarbageCollector'
-        }
+          name: 'GarbageCollector',
+        },
       ],
       triggers: [
         {
@@ -185,11 +185,11 @@ export const EVOLUTIONS = {
           to: 29,
           condition: {
             event: 'ci_passes',
-            count: 8
+            count: 8,
           },
-          description: 'Pass 8 CI builds'
-        }
-      ]
+          description: 'Pass 8 CI builds',
+        },
+      ],
     },
     {
       id: 'prompt_chain',
@@ -197,12 +197,12 @@ export const EVOLUTIONS = {
       stages: [
         {
           monsterId: 17,
-          name: 'PromptGoblin'
+          name: 'PromptGoblin',
         },
         {
           monsterId: 30,
-          name: 'PromptEngineer'
-        }
+          name: 'PromptEngineer',
+        },
       ],
       triggers: [
         {
@@ -210,78 +210,78 @@ export const EVOLUTIONS = {
           to: 30,
           condition: {
             event: 'docs_written',
-            count: 5
+            count: 5,
           },
-          description: 'Write 5 docs'
-        }
-      ]
-    }
+          description: 'Write 5 docs',
+        },
+      ],
+    },
   ],
   events: {
     commits: {
       label: 'Commits',
       icon: 'git-commit',
-      description: 'Code committed to repository'
+      description: 'Code committed to repository',
     },
     prs_merged: {
       label: 'PRs Merged',
       icon: 'git-merge',
-      description: 'Pull requests merged'
+      description: 'Pull requests merged',
     },
     bugs_fixed: {
       label: 'Bugs Fixed',
       icon: 'bug',
-      description: 'Bug fixes committed'
+      description: 'Bug fixes committed',
     },
     tests_passing: {
       label: 'Tests Passing',
       icon: 'check',
-      description: 'Test suites passed'
+      description: 'Test suites passed',
     },
     refactors: {
       label: 'Refactors',
       icon: 'wrench',
-      description: 'Code refactored'
+      description: 'Code refactored',
     },
     code_reviews: {
       label: 'Code Reviews',
       icon: 'eye',
-      description: 'Pull requests reviewed'
+      description: 'Pull requests reviewed',
     },
     conflicts_resolved: {
       label: 'Conflicts Resolved',
       icon: 'git-branch',
-      description: 'Merge conflicts resolved'
+      description: 'Merge conflicts resolved',
     },
     ci_passes: {
       label: 'CI Passes',
       icon: 'server',
-      description: 'CI pipeline passed'
+      description: 'CI pipeline passed',
     },
     deploys: {
       label: 'Deploys',
       icon: 'rocket',
-      description: 'Code deployed'
+      description: 'Code deployed',
     },
     docs_written: {
       label: 'Docs Written',
       icon: 'book',
-      description: 'Documentation added'
+      description: 'Documentation added',
     },
     lint_fixes: {
       label: 'Lint Fixes',
       icon: 'check-circle',
-      description: 'Lint issues resolved'
+      description: 'Lint issues resolved',
     },
     type_errors_fixed: {
       label: 'Type Errors Fixed',
       icon: 'shield',
-      description: 'TypeScript errors resolved'
+      description: 'TypeScript errors resolved',
     },
     security_fixes: {
       label: 'Security Fixes',
       icon: 'lock',
-      description: 'Security issues resolved'
-    }
-  }
+      description: 'Security issues resolved',
+    },
+  },
 };

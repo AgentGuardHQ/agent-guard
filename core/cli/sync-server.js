@@ -20,9 +20,14 @@ import { createServer } from 'node:http';
 import { createHash } from 'node:crypto';
 import { loadBugDex, saveBugDex } from '../../ecosystem/storage.js';
 import {
-  SYNC_PORT, PING_INTERVAL,
-  MSG_PULL_CLI_STATE, MSG_BROWSER_STATE, MSG_PONG,
-  MSG_CLI_STATE, MSG_CLI_EVENT, MSG_PING,
+  SYNC_PORT,
+  PING_INTERVAL,
+  MSG_PULL_CLI_STATE,
+  MSG_BROWSER_STATE,
+  MSG_PONG,
+  MSG_CLI_STATE,
+  MSG_CLI_EVENT,
+  MSG_PING,
 } from '../../ecosystem/sync-protocol.js';
 
 const PORT = SYNC_PORT;
@@ -58,7 +63,9 @@ export function startSyncServer() {
     if (req.url === '/api/state' && req.method === 'POST') {
       // HTTP fallback: receive browser state
       let body = '';
-      req.on('data', chunk => { body += chunk; });
+      req.on('data', (chunk) => {
+        body += chunk;
+      });
       req.on('end', () => {
         try {
           const browserState = JSON.parse(body);
@@ -75,12 +82,14 @@ export function startSyncServer() {
 
     if (req.url === '/api/status') {
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({
-        server: 'bugmon-sync',
-        version: 1,
-        clients: clients.size,
-        uptime: process.uptime(),
-      }));
+      res.end(
+        JSON.stringify({
+          server: 'bugmon-sync',
+          version: 1,
+          clients: clients.size,
+          uptime: process.uptime(),
+        })
+      );
       return;
     }
 
@@ -108,16 +117,18 @@ export function startSyncServer() {
 
     socket.write(
       'HTTP/1.1 101 Switching Protocols\r\n' +
-      'Upgrade: websocket\r\n' +
-      'Connection: Upgrade\r\n' +
-      `Sec-WebSocket-Accept: ${accept}\r\n` +
-      '\r\n'
+        'Upgrade: websocket\r\n' +
+        'Connection: Upgrade\r\n' +
+        `Sec-WebSocket-Accept: ${accept}\r\n` +
+        '\r\n'
     );
 
     const client = { socket, alive: true };
     clients.add(client);
 
-    process.stderr.write(`  \x1b[32m✓\x1b[0m Browser connected (${clients.size} client${clients.size > 1 ? 's' : ''})\n`);
+    process.stderr.write(
+      `  \x1b[32m✓\x1b[0m Browser connected (${clients.size} client${clients.size > 1 ? 's' : ''})\n`
+    );
 
     // Send initial CLI state
     sendToClient(client, { type: MSG_CLI_STATE, data: getCLIState() });
@@ -131,7 +142,7 @@ export function startSyncServer() {
           socket.end();
           return;
         }
-        if (frame.opcode === 0xA) {
+        if (frame.opcode === 0xa) {
           // Pong
           client.alive = true;
           continue;
@@ -141,14 +152,18 @@ export function startSyncServer() {
           try {
             const msg = JSON.parse(frame.payload);
             handleClientMessage(client, msg, clients);
-          } catch { /* ignore malformed */ }
+          } catch {
+            /* ignore malformed */
+          }
         }
       }
     });
 
     socket.on('close', () => {
       clients.delete(client);
-      process.stderr.write(`  \x1b[33m⚡\x1b[0m Browser disconnected (${clients.size} client${clients.size > 1 ? 's' : ''})\n`);
+      process.stderr.write(
+        `  \x1b[33m⚡\x1b[0m Browser disconnected (${clients.size} client${clients.size > 1 ? 's' : ''})\n`
+      );
     });
 
     socket.on('error', () => {
@@ -252,7 +267,7 @@ function mergeBrowserState(browserState) {
   // Merge storage
   if (browserState.bugdex?.storage) {
     if (!dex.storage) dex.storage = [];
-    const existingIds = new Set(dex.storage.map(m => `${m.id}`));
+    const existingIds = new Set(dex.storage.map((m) => `${m.id}`));
     for (const mon of browserState.bugdex.storage) {
       if (!existingIds.has(`${mon.id}`)) {
         dex.storage.push(mon);
@@ -264,7 +279,10 @@ function mergeBrowserState(browserState) {
   if (browserState.bugdex?.stats) {
     const bs = browserState.bugdex.stats;
     dex.stats.totalEncounters = Math.max(dex.stats.totalEncounters || 0, bs.totalEncounters || 0);
-    dex.stats.totalCached = Math.max(dex.stats.totalCached || dex.stats.totalCaught || 0, bs.totalCached || 0);
+    dex.stats.totalCached = Math.max(
+      dex.stats.totalCached || dex.stats.totalCaught || 0,
+      bs.totalCached || 0
+    );
     dex.stats.xp = Math.max(dex.stats.xp || 0, bs.xp || 0);
   }
 
@@ -306,9 +324,9 @@ function decodeFrames(buffer) {
 
     const byte0 = buffer[offset];
     const byte1 = buffer[offset + 1];
-    const opcode = byte0 & 0x0F;
+    const opcode = byte0 & 0x0f;
     const masked = (byte1 & 0x80) !== 0;
-    let payloadLen = byte1 & 0x7F;
+    let payloadLen = byte1 & 0x7f;
     offset += 2;
 
     if (payloadLen === 126) {
@@ -353,7 +371,9 @@ function sendToClient(client, msg) {
   try {
     const frame = encodeFrame(JSON.stringify(msg));
     client.socket.write(frame);
-  } catch { /* client may have disconnected */ }
+  } catch {
+    /* client may have disconnected */
+  }
 }
 
 /**

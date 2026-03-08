@@ -18,6 +18,8 @@ export function calcDamageHeadless(attacker, move, defender, typeChart, rng) {
  */
 export function runBattle(monA, monB, movesData, typeChart, strategyA, strategyB, rng) {
   return simulateBattle(monA, monB, movesData, { effectiveness: typeChart }, 100, {
-    strategyA, strategyB, rng
+    strategyA,
+    strategyB,
+    rng,
   });
 }

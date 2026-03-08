@@ -67,7 +67,9 @@ export function recordBrowserCache(monster) {
 
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify(save));
-  } catch { /* storage full */ }
+  } catch {
+    /* storage full */
+  }
 }
 
 function serializeMon(mon) {

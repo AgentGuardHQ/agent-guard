@@ -1,7 +1,9 @@
 // Event Bus - decoupled communication between game systems
 
 class EventBus {
-  constructor() { this.listeners = {}; }
+  constructor() {
+    this.listeners = {};
+  }
 
   on(event, callback) {
     if (!this.listeners[event]) this.listeners[event] = [];

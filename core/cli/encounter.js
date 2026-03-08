@@ -83,11 +83,7 @@ async function showEncounter(monster, errorInfo) {
 
   // Encounter box
   const title = `${BOLD}      BUGMON ENCOUNTER${RESET}`;
-  console.log(box([
-    '',
-    title,
-    '',
-  ], 40));
+  console.log(box(['', title, ''], 40));
 
   console.log();
 
@@ -159,23 +155,27 @@ async function battleSequence(monster, typeColor) {
 
 function showBugDex(monsters) {
   console.log();
-  console.log(box([
-    '',
-    `${BOLD}         B U G D E X${RESET}`,
-    '',
-  ], 44));
+  console.log(box(['', `${BOLD}         B U G D E X${RESET}`, ''], 44));
   console.log();
 
   for (const mon of monsters) {
     const typeColor = TYPE_COLORS[mon.type] || WHITE;
     const rarity = RARITY_STYLE[mon.rarity] || RARITY_STYLE.common;
-    const rarityTag = mon.rarity === 'common' ? '' :
-      mon.rarity === 'uncommon' ? ` ${CYAN}[uncommon]${RESET}` :
-      mon.rarity === 'rare' ? ` ${YELLOW}[★ rare]${RESET}` :
-      ` ${MAGENTA}[⚡ legendary]${RESET}`;
+    const rarityTag =
+      mon.rarity === 'common'
+        ? ''
+        : mon.rarity === 'uncommon'
+          ? ` ${CYAN}[uncommon]${RESET}`
+          : mon.rarity === 'rare'
+            ? ` ${YELLOW}[★ rare]${RESET}`
+            : ` ${MAGENTA}[⚡ legendary]${RESET}`;
 
-    console.log(`  ${BOLD}#${String(mon.id).padStart(2, '0')}${RESET} ${rarity.color}${mon.name}${RESET}${rarityTag}`);
-    console.log(`      ${DIM}Type:${RESET} ${typeColor}${mon.type}${RESET}  ${DIM}HP:${RESET} ${mon.hp}  ${DIM}XP:${RESET} ${mon.xp}  ${DIM}Maps to:${RESET} ${mon.errorType}`);
+    console.log(
+      `  ${BOLD}#${String(mon.id).padStart(2, '0')}${RESET} ${rarity.color}${mon.name}${RESET}${rarityTag}`
+    );
+    console.log(
+      `      ${DIM}Type:${RESET} ${typeColor}${mon.type}${RESET}  ${DIM}HP:${RESET} ${mon.hp}  ${DIM}XP:${RESET} ${mon.xp}  ${DIM}Maps to:${RESET} ${mon.errorType}`
+    );
     console.log();
   }
 }
@@ -184,11 +184,17 @@ function showBugDex(monsters) {
 
 function showHelp() {
   console.log();
-  console.log(`  ${BOLD}BugMon${RESET} ${DIM}— Pokemon-style encounters for runtime errors.${RESET}`);
+  console.log(
+    `  ${BOLD}BugMon${RESET} ${DIM}— Pokemon-style encounters for runtime errors.${RESET}`
+  );
   console.log();
   console.log(`  ${BOLD}Usage:${RESET}`);
-  console.log(`    ${GREEN}bugmon${RESET} ${WHITE}<script.js>${RESET}         Run a file, catch bugs as monsters`);
-  console.log(`    ${GREEN}bugmon${RESET} ${WHITE}--bugdex${RESET}            Show all known BugMon`);
+  console.log(
+    `    ${GREEN}bugmon${RESET} ${WHITE}<script.js>${RESET}         Run a file, catch bugs as monsters`
+  );
+  console.log(
+    `    ${GREEN}bugmon${RESET} ${WHITE}--bugdex${RESET}            Show all known BugMon`
+  );
   console.log(`    ${GREEN}bugmon${RESET} ${WHITE}--help${RESET}              Show this help`);
   console.log();
   console.log(`  ${BOLD}Examples:${RESET}`);

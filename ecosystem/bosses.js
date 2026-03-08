@@ -25,7 +25,8 @@ export const BOSSES = [
     speed: 4,
     moves: ['assertion-storm', 'flaky-regenerate', 'coverage-drain'],
     defeatCondition: 'All tests pass',
-    description: 'A many-headed beast that grows stronger with each failing test. Cut one head and two more appear.',
+    description:
+      'A many-headed beast that grows stronger with each failing test. Cut one head and two more appear.',
     rarity: 'boss',
     ascii: [
       '   ╱O╲ ╱O╲ ╱O╲   ',
@@ -50,7 +51,8 @@ export const BOSSES = [
     speed: 2,
     moves: ['heap-overflow', 'garbage-storm', 'reference-trap'],
     defeatCondition: 'No memory warnings in 5 minutes',
-    description: 'A slow-moving colossus that grows endlessly, consuming all available memory. It never releases what it takes.',
+    description:
+      'A slow-moving colossus that grows endlessly, consuming all available memory. It never releases what it takes.',
     rarity: 'boss',
     ascii: [
       '      ╭─────╮      ',
@@ -75,7 +77,8 @@ export const BOSSES = [
     speed: 3,
     moves: ['version-tangle', 'peer-conflict', 'lockfile-smash'],
     defeatCondition: 'Clean install with no conflicts',
-    description: 'A tentacled horror lurking in node_modules. Each tentacle is a conflicting dependency version.',
+    description:
+      'A tentacled horror lurking in node_modules. Each tentacle is a conflicting dependency version.',
     rarity: 'boss',
     ascii: [
       '    ╭──●──╮        ',
@@ -100,7 +103,8 @@ export const BOSSES = [
     speed: 5,
     moves: ['pipeline-fire', 'deploy-block', 'status-check-deny'],
     defeatCondition: 'Pipeline passes',
-    description: 'An ancient dragon that guards the deployment gate. Its fire is the red X on your PR checks.',
+    description:
+      'An ancient dragon that guards the deployment gate. Its fire is the red X on your PR checks.',
     rarity: 'boss',
     ascii: [
       '        /\\_/\\       ',
@@ -150,7 +154,8 @@ export const BOSSES = [
     speed: 8,
     moves: ['unexpected-token', 'bracket-mismatch', 'semicolon-rain'],
     defeatCondition: 'No SyntaxErrors remain',
-    description: 'A cascading waterfall of syntax errors. Fix one and three more tumble out from the refactor.',
+    description:
+      'A cascading waterfall of syntax errors. Fix one and three more tumble out from the refactor.',
     rarity: 'boss',
     ascii: [
       '   { ( [ < > ] ) }  ',
@@ -218,7 +223,7 @@ export function checkBossEncounter(errorCounts, latestMessage) {
         total += errorCounts.get(et) || 0;
       }
       if (total >= trigger.threshold) {
-        const boss = BOSSES.find(b => b.trigger === triggerId);
+        const boss = BOSSES.find((b) => b.trigger === triggerId);
         if (boss) return { boss, trigger: triggerId };
       }
     }
@@ -227,7 +232,7 @@ export function checkBossEncounter(errorCounts, latestMessage) {
     if (trigger.patterns && trigger.window === 'single') {
       for (const pat of trigger.patterns) {
         if (pat.test(latestMessage)) {
-          const boss = BOSSES.find(b => b.trigger === triggerId);
+          const boss = BOSSES.find((b) => b.trigger === triggerId);
           if (boss) return { boss, trigger: triggerId };
         }
       }

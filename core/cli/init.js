@@ -43,7 +43,9 @@ export async function init(options = {}) {
   let skipped = 0;
 
   process.stderr.write('\n');
-  process.stderr.write(`  ${BOLD}BugMon Init${RESET} — Installing git hooks for evolution tracking\n\n`);
+  process.stderr.write(
+    `  ${BOLD}BugMon Init${RESET} — Installing git hooks for evolution tracking\n\n`
+  );
 
   for (const hookName of HOOK_NAMES) {
     const sourcePath = join(sourceDir, hookName);
@@ -56,7 +58,9 @@ export async function init(options = {}) {
     }
 
     if (existsSync(destPath) && !options.force) {
-      process.stderr.write(`  ${YELLOW}⚠${RESET}  ${hookName}: already exists ${DIM}(use --force to overwrite)${RESET}\n`);
+      process.stderr.write(
+        `  ${YELLOW}⚠${RESET}  ${hookName}: already exists ${DIM}(use --force to overwrite)${RESET}\n`
+      );
       skipped++;
       continue;
     }
@@ -71,9 +75,13 @@ export async function init(options = {}) {
   process.stderr.write('\n');
 
   if (installed > 0) {
-    process.stderr.write(`  ${GREEN}${BOLD}Done!${RESET} ${installed} hook${installed > 1 ? 's' : ''} installed.\n`);
+    process.stderr.write(
+      `  ${GREEN}${BOLD}Done!${RESET} ${installed} hook${installed > 1 ? 's' : ''} installed.\n`
+    );
     process.stderr.write(`  ${DIM}Commits and merges will now track evolution progress.${RESET}\n`);
-    process.stderr.write(`  ${DIM}Activity is saved to ${CYAN}.events.json${RESET}${DIM} in your repo root.${RESET}\n`);
+    process.stderr.write(
+      `  ${DIM}Activity is saved to ${CYAN}.events.json${RESET}${DIM} in your repo root.${RESET}\n`
+    );
   } else {
     process.stderr.write(`  ${DIM}No hooks were installed.${RESET}\n`);
   }

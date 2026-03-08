@@ -2,11 +2,12 @@
 const monsterCache = new Map();
 
 function mulberry32(seed) {
-  return function() {
-    seed |= 0; seed = seed + 0x6D2B79F5 | 0;
-    let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
-    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
-    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  return function () {
+    seed |= 0;
+    seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
 }
 
@@ -17,7 +18,16 @@ function hexToRgb(hex) {
 
 function shade(hex, amt) {
   const [r, g, b] = hexToRgb(hex);
-  return '#' + [r + amt, g + amt, b + amt].map(c => Math.max(0, Math.min(255, c | 0)).toString(16).padStart(2, '0')).join('');
+  return (
+    '#' +
+    [r + amt, g + amt, b + amt]
+      .map((c) =>
+        Math.max(0, Math.min(255, c | 0))
+          .toString(16)
+          .padStart(2, '0')
+      )
+      .join('')
+  );
 }
 
 export function generateMonster(monsterId, color, size) {
@@ -32,9 +42,9 @@ export function generateMonster(monsterId, color, size) {
   const px = size / 10;
 
   // Generate symmetric body on 5x10 grid
-  const grid = Array.from({length: 10}, () => new Uint8Array(5));
-  const bodyTop = 1 + (rand() * 2 | 0);
-  const bodyBot = 7 + (rand() * 2 | 0);
+  const grid = Array.from({ length: 10 }, () => new Uint8Array(5));
+  const bodyTop = 1 + ((rand() * 2) | 0);
+  const bodyBot = 7 + ((rand() * 2) | 0);
 
   for (let y = bodyTop; y <= bodyBot; y++) {
     const p = (y - bodyTop) / (bodyBot - bodyTop);
@@ -59,7 +69,8 @@ export function generateMonster(monsterId, color, size) {
   ctx.fillRect(2 * px + px * 0.2, eyeY, ew, ew);
   ctx.fillRect(7 * px + px * 0.2, eyeY, ew, ew);
   ctx.fillStyle = '#111';
-  const ps = ew * 0.5, po = (ew - ps) / 2;
+  const ps = ew * 0.5,
+    po = (ew - ps) / 2;
   ctx.fillRect(2 * px + px * 0.2 + po, eyeY + po, ps, ps);
   ctx.fillRect(7 * px + px * 0.2 + po, eyeY + po, ps, ps);
 
@@ -75,8 +86,10 @@ export function generateEgg(monsterId, color, size) {
   canvas.width = size;
   canvas.height = size;
   const ctx = canvas.getContext('2d');
-  const cx = size / 2, cy = size / 2 + size * 0.05;
-  const rx = size * 0.3, ry = size * 0.38;
+  const cx = size / 2,
+    cy = size / 2 + size * 0.05;
+  const rx = size * 0.3,
+    ry = size * 0.38;
 
   ctx.beginPath();
   ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);

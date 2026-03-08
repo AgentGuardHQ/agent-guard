@@ -40,7 +40,7 @@ export function drawSprite(ctx, name, x, y, width, height) {
 
 // Preload all sprites for a set of monsters + the player
 export async function preloadAll(monsters) {
-  const names = monsters.map(m => m.sprite).filter(Boolean);
+  const names = monsters.map((m) => m.sprite).filter(Boolean);
   names.push('player_down', 'player_up', 'player_left', 'player_right');
   await Promise.all(names.map(preloadSprite));
 }

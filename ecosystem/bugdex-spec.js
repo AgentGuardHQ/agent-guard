@@ -33,13 +33,16 @@
  */
 
 export const VALID_TYPES = [
-  'frontend', 'backend', 'devops', 'testing',
-  'architecture', 'security', 'ai',
+  'frontend',
+  'backend',
+  'devops',
+  'testing',
+  'architecture',
+  'security',
+  'ai',
 ];
 
-export const VALID_RARITIES = [
-  'common', 'uncommon', 'rare', 'legendary', 'evolved',
-];
+export const VALID_RARITIES = ['common', 'uncommon', 'rare', 'legendary', 'evolved'];
 
 const STAT_RANGES = {
   hp: { min: 10, max: 100 },
@@ -119,7 +122,19 @@ export function validateBugDexEntry(entry) {
  */
 export const BUGDEX_SCHEMA = {
   type: 'object',
-  required: ['id', 'name', 'errorType', 'type', 'rarity', 'hp', 'attack', 'defense', 'speed', 'moves', 'description'],
+  required: [
+    'id',
+    'name',
+    'errorType',
+    'type',
+    'rarity',
+    'hp',
+    'attack',
+    'defense',
+    'speed',
+    'moves',
+    'description',
+  ],
   properties: {
     id: { type: ['string', 'number'], description: 'Unique identifier' },
     name: { type: 'string', description: 'Display name' },
@@ -130,13 +145,27 @@ export const BUGDEX_SCHEMA = {
     attack: { type: 'number', minimum: 1, maximum: 20, description: 'Attack stat' },
     defense: { type: 'number', minimum: 1, maximum: 20, description: 'Defense stat' },
     speed: { type: 'number', minimum: 1, maximum: 15, description: 'Speed stat' },
-    moves: { type: 'array', items: { type: 'string' }, minItems: 1, maxItems: 4, description: 'Move IDs' },
+    moves: {
+      type: 'array',
+      items: { type: 'string' },
+      minItems: 1,
+      maxItems: 4,
+      description: 'Move IDs',
+    },
     description: { type: 'string', description: 'What this bug is and when it occurs' },
     sprite: { type: 'string', description: 'Sprite filename (32x32 PNG, no extension)' },
-    color: { type: 'string', pattern: '^#[0-9a-fA-F]{6}$', description: 'Hex color for fallback rendering' },
+    color: {
+      type: 'string',
+      pattern: '^#[0-9a-fA-F]{6}$',
+      description: 'Hex color for fallback rendering',
+    },
     habitat: { type: 'string', description: 'Where this bug commonly occurs' },
     weakness: { type: 'string', description: 'What fixes or prevents this bug' },
     fixTip: { type: 'string', description: 'Practical developer fix advice' },
-    errorPatterns: { type: 'array', items: { type: 'string' }, description: 'Strings to match in error messages' },
+    errorPatterns: {
+      type: 'array',
+      items: { type: 'string' },
+      description: 'Strings to match in error messages',
+    },
   },
 };
