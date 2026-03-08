@@ -1,5 +1,10 @@
-// Boss encounters — triggered by systemic failures
-// Bosses represent large-scale development problems.
+// Boss encounter definitions — data + type definitions
+// Trigger evaluation logic lives in src/domain/bosses.ts
+//
+// Re-exports checkBossEncounter for backward compatibility,
+// binding it to the BOSSES and BOSS_TRIGGERS data defined here.
+
+import { checkBossEncounter as checkBossEncounterPure } from '../domain/bosses.js';
 
 export interface BossDefinition {
   id: string;
@@ -140,31 +145,13 @@ export const BOSS_TRIGGERS: Record<string, BossTrigger> = {
   },
 };
 
+/**
+ * Check if a boss encounter should trigger, using the module-level BOSSES and BOSS_TRIGGERS data.
+ * This is a convenience wrapper around the pure domain function.
+ */
 export function checkBossEncounter(
   errorCounts: Map<string, number>,
   latestMessage: string,
 ): { boss: BossDefinition; trigger: string } | null {
-  for (const [triggerId, trigger] of Object.entries(BOSS_TRIGGERS)) {
-    if (trigger.errorTypes) {
-      let total = 0;
-      for (const et of trigger.errorTypes) {
-        total += errorCounts.get(et) || 0;
-      }
-      if (total >= trigger.threshold) {
-        const boss = BOSSES.find((b) => b.trigger === triggerId);
-        if (boss) return { boss, trigger: triggerId };
-      }
-    }
-
-    if (trigger.patterns && trigger.window === 'single') {
-      for (const pat of trigger.patterns) {
-        if (pat.test(latestMessage)) {
-          const boss = BOSSES.find((b) => b.trigger === triggerId);
-          if (boss) return { boss, trigger: triggerId };
-        }
-      }
-    }
-  }
-
-  return null;
+  return checkBossEncounterPure(BOSSES, BOSS_TRIGGERS, errorCounts, latestMessage);
 }

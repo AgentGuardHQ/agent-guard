@@ -125,6 +125,21 @@ export const MODULE_CONTRACTS: Record<string, ModuleContract> = {
     dependencies: ['domain/events'],
   },
 
+  'domain/bosses': {
+    exports: {
+      checkBossEncounter: {
+        params: ['bosses', 'triggers', 'errorCounts', 'latestMessage'],
+        returns: 'object|null',
+      },
+    },
+    invariants: [
+      'Pure function — no side effects, no mutation',
+      'Returns null when no trigger threshold is met',
+      'Session triggers accumulate error counts; single triggers match latest message',
+    ],
+    dependencies: [],
+  },
+
   'domain/ingestion/pipeline': {
     exports: {
       ingest: { params: ['rawText'], returns: 'array' },

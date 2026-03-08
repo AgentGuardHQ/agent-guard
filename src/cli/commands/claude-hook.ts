@@ -4,7 +4,7 @@
 
 import { parseErrors } from '../../core/error-parser.js';
 import { matchMonster, getAllMonsters } from '../../core/matcher.js';
-import { recordEncounter } from '../../ecosystem/storage.js';
+import { recordEncounter } from '../../protocol/storage.js';
 
 export async function claudeHook(): Promise<void> {
   try {

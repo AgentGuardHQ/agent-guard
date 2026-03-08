@@ -5,7 +5,7 @@ import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { parseErrors } from '../../core/error-parser.js';
 import { matchMonster } from '../../core/matcher.js';
-import { recordEncounter } from '../../ecosystem/storage.js';
+import { recordEncounter } from '../../protocol/storage.js';
 import { renderEncounter } from '../renderer.js';
 
 export async function scan(target: string): Promise<void> {

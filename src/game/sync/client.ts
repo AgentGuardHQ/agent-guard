@@ -13,7 +13,10 @@ import {
   MSG_CLI_STATE,
   MSG_CLI_EVENT,
   MSG_PING,
-} from '../../ecosystem/sync-protocol.js';
+  PROTOCOL_VERSION,
+  nextSeq,
+  resetSeq,
+} from '../../protocol/sync-protocol.js';
 
 declare global {
   interface Window {
@@ -30,6 +33,7 @@ let connected = false;
 let reconnectAttempts = 0;
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 let onSyncCallback: ((data: unknown) => void) | null = null;
+let lastReceivedSeq = 0;
 
 export function initSyncClient(onSync?: (data: unknown) => void): void {
   onSyncCallback = onSync || null;
@@ -53,9 +57,10 @@ export function getSyncStatus(): {
 export function pushToCLI(state: unknown): boolean {
   if (!ws || ws.readyState !== WebSocket.OPEN) return false;
   try {
-    ws.send(JSON.stringify({ type: MSG_BROWSER_STATE, data: state }));
+    ws.send(JSON.stringify({ type: MSG_BROWSER_STATE, data: state, seq: nextSeq(), v: PROTOCOL_VERSION }));
     return true;
-  } catch {
+  } catch (err) {
+    console.warn('[BugMon Sync] Failed to push state:', err);
     return false;
   }
 }
@@ -63,9 +68,10 @@ export function pushToCLI(state: unknown): boolean {
 export function pullFromCLI(): boolean {
   if (!ws || ws.readyState !== WebSocket.OPEN) return false;
   try {
-    ws.send(JSON.stringify({ type: MSG_PULL_CLI_STATE }));
+    ws.send(JSON.stringify({ type: MSG_PULL_CLI_STATE, seq: nextSeq(), v: PROTOCOL_VERSION }));
     return true;
-  } catch {
+  } catch (err) {
+    console.warn('[BugMon Sync] Failed to pull CLI state:', err);
     return false;
   }
 }
@@ -82,16 +88,25 @@ function attemptConnection(): void {
   ws.onopen = () => {
     connected = true;
     reconnectAttempts = 0;
+    lastReceivedSeq = 0;
+    resetSeq();
     console.log('[BugMon Sync] Connected to CLI sync server');
     pullFromCLI();
   };
 
   ws.onmessage = (event: MessageEvent) => {
     try {
-      const msg = JSON.parse(event.data as string) as { type: string; data?: unknown; event?: string };
+      const msg = JSON.parse(event.data as string) as { type: string; seq?: number; data?: unknown; event?: string };
+      // Detect out-of-order delivery
+      if (msg.seq !== undefined) {
+        if (msg.seq <= lastReceivedSeq) {
+          console.warn(`[BugMon Sync] Out-of-order message: got seq ${msg.seq}, expected > ${lastReceivedSeq}`);
+        }
+        lastReceivedSeq = msg.seq;
+      }
       handleMessage(msg);
-    } catch {
-      // Ignore malformed messages
+    } catch (err) {
+      console.warn('[BugMon Sync] Failed to parse message:', err);
     }
   };
 
@@ -104,8 +119,8 @@ function attemptConnection(): void {
     scheduleReconnect();
   };
 
-  ws.onerror = () => {
-    // Silently handle — onclose will fire after this
+  ws.onerror = (err) => {
+    console.warn('[BugMon Sync] WebSocket error:', err);
   };
 }
 

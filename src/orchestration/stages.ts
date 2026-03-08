@@ -1,7 +1,7 @@
 // Pipeline stage definitions and validation
-// No DOM, no Node.js APIs — pure domain logic.
+// No DOM, no Node.js APIs — pure orchestration logic.
 
-import type { StageId, AgentRole, StageStatus, ValidationResult } from '../../core/types.js';
+import type { StageId, AgentRole, StageStatus, ValidationResult } from '../core/types.js';
 import { ROLES, isValidRole } from './roles.js';
 
 interface StageDef {

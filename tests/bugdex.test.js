@@ -1,7 +1,7 @@
 import assert from 'node:assert';
 import { test, suite } from './run.js';
 
-const { identify, getAllMonsters, BUGDEX } = await import('../dist/ecosystem/bugdex.js');
+const { identify, getAllMonsters, BUGDEX } = await import('../dist/meta/bugdex.js');
 
 suite('BugDex identification (ecosystem/bugdex.js)', () => {
   test('BUGDEX is a non-empty array', () => {

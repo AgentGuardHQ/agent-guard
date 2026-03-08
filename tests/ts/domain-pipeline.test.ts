@@ -15,9 +15,9 @@ import {
   validateStageInput,
   validateStageOutput,
   isRoleAuthorizedForStage,
-} from '../../src/domain/pipeline/index.js';
+} from '../../src/orchestration/index.js';
 
-describe('domain/pipeline', () => {
+describe('orchestration/pipeline', () => {
   beforeEach(() => {
     resetRunCounter();
   });

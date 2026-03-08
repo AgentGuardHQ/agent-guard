@@ -3,7 +3,7 @@
 // BugMon CLI — cache bugs by actually hitting bugs
 
 import { watch } from './commands/adapter.js';
-import { loadBugDex, saveBugDex } from '../ecosystem/storage.js';
+import { loadBugDex, saveBugDex } from '../protocol/storage.js';
 import { getAllMonsters } from '../core/matcher.js';
 import { renderBugDex, renderStats, renderParty } from './renderer.js';
 import { formatHelp } from './args.js';

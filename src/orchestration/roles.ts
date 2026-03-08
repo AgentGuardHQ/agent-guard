@@ -1,7 +1,7 @@
 // Agent role definitions for the multi-agent engineering pipeline
-// No DOM, no Node.js APIs — pure data definitions.
+// No DOM, no Node.js APIs — pure orchestration data definitions.
 
-import type { AgentRole } from '../../core/types.js';
+import type { AgentRole } from '../core/types.js';
 
 export const ROLES: Record<string, AgentRole> = {
   ARCHITECT: 'architect',
