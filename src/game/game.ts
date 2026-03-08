@@ -9,28 +9,21 @@ import {
 } from './engine/game-renderer.js';
 import { clearJustPressed, simulatePress, simulateRelease } from './engine/input.js';
 import { getState, setState, STATES } from './engine/state.js';
-import { getMap, setMapData } from './world/map.js';
+import { getMap } from './world/map.js';
 import { getPlayer, updatePlayer } from './world/player.js';
-import { setMonstersData, checkEncounter } from './world/encounters.js';
+import { checkEncounter } from './world/encounters.js';
 import {
-  setMovesData,
-  setTypeData,
   startBattle,
   getBattle,
   updateBattle,
   movesData,
 } from './battle/battle-engine.js';
-import { preloadAll } from './sprites/sprites.js';
-import { initTileTextures } from './sprites/tiles.js';
 import {
   startTransition,
   updateTransition,
   drawTransitionOverlay,
 } from './engine/transition.js';
-import { initTracker } from './evolution/tracker.js';
 import {
-  setEvolutionData,
-  setMonstersDataForEvolution,
   clearPendingEvolution,
   getEvolutionProgress,
 } from './evolution/evolution.js';
@@ -43,18 +36,9 @@ import { saveGame, loadGame, applySave, recordBrowserCache } from './sync/save.j
 import { eventBus, Events } from './engine/events.js';
 import { updateTitle, drawTitle } from './engine/title.js';
 import { unlock, toggleMute } from './audio/sound.js';
+import { loadGameData } from './data-loader.js';
+import type { LoadedGameData } from './data-loader.js';
 import type { GameMon } from './world/player.js';
-
-// @ts-expect-error — JS data modules (no .d.ts), bundled by esbuild
-import { MONSTERS as MONSTERS_DATA } from '../../ecosystem/data/monsters.js';
-// @ts-expect-error — JS data module
-import { MOVES as MOVES_DATA } from '../../ecosystem/data/moves.js';
-// @ts-expect-error — JS data module
-import { TYPES as TYPES_DATA } from '../../ecosystem/data/types.js';
-// @ts-expect-error — JS data module
-import { EVOLUTIONS as EVOLUTIONS_DATA } from '../../ecosystem/data/evolutions.js';
-// @ts-expect-error — JS data module
-import { MAP_DATA } from '../../ecosystem/data/mapData.js';
 
 // Re-export for inline script in index.html
 export { simulatePress, simulateRelease, unlock, toggleMute };
@@ -76,33 +60,12 @@ const AUTO_SAVE_INTERVAL = 30000;
 let MONSTERS: MonsterData[] = [];
 let TYPES: TypesData = {};
 
-export async function init(
-  canvas: HTMLCanvasElement,
-  monstersData: MonsterData[],
-  movesDataIn: Array<{ id: string; name: string; power: number; type: string }>,
-  typesData: TypesData,
-  evolutionsData: unknown,
-  mapData: { width: number; height: number; tiles: number[][] },
-): Promise<void> {
-  MONSTERS = monstersData;
-  TYPES = typesData;
-
+export async function init(canvas: HTMLCanvasElement): Promise<void> {
   initRenderer(canvas);
 
-  setMonstersData(MONSTERS);
-  setMovesData(movesDataIn);
-  setTypeData(TYPES);
-  setEvolutionData(evolutionsData);
-  setMonstersDataForEvolution(MONSTERS);
-  setMapData(mapData);
-
-  initTracker();
-
-  const { importFromFile } = await import('./evolution/tracker.js');
-  await importFromFile();
-
-  await preloadAll(MONSTERS);
-  initTileTextures();
+  const data: LoadedGameData = await loadGameData();
+  MONSTERS = data.monsters as MonsterData[];
+  TYPES = data.types as TypesData;
 
   const player = getPlayer();
   const savedState = loadGame();
@@ -239,13 +202,6 @@ function render(): void {
 if (typeof document !== 'undefined') {
   const canvas = document.getElementById('game') as HTMLCanvasElement;
   if (canvas) {
-    init(
-      canvas,
-      MONSTERS_DATA as MonsterData[],
-      MOVES_DATA as Array<{ id: string; name: string; power: number; type: string }>,
-      TYPES_DATA as TypesData,
-      EVOLUTIONS_DATA as unknown,
-      MAP_DATA as { width: number; height: number; tiles: number[][] },
-    ).catch((err: unknown) => console.error('BugMon failed to start:', err));
+    init(canvas).catch((err: unknown) => console.error('BugMon failed to start:', err));
   }
 }

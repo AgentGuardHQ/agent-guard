@@ -4,7 +4,7 @@ import { createInterface } from 'node:readline';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { loadBugDex, saveBugDex } from '../../ecosystem/storage.js';
+import { loadBugDex, saveBugDex } from '../../protocol/storage.js';
 import { RESET, BOLD, DIM, color as c } from '../colors.js';
 
 const __filename = fileURLToPath(import.meta.url);

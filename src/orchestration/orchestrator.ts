@@ -1,7 +1,7 @@
 // Pipeline orchestrator — runs stages sequentially with validation gates
-// No DOM, no Node.js APIs — pure domain logic.
+// No DOM, no Node.js APIs — pure orchestration logic.
 
-import type { StageStatus } from '../../core/types.js';
+import type { StageStatus } from '../core/types.js';
 import {
   STAGES,
   STAGE_STATUS,

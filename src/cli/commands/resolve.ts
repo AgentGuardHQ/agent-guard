@@ -1,6 +1,6 @@
 // bugmon resolve — mark bugs as fixed and earn XP
 
-import { loadBugDex, saveBugDex, resolveLastUnresolved, resolveAllUnresolved } from '../../ecosystem/storage.js';
+import { loadBugDex, saveBugDex, resolveLastUnresolved, resolveAllUnresolved } from '../../protocol/storage.js';
 import { createComboState, recordResolution, applyComboXP, formatCombo } from '../../domain/combo.js';
 import { RESET, BOLD, DIM, FG } from '../colors.js';
 import type { ComboTier } from '../../core/types.js';

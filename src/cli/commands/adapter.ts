@@ -4,7 +4,7 @@ import { spawn } from 'node:child_process';
 import { parseErrors } from '../../core/error-parser.js';
 import { parseStackTrace, getUserFrame } from '../../core/stacktrace-parser.js';
 import { matchMonster } from '../../core/matcher.js';
-import { recordEncounter } from '../../ecosystem/storage.js';
+import { recordEncounter } from '../../protocol/storage.js';
 import {
   renderEncounter,
   renderEncounterPrompt,
@@ -14,7 +14,7 @@ import {
 } from '../renderer.js';
 import { renderContributionPrompt, LOW_CONFIDENCE_THRESHOLD } from './contribute.js';
 import { interactiveCache } from './catch.js';
-import { checkBossEncounter, BOSS_TRIGGERS } from '../../ecosystem/bosses.js';
+import { checkBossEncounter, BOSS_TRIGGERS } from '../../meta/bosses.js';
 import { createRecorder } from '../recorder.js';
 import { createRun, addEncounter, addBossDefeat, endRun } from '../../domain/run-session.js';
 import type { RunSession } from '../../core/types.js';

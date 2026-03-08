@@ -23,7 +23,7 @@ import { parseErrors } from '../dist/core/error-parser.js';
 import { matchMonster } from '../dist/core/matcher.js';
 import {
   createBattleState, executeTurn, resolveMove, simulateBattle
-} from '../dist/game/battle/battle-core.js';
+} from '../dist/domain/battle.js';
 
 suite('Integration: Error → Monster Matching (error-parser + matcher)', () => {
   test('TypeError produces a valid monster match', () => {

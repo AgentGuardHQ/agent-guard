@@ -3,7 +3,7 @@
 
 import { createServer } from 'node:http';
 import { createHash } from 'node:crypto';
-import { loadBugDex, saveBugDex } from '../ecosystem/storage.js';
+import { loadBugDex, saveBugDex } from '../protocol/storage.js';
 import {
   SYNC_PORT,
   PING_INTERVAL,
@@ -13,7 +13,8 @@ import {
   MSG_CLI_STATE,
   MSG_CLI_EVENT,
   MSG_PING,
-} from '../ecosystem/sync-protocol.js';
+  nextSeq,
+} from '../protocol/sync-protocol.js';
 import type { Socket } from 'node:net';
 
 const PORT = SYNC_PORT;
@@ -28,6 +29,7 @@ interface WSMessage {
   type: string;
   data?: Record<string, unknown>;
   event?: string;
+  seq?: number;
 }
 
 interface SyncServerResult {
@@ -144,8 +146,8 @@ export function startSyncServer(): Promise<SyncServerResult> {
           try {
             const msg = JSON.parse(frame.payload as string) as WSMessage;
             handleClientMessage(client, msg);
-          } catch {
-            /* ignore malformed */
+          } catch (err) {
+            process.stderr.write(`  \x1b[33m⚠\x1b[0m Malformed WebSocket message: ${(err as Error).message}\n`);
           }
         }
       }
@@ -241,12 +243,16 @@ function getCLIState(): Record<string, unknown> {
 function mergeBrowserState(browserState: Record<string, unknown>): void {
   if (!browserState) return;
   const dex = loadBugDex() as Record<string, unknown>;
+  const now = Date.now();
+  let mergeConflicts = 0;
 
   const bugdex = browserState.bugdex as Record<string, unknown> | undefined;
   if (bugdex?.seen) {
     const dexSeen = dex.seen as Record<string, number>;
     for (const [id, count] of Object.entries(bugdex.seen as Record<string, number>)) {
-      dexSeen[id] = Math.max(dexSeen[id] || 0, count);
+      const localVal = dexSeen[id] || 0;
+      if (count !== localVal) mergeConflicts++;
+      dexSeen[id] = Math.max(localVal, count);
     }
   }
 
@@ -264,12 +270,29 @@ function mergeBrowserState(browserState: Record<string, unknown>): void {
   if (bugdex?.stats) {
     const bs = bugdex.stats as Record<string, number>;
     const stats = dex.stats as Record<string, number>;
-    stats.totalEncounters = Math.max(stats.totalEncounters || 0, bs.totalEncounters || 0);
-    stats.totalCached = Math.max(
-      stats.totalCached || stats.totalCaught || 0,
-      bs.totalCached || 0,
-    );
-    stats.xp = Math.max(stats.xp || 0, bs.xp || 0);
+    // Use timestamp from browser state if available, otherwise use MAX
+    const browserTs = (bugdex.updatedAt as number) || 0;
+    const localTs = (dex.updatedAt as number) || 0;
+    const useRemote = browserTs > localTs;
+
+    if (useRemote) {
+      stats.totalEncounters = bs.totalEncounters || stats.totalEncounters || 0;
+      stats.totalCached = bs.totalCached || stats.totalCached || stats.totalCaught || 0;
+      stats.xp = bs.xp || stats.xp || 0;
+    } else {
+      stats.totalEncounters = Math.max(stats.totalEncounters || 0, bs.totalEncounters || 0);
+      stats.totalCached = Math.max(
+        stats.totalCached || stats.totalCaught || 0,
+        bs.totalCached || 0,
+      );
+      stats.xp = Math.max(stats.xp || 0, bs.xp || 0);
+    }
+  }
+
+  (dex as Record<string, unknown>).updatedAt = now;
+
+  if (mergeConflicts > 0) {
+    process.stderr.write(`  \x1b[33m⚠\x1b[0m Merge: ${mergeConflicts} field conflict(s) resolved\n`);
   }
 
   saveBugDex(dex as Parameters<typeof saveBugDex>[0]);
@@ -360,10 +383,10 @@ function decodeFrames(buffer: Buffer): WSFrame[] {
 
 function sendToClient(client: WSClient, msg: WSMessage): void {
   try {
-    const frame = encodeFrame(JSON.stringify(msg));
+    const frame = encodeFrame(JSON.stringify({ ...msg, seq: nextSeq() }));
     client.socket.write(frame);
-  } catch {
-    /* client may have disconnected */
+  } catch (err) {
+    process.stderr.write(`  \x1b[31m✗\x1b[0m Failed to send to client: ${(err as Error).message}\n`);
   }
 }
 

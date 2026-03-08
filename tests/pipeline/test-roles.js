@@ -6,7 +6,7 @@ import {
   isValidRole,
   getRoleDefinition,
   isActionAllowed,
-} from '../../dist/domain/pipeline/roles.js';
+} from '../../dist/orchestration/roles.js';
 
 suite('Pipeline Roles', () => {
   test('defines all five agent roles', () => {
