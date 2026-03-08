@@ -55,11 +55,11 @@ The following systems are built and operational:
 - Boss encounter system with threshold triggers (`ecosystem/bosses.js`)
 
 ### Infrastructure
-- 52 test files covering all modules
+- 81 test files (77 JS + 4 TS) covering all modules
 - Size budget enforcement (10 KB target, 17 KB cap gzipped)
 - CI workflows (deploy, validate, size check, CodeQL, publish, release)
 - Community submission workflow with automated validation
-- Zero runtime dependencies
+- Zero browser runtime dependencies; CLI uses `chokidar`, `commander`, `pino`
 
 ## What Is Next
 

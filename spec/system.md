@@ -57,7 +57,7 @@ Both layers share the **canonical event model** as their architectural spine.
 
 1. All system activity flows through the canonical event model
 2. Domain logic has zero environment dependencies
-3. Zero runtime dependencies — dev dependencies only
+3. Zero browser runtime dependencies — CLI has minimal runtime deps (`chokidar`, `commander`, `pino`)
 4. Browser game is 100% client-side
 5. All audio is synthesized at runtime (no audio files)
 6. Size budget: 10 KB target / 17 KB cap (gzipped main bundle)
@@ -76,8 +76,8 @@ Both layers share the **canonical event model** as their architectural spine.
 
 ## Technical Constraints
 
-- 100% client-side browser game, zero runtime dependencies
-- Vanilla JavaScript (ES6 modules), HTML5 Canvas 2D, Web Audio API
+- 100% client-side browser game, zero browser runtime dependencies
+- Vanilla JavaScript (ES6 modules), HTML5 Canvas 2D, Web Audio API; TypeScript refactoring in progress (`src/`)
 - All audio synthesized at runtime (no audio files)
 - Build: esbuild + terser (dev dependencies only)
 - Deployed to GitHub Pages

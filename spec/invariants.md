@@ -52,4 +52,4 @@ These are structural guarantees that must never be violated. Agents and contribu
 
 ## Zero-Dependency Invariant
 
-19. **No runtime dependencies.** The project has zero production dependencies. Build tools (esbuild, terser) are dev-only.
+19. **No browser runtime dependencies.** The browser game has zero production dependencies. The CLI tool uses minimal runtime deps (`chokidar`, `commander`, `pino`). Build tools (esbuild, terser) are dev-only.

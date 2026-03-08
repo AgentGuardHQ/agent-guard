@@ -4,8 +4,8 @@ Total bundle must remain under 32 KB gzipped. Target: 16 KB.
 
 ## Rules
 
-- No runtime dependencies
-- Vanilla JavaScript only
+- No runtime dependencies in browser game; CLI deps must be minimal (`chokidar`, `commander`, `pino`)
+- Vanilla JavaScript for production game code; TypeScript refactoring in progress in `src/`
 - Canvas API for rendering
 - Web Audio API for sound (no audio files)
 - Functions over classes
