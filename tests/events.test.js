@@ -81,6 +81,45 @@ suite('EventBus (game/engine/events.js)', () => {
     assert.strictEqual(Events.PASSIVE_ACTIVATED, 'PASSIVE_ACTIVATED');
   });
 
+  // off() / clear() / unsubscribe tests (available after consolidation with domain/event-bus.js)
+
+  test('on() returns unsubscribe function', () => {
+    let count = 0;
+    const unsub = eventBus.on('test_unsub', () => { count++; });
+    eventBus.emit('test_unsub');
+    assert.strictEqual(count, 1);
+    unsub();
+    eventBus.emit('test_unsub');
+    assert.strictEqual(count, 1);
+  });
+
+  test('off() removes a specific listener', () => {
+    let count = 0;
+    const cb = () => { count++; };
+    eventBus.on('test_off', cb);
+    eventBus.emit('test_off');
+    assert.strictEqual(count, 1);
+    eventBus.off('test_off', cb);
+    eventBus.emit('test_off');
+    assert.strictEqual(count, 1);
+  });
+
+  test('off() on unregistered event does not throw', () => {
+    assert.doesNotThrow(() => {
+      eventBus.off('test_off_nonexistent', () => {});
+    });
+  });
+
+  test('clear() removes all listeners', () => {
+    let count = 0;
+    eventBus.on('test_clear_a', () => { count++; });
+    eventBus.on('test_clear_b', () => { count++; });
+    eventBus.clear();
+    eventBus.emit('test_clear_a');
+    eventBus.emit('test_clear_b');
+    assert.strictEqual(count, 0);
+  });
+
   // Edge case tests
   test('listener that throws halts remaining listeners (documents current behavior)', () => {
     let secondFired = false;

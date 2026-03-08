@@ -1,24 +1,7 @@
 // Event Bus - decoupled communication between game systems
-//
-// TODO(roadmap/ts-migration): Consolidate with domain/event-bus.js (canonical implementation)
-//   domain/event-bus.js has off(), clear(), and unsubscribe returns that this version lacks.
-//   The Events constants below should also move to domain/events.js.
+// Uses canonical EventBus from domain/ (supports off, clear, unsubscribe returns)
 
-class EventBus {
-  constructor() {
-    this.listeners = {};
-  }
-
-  on(event, callback) {
-    if (!this.listeners[event]) this.listeners[event] = [];
-    this.listeners[event].push(callback);
-  }
-
-  emit(event, data) {
-    if (!this.listeners[event]) return;
-    for (const callback of this.listeners[event]) callback(data);
-  }
-}
+import { EventBus } from '../../domain/event-bus.js';
 
 export const Events = {
   BATTLE_STARTED: 'BATTLE_STARTED',
