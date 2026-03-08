@@ -283,10 +283,17 @@ A parallel TypeScript implementation exists in `src/` (see `src/README.md` for a
 - `npm run ts:test` — Run TS tests (vitest)
 - `npm run build:ts` — Build TS (tsc + esbuild)
 
+**Known issues:**
+- `build:ts` script requires `tsx` which is not in devDependencies — add `tsx` before running
+- Runtime deps (`chokidar`, `commander`, `pino`) are only used by TS code in `src/`, not by the JS CLI
+- `game/engine/events.js` duplicates `domain/event-bus.js` — consolidate during migration
+
 **Remaining work:**
+- [ ] Add `tsx` to devDependencies (required for `build:ts`)
 - [ ] Migrate remaining `core/` modules to TypeScript
 - [ ] Migrate `domain/` modules to TypeScript
 - [ ] Migrate `agentguard/` modules to TypeScript
+- [ ] Consolidate `game/engine/events.js` with `domain/event-bus.js`
 - [ ] Integrate TS CLI as primary CLI entry point
 - [ ] Unify JS and TS test suites
 - [ ] Update build pipeline to produce TS-based bundles

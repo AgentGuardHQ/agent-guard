@@ -47,7 +47,7 @@ Build it yourself: `node scripts/build.js`
 
 BugMon has 31 monsters, 72 moves, 7 types, evolution chains, procedural terrain, synthesized audio, a full battle system, and mobile controls. Still smaller than jQuery.
 
-`node_modules` for dev tooling: esbuild + terser only. Zero runtime dependencies.
+`node_modules` for dev tooling: esbuild + terser only. Zero browser runtime dependencies. CLI tool has minimal deps (`chokidar`, `commander`, `pino`).
 
 ## What Makes This Possible
 
