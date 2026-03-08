@@ -3,18 +3,24 @@
 // Tracks encounters, resolutions, combos, duration, and score.
 // No DOM, no Node.js APIs — pure data transformations.
 //
-// TODO(roadmap/phase-3): Add configurable idle/active threshold
 // TODO(roadmap/phase-3): Add stability collapse detection (run death from cascading failures)
 // TODO(roadmap/phase-3): Add run summary and scoring at session end
 // TODO(roadmap/phase-3): Add governance boss encounters from AgentGuard events
 // TODO(roadmap/ts-migration): Migrate to TypeScript (src/domain/)
 
+import { SEVERITY } from '../core/bug-event.js';
 import { simpleHash } from './hash.js';
 import { createComboState, recordResolution, recordFailure, applyComboXP, getTier } from './combo.js';
 
+/** Default idle/active severity threshold. Encounters at or below this severity auto-resolve. */
+const DEFAULT_IDLE_THRESHOLD = SEVERITY.LOW; // severity 1-2 auto-resolve
+
 /**
  * Create a new run session.
- * @param {{ playerLevel?: number, repo?: string }} options
+ * @param {{ playerLevel?: number, repo?: string, idleThreshold?: number }} options
+ * @param {number} [options.idleThreshold] - Max severity that auto-resolves in idle mode (default: 2).
+ *   Encounters with severity <= idleThreshold are idle (auto-resolve).
+ *   Encounters with severity > idleThreshold are active (require player input).
  * @returns {object} Run session state
  */
 export function createRun(options = {}) {
@@ -25,6 +31,7 @@ export function createRun(options = {}) {
     endedAt: null,
     repo: options.repo || null,
     playerLevel: options.playerLevel || 1,
+    idleThreshold: options.idleThreshold ?? DEFAULT_IDLE_THRESHOLD,
     encounters: [],
     resolutions: [],
     bossesDefeated: [],
@@ -34,6 +41,16 @@ export function createRun(options = {}) {
     totalBonusXP: 0,
     status: 'active', // active | completed | abandoned
   };
+}
+
+/**
+ * Determine if an encounter should auto-resolve (idle) or require player input (active).
+ * @param {object} run - Run session state
+ * @param {number} severity - Encounter severity (1-5)
+ * @returns {'idle' | 'active'} Encounter mode
+ */
+export function getEncounterMode(run, severity) {
+  return severity <= run.idleThreshold ? 'idle' : 'active';
 }
 
 /**

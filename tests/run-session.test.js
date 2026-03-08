@@ -7,6 +7,7 @@ import {
   addBossDefeat,
   endRun,
   getRunStats,
+  getEncounterMode,
 } from '../domain/run-session.js';
 
 suite('Run Session Tracker (domain/run-session.js)', () => {
@@ -109,6 +110,37 @@ suite('Run Session Tracker (domain/run-session.js)', () => {
     assert.strictEqual(final.summary.totalResolved, 1);
     assert.strictEqual(final.summary.unresolvedCount, 1);
     assert.strictEqual(final.summary.uniqueMonsters, 2);
+  });
+
+  // --- idleThreshold ---
+  test('createRun uses default idle threshold of 2', () => {
+    const run = createRun();
+    assert.strictEqual(run.idleThreshold, 2);
+  });
+
+  test('createRun accepts custom idle threshold', () => {
+    const run = createRun({ idleThreshold: 3 });
+    assert.strictEqual(run.idleThreshold, 3);
+  });
+
+  test('getEncounterMode returns idle for severity at or below threshold', () => {
+    const run = createRun(); // threshold = 2
+    assert.strictEqual(getEncounterMode(run, 1), 'idle');
+    assert.strictEqual(getEncounterMode(run, 2), 'idle');
+  });
+
+  test('getEncounterMode returns active for severity above threshold', () => {
+    const run = createRun(); // threshold = 2
+    assert.strictEqual(getEncounterMode(run, 3), 'active');
+    assert.strictEqual(getEncounterMode(run, 4), 'active');
+    assert.strictEqual(getEncounterMode(run, 5), 'active');
+  });
+
+  test('getEncounterMode respects custom threshold', () => {
+    const run = createRun({ idleThreshold: 4 });
+    assert.strictEqual(getEncounterMode(run, 3), 'idle');
+    assert.strictEqual(getEncounterMode(run, 4), 'idle');
+    assert.strictEqual(getEncounterMode(run, 5), 'active');
   });
 
   // --- getRunStats ---
