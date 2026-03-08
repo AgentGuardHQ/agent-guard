@@ -26,6 +26,14 @@ import {
 } from '../audio/sound.js';
 import { checkPartyEvolutions, applyEvolution } from '../evolution/evolution.js';
 import { startEvolutionAnimation } from '../evolution/animation.js';
+import {
+  spawnDamageNumber,
+  spawnFloatingLabel,
+  triggerShake,
+  triggerSpriteFlash,
+  animateHP,
+  clearBattleEffects,
+} from '../engine/effects.js';
 import type { GameMon } from '../world/player.js';
 import type { Bugmon, BattleMove } from '../../core/types.js';
 
@@ -80,6 +88,7 @@ export function setTypeData(data: TypeData): void {
 }
 
 export function startBattle(wildMon: GameMon): BattleUIState {
+  clearBattleEffects();
   const player = getPlayer();
   const mon = player.party[0];
   battle = {
@@ -138,13 +147,30 @@ export function updateBattle(dt: number): void {
     }
   } else if (battle.state === 'fight') {
     const moveCount = battle.playerMon.moves.length;
+    // 2×2 grid navigation
     if (wasPressed('ArrowLeft')) {
-      battle.moveIndex = Math.max(0, battle.moveIndex - 1);
-      playMenuNav();
+      if (battle.moveIndex % 2 === 1) {
+        battle.moveIndex--;
+        playMenuNav();
+      }
     }
     if (wasPressed('ArrowRight')) {
-      battle.moveIndex = Math.min(moveCount - 1, battle.moveIndex + 1);
-      playMenuNav();
+      if (battle.moveIndex % 2 === 0 && battle.moveIndex + 1 < moveCount) {
+        battle.moveIndex++;
+        playMenuNav();
+      }
+    }
+    if (wasPressed('ArrowUp')) {
+      if (battle.moveIndex >= 2) {
+        battle.moveIndex -= 2;
+        playMenuNav();
+      }
+    }
+    if (wasPressed('ArrowDown')) {
+      if (battle.moveIndex + 2 < moveCount) {
+        battle.moveIndex += 2;
+        playMenuNav();
+      }
     }
     if (wasPressed('Escape')) {
       playMenuCancel();
@@ -212,6 +238,53 @@ function playbackEvents(events: BattleEvent[], index: number): void {
     showMessage(event.message || '', next);
   } else if (event.type === MOVE_USED) {
     playAttack();
+
+    // Visual effects for damage/healing
+    if (battle && event.damage !== undefined && event.damage > 0) {
+      const isEnemyAttacker = event.attacker === battle.enemy.name;
+      const target: 'player' | 'enemy' = isEnemyAttacker ? 'player' : 'enemy';
+      const targetMon = target === 'player' ? battle.playerMon : battle.enemy;
+
+      // Floating damage number
+      const dmgX = target === 'enemy' ? 352 : 112;
+      const dmgY = target === 'enemy' ? 50 : 150;
+      spawnDamageNumber(event.damage, dmgX, dmgY, {
+        critical: event.critical,
+        effectiveness: event.effectiveness,
+      });
+
+      // Animate HP drain
+      const newHP = Math.max(0, targetMon.currentHP - event.damage);
+      animateHP(target, targetMon.currentHP, newHP);
+
+      // Sprite flash on hit
+      triggerSpriteFlash(target);
+
+      // Screen shake on critical or super effective
+      if (event.critical) triggerShake(6, 250);
+      else if (event.effectiveness !== undefined && event.effectiveness > 1.0) triggerShake(4, 180);
+
+      // Effectiveness label
+      if (event.effectiveness !== undefined && event.effectiveness > 1.0) {
+        spawnFloatingLabel('Super effective!', dmgX, dmgY + 18);
+      } else if (event.effectiveness !== undefined && event.effectiveness < 1.0) {
+        spawnFloatingLabel('Not effective...', dmgX, dmgY + 18, '#94A3B8');
+      }
+      if (event.critical) {
+        spawnFloatingLabel('CRITICAL!', dmgX, dmgY - 14, '#f39c12');
+      }
+    }
+
+    if (battle && event.healing !== undefined && event.healing > 0) {
+      const isEnemyHealer = event.attacker === battle!.enemy.name;
+      const target: 'player' | 'enemy' = isEnemyHealer ? 'enemy' : 'player';
+      const targetMon = target === 'player' ? battle!.playerMon : battle!.enemy;
+      const healX = target === 'enemy' ? 352 : 112;
+      const healY = target === 'enemy' ? 50 : 150;
+      spawnFloatingLabel(`+${event.healing}`, healX, healY, '#2ecc71');
+      animateHP(target, targetMon.currentHP, Math.min(targetMon.hp, targetMon.currentHP + event.healing));
+    }
+
     const msg = formatMoveMessage(event);
     const nextEvent = events[index + 1];
     if (nextEvent && nextEvent.type === BUGMON_FAINTED) {
@@ -329,6 +402,7 @@ function showMessage(msg: string, callback?: () => void): void {
 
 function endBattle(): void {
   if (!battle) return;
+  clearBattleEffects();
   const player = getPlayer();
   const outcome = battle.enemy.currentHP <= 0 ? 'win' : 'other';
   if (battle.playerMon.currentHP > 0) {

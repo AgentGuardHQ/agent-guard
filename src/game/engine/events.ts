@@ -12,9 +12,21 @@ export const Events = {
   BATTLE_ENDED: 'BATTLE_ENDED',
   STATE_CHANGED: 'STATE_CHANGED',
   PASSIVE_ACTIVATED: 'PASSIVE_ACTIVATED',
+  DAMAGE_DEALT: 'DAMAGE_DEALT',
+  IDLE_ENCOUNTER: 'IDLE_ENCOUNTER',
 } as const;
 
 export type GameEventName = (typeof Events)[keyof typeof Events];
+
+interface DamageDealtData {
+  target: 'player' | 'enemy';
+  damage: number;
+  critical?: boolean;
+  effectiveness?: number;
+  healing?: number;
+  previousHP: number;
+  newHP: number;
+}
 
 interface GameEventMap {
   [Events.BATTLE_STARTED]: { playerMon: string; enemy: string };
@@ -23,6 +35,8 @@ interface GameEventMap {
   [Events.BATTLE_ENDED]: { outcome: string };
   [Events.STATE_CHANGED]: { from: string; to: string };
   [Events.PASSIVE_ACTIVATED]: { name: string; message: string };
+  [Events.DAMAGE_DEALT]: DamageDealtData;
+  [Events.IDLE_ENCOUNTER]: { name: string; xp: number };
 }
 
 export const eventBus = new EventBus<GameEventMap>();
