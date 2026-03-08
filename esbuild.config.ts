@@ -10,17 +10,74 @@ const shared: esbuild.BuildOptions = {
   packages: 'external',
 };
 
-// CLI entry point
+// CLI entry points
 await esbuild.build({
   ...shared,
-  entryPoints: ['src/cli/index.ts'],
+  entryPoints: ['src/cli/index.ts', 'src/cli/bin.ts'],
   outdir: 'dist/cli',
 });
 
-// Game entry point (browser target)
+// Domain entry points
 await esbuild.build({
   ...shared,
-  entryPoints: ['src/game/engine.ts', 'src/game/renderer.ts', 'src/game/loop.ts'],
+  entryPoints: [
+    'src/domain/events.ts',
+    'src/domain/event-store.ts',
+    'src/domain/hash.ts',
+    'src/domain/shapes.ts',
+    'src/domain/contracts.ts',
+    'src/domain/battle.ts',
+    'src/domain/encounters.ts',
+    'src/domain/evolution.ts',
+    'src/domain/combo.ts',
+    'src/domain/run-session.ts',
+    'src/domain/run-history.ts',
+    'src/domain/actions.ts',
+    'src/domain/policy.ts',
+    'src/domain/invariants.ts',
+    'src/domain/reference-monitor.ts',
+    'src/domain/source-registry.ts',
+  ],
+  outdir: 'dist/domain',
+});
+
+// AgentGuard entry points
+await esbuild.build({
+  ...shared,
+  entryPoints: [
+    'src/agentguard/core/aab.ts',
+    'src/agentguard/core/engine.ts',
+    'src/agentguard/monitor.ts',
+    'src/agentguard/policies/evaluator.ts',
+    'src/agentguard/policies/loader.ts',
+    'src/agentguard/invariants/checker.ts',
+    'src/agentguard/invariants/definitions.ts',
+    'src/agentguard/evidence/pack.ts',
+  ],
+  outdir: 'dist/agentguard',
+});
+
+// Ecosystem entry points
+await esbuild.build({
+  ...shared,
+  entryPoints: [
+    'src/ecosystem/storage.ts',
+    'src/ecosystem/bosses.ts',
+    'src/ecosystem/bugdex-spec.ts',
+    'src/ecosystem/sync-protocol.ts',
+  ],
+  outdir: 'dist/ecosystem',
+});
+
+// Game entry points (browser target)
+await esbuild.build({
+  ...shared,
+  entryPoints: [
+    'src/game/engine.ts',
+    'src/game/renderer.ts',
+    'src/game/loop.ts',
+    'src/game/game.ts',
+  ],
   platform: 'browser',
   target: 'es2022',
   outdir: 'dist/game',
