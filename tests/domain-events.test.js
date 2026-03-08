@@ -3,6 +3,7 @@ import { test, suite } from './run.js';
 import {
   createEvent,
   validateEvent,
+  resetEventCounter,
   ALL_EVENT_KINDS,
   ERROR_OBSERVED,
   BUG_CLASSIFIED,
@@ -27,29 +28,71 @@ import {
   BLAST_RADIUS_EXCEEDED,
   MERGE_GUARD_FAILURE,
   EVIDENCE_PACK_GENERATED,
+  FILE_SAVED,
+  TEST_COMPLETED,
+  BUILD_COMPLETED,
+  COMMIT_CREATED,
+  CODE_REVIEWED,
+  DEPLOY_COMPLETED,
+  LINT_COMPLETED,
 } from '../domain/events.js';
 
 suite('Domain Events — Schema Validation', () => {
-  test('ALL_EVENT_KINDS contains all 23 event kinds', () => {
-    assert.strictEqual(ALL_EVENT_KINDS.size, 23);
+  test('ALL_EVENT_KINDS contains all 30 event kinds', () => {
+    assert.strictEqual(ALL_EVENT_KINDS.size, 30);
     assert.ok(ALL_EVENT_KINDS.has(ERROR_OBSERVED));
     assert.ok(ALL_EVENT_KINDS.has(BATTLE_ENDED));
     assert.ok(ALL_EVENT_KINDS.has(STATE_CHANGED));
+    assert.ok(ALL_EVENT_KINDS.has(FILE_SAVED));
+    assert.ok(ALL_EVENT_KINDS.has(COMMIT_CREATED));
   });
 
   // --- createEvent structure ---
 
-  test('createEvent returns object with kind and timestamp', () => {
+  test('createEvent returns object with kind, timestamp, id, and fingerprint', () => {
     const event = createEvent(ERROR_OBSERVED, { message: 'fail' });
     assert.strictEqual(event.kind, ERROR_OBSERVED);
     assert.strictEqual(typeof event.timestamp, 'number');
     assert.strictEqual(event.message, 'fail');
+    assert.ok(event.id.startsWith('evt_'));
+    assert.strictEqual(typeof event.fingerprint, 'string');
   });
 
   test('createEvent spreads data fields onto the event', () => {
     const event = createEvent(DAMAGE_DEALT, { amount: 10, target: 'enemy' });
     assert.strictEqual(event.amount, 10);
     assert.strictEqual(event.target, 'enemy');
+  });
+
+  test('createEvent generates unique IDs for consecutive events', () => {
+    const e1 = createEvent(DAMAGE_DEALT, { amount: 1, target: 'a' });
+    const e2 = createEvent(DAMAGE_DEALT, { amount: 2, target: 'b' });
+    assert.notStrictEqual(e1.id, e2.id);
+  });
+
+  test('createEvent generates stable fingerprints for same data', () => {
+    const data = { amount: 10, target: 'enemy' };
+    const e1 = createEvent(DAMAGE_DEALT, data);
+    const e2 = createEvent(DAMAGE_DEALT, data);
+    assert.strictEqual(e1.fingerprint, e2.fingerprint);
+  });
+
+  test('createEvent preserves explicitly provided fingerprint', () => {
+    const event = createEvent(ERROR_OBSERVED, {
+      message: 'test',
+      fingerprint: 'custom-fp',
+    });
+    assert.strictEqual(event.fingerprint, 'custom-fp');
+  });
+
+  test('resetEventCounter resets the ID counter', () => {
+    resetEventCounter();
+    const e1 = createEvent(DAMAGE_DEALT, { amount: 1, target: 'a' });
+    const counter1 = e1.id.split('_')[2];
+    resetEventCounter();
+    const e2 = createEvent(DAMAGE_DEALT, { amount: 2, target: 'b' });
+    const counter2 = e2.id.split('_')[2];
+    assert.strictEqual(counter1, counter2);
   });
 
   // --- createEvent validation: unknown kind ---
@@ -465,5 +508,156 @@ suite('Domain Events — Schema Validation', () => {
       () => createEvent(EVIDENCE_PACK_GENERATED, { packId: 'pack-001' }),
       (err) => err.message.includes('eventIds'),
     );
+  });
+
+  // --- Developer signal event types ---
+
+  test('FILE_SAVED constant is defined', () => {
+    assert.strictEqual(FILE_SAVED, 'FileSaved');
+    assert.ok(ALL_EVENT_KINDS.has(FILE_SAVED));
+  });
+
+  test('createEvent succeeds for FILE_SAVED with required fields', () => {
+    const event = createEvent(FILE_SAVED, { file: 'src/main.js' });
+    assert.strictEqual(event.kind, FILE_SAVED);
+    assert.strictEqual(event.file, 'src/main.js');
+  });
+
+  test('createEvent succeeds for FILE_SAVED with optional fields', () => {
+    const event = createEvent(FILE_SAVED, {
+      file: 'src/main.js',
+      language: 'javascript',
+      linesChanged: 15,
+    });
+    assert.strictEqual(event.language, 'javascript');
+    assert.strictEqual(event.linesChanged, 15);
+  });
+
+  test('createEvent throws when FILE_SAVED missing file', () => {
+    assert.throws(
+      () => createEvent(FILE_SAVED, {}),
+      (err) => err.message.includes('file'),
+    );
+  });
+
+  test('createEvent succeeds for TEST_COMPLETED with required fields', () => {
+    const event = createEvent(TEST_COMPLETED, { result: 'pass' });
+    assert.strictEqual(event.kind, TEST_COMPLETED);
+    assert.strictEqual(event.result, 'pass');
+  });
+
+  test('createEvent succeeds for TEST_COMPLETED with optional fields', () => {
+    const event = createEvent(TEST_COMPLETED, {
+      result: 'fail',
+      suite: 'unit',
+      duration: 1200,
+      passed: 48,
+      failed: 2,
+      total: 50,
+    });
+    assert.strictEqual(event.suite, 'unit');
+    assert.strictEqual(event.passed, 48);
+    assert.strictEqual(event.failed, 2);
+  });
+
+  test('createEvent throws when TEST_COMPLETED missing result', () => {
+    assert.throws(
+      () => createEvent(TEST_COMPLETED, {}),
+      (err) => err.message.includes('result'),
+    );
+  });
+
+  test('createEvent succeeds for BUILD_COMPLETED with required fields', () => {
+    const event = createEvent(BUILD_COMPLETED, { result: 'pass' });
+    assert.strictEqual(event.kind, BUILD_COMPLETED);
+    assert.strictEqual(event.result, 'pass');
+  });
+
+  test('createEvent succeeds for BUILD_COMPLETED with optional fields', () => {
+    const event = createEvent(BUILD_COMPLETED, {
+      result: 'fail',
+      duration: 5000,
+      tool: 'esbuild',
+      exitCode: 1,
+    });
+    assert.strictEqual(event.tool, 'esbuild');
+    assert.strictEqual(event.exitCode, 1);
+  });
+
+  test('createEvent succeeds for COMMIT_CREATED with required fields', () => {
+    const event = createEvent(COMMIT_CREATED, { hash: 'abc123' });
+    assert.strictEqual(event.kind, COMMIT_CREATED);
+    assert.strictEqual(event.hash, 'abc123');
+  });
+
+  test('createEvent succeeds for COMMIT_CREATED with optional fields', () => {
+    const event = createEvent(COMMIT_CREATED, {
+      hash: 'abc123',
+      message: 'fix bug',
+      filesChanged: 3,
+      additions: 10,
+      deletions: 5,
+    });
+    assert.strictEqual(event.message, 'fix bug');
+    assert.strictEqual(event.filesChanged, 3);
+  });
+
+  test('createEvent throws when COMMIT_CREATED missing hash', () => {
+    assert.throws(
+      () => createEvent(COMMIT_CREATED, {}),
+      (err) => err.message.includes('hash'),
+    );
+  });
+
+  test('createEvent succeeds for CODE_REVIEWED with required fields', () => {
+    const event = createEvent(CODE_REVIEWED, { action: 'approve' });
+    assert.strictEqual(event.kind, CODE_REVIEWED);
+    assert.strictEqual(event.action, 'approve');
+  });
+
+  test('createEvent succeeds for CODE_REVIEWED with optional fields', () => {
+    const event = createEvent(CODE_REVIEWED, {
+      action: 'comment',
+      prId: 'pr-42',
+      file: 'src/main.js',
+      comment: 'looks good',
+    });
+    assert.strictEqual(event.prId, 'pr-42');
+  });
+
+  test('createEvent succeeds for DEPLOY_COMPLETED with required fields', () => {
+    const event = createEvent(DEPLOY_COMPLETED, { result: 'pass' });
+    assert.strictEqual(event.kind, DEPLOY_COMPLETED);
+    assert.strictEqual(event.result, 'pass');
+  });
+
+  test('createEvent succeeds for DEPLOY_COMPLETED with optional fields', () => {
+    const event = createEvent(DEPLOY_COMPLETED, {
+      result: 'pass',
+      environment: 'production',
+      duration: 30000,
+      version: '1.2.0',
+    });
+    assert.strictEqual(event.environment, 'production');
+    assert.strictEqual(event.version, '1.2.0');
+  });
+
+  test('createEvent succeeds for LINT_COMPLETED with required fields', () => {
+    const event = createEvent(LINT_COMPLETED, { result: 'pass' });
+    assert.strictEqual(event.kind, LINT_COMPLETED);
+    assert.strictEqual(event.result, 'pass');
+  });
+
+  test('createEvent succeeds for LINT_COMPLETED with optional fields', () => {
+    const event = createEvent(LINT_COMPLETED, {
+      result: 'fail',
+      tool: 'eslint',
+      errors: 3,
+      warnings: 7,
+      fixed: 2,
+    });
+    assert.strictEqual(event.tool, 'eslint');
+    assert.strictEqual(event.errors, 3);
+    assert.strictEqual(event.fixed, 2);
   });
 });

@@ -89,6 +89,7 @@ async function main() {
   await import('./domain-event-bus.test.js');
   await import('./domain-evolution.test.js');
   await import('./domain-events.test.js');
+  await import('./event-store.test.js');
 
   console.log('\n' + '='.repeat(40));
   if (totalFailed === 0) {

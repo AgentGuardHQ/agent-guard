@@ -1,6 +1,8 @@
 // Fingerprinting — deduplicates errors within a session
 // Generates stable fingerprints for error deduplication and frequency tracking.
 
+import { simpleHash } from '../hash.js';
+
 /**
  * Generate a stable fingerprint for an error.
  * Same error type + message + location = same fingerprint.
@@ -30,10 +32,3 @@ export function deduplicateErrors(errors) {
   return Array.from(seen.values());
 }
 
-function simpleHash(str) {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = ((hash << 5) - hash + str.charCodeAt(i)) | 0;
-  }
-  return Math.abs(hash).toString(36);
-}

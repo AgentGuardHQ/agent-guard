@@ -2,6 +2,8 @@
 // All systems emit and consume these event types.
 // No DOM, no Node.js APIs — pure data definitions.
 
+import { simpleHash } from './hash.js';
+
 // --- Event Kinds ---
 // Ingestion pipeline
 export const ERROR_OBSERVED = 'ErrorObserved';
@@ -35,6 +37,15 @@ export const INVARIANT_VIOLATION = 'InvariantViolation';
 export const BLAST_RADIUS_EXCEEDED = 'BlastRadiusExceeded';
 export const MERGE_GUARD_FAILURE = 'MergeGuardFailure';
 export const EVIDENCE_PACK_GENERATED = 'EvidencePackGenerated';
+
+// Developer Signals
+export const FILE_SAVED = 'FileSaved';
+export const TEST_COMPLETED = 'TestCompleted';
+export const BUILD_COMPLETED = 'BuildCompleted';
+export const COMMIT_CREATED = 'CommitCreated';
+export const CODE_REVIEWED = 'CodeReviewed';
+export const DEPLOY_COMPLETED = 'DeployCompleted';
+export const LINT_COMPLETED = 'LintCompleted';
 
 // --- Event Schemas ---
 // Maps each event kind to its required and optional data fields.
@@ -139,9 +150,70 @@ const EVENT_SCHEMAS = {
     required: ['packId', 'eventIds'],
     optional: ['summary', 'metadata'],
   },
+  [FILE_SAVED]: {
+    required: ['file'],
+    optional: ['language', 'linesChanged'],
+  },
+  [TEST_COMPLETED]: {
+    required: ['result'],
+    optional: ['suite', 'duration', 'passed', 'failed', 'total'],
+  },
+  [BUILD_COMPLETED]: {
+    required: ['result'],
+    optional: ['duration', 'tool', 'exitCode'],
+  },
+  [COMMIT_CREATED]: {
+    required: ['hash'],
+    optional: ['message', 'filesChanged', 'additions', 'deletions'],
+  },
+  [CODE_REVIEWED]: {
+    required: ['action'],
+    optional: ['prId', 'file', 'comment'],
+  },
+  [DEPLOY_COMPLETED]: {
+    required: ['result'],
+    optional: ['environment', 'duration', 'version'],
+  },
+  [LINT_COMPLETED]: {
+    required: ['result'],
+    optional: ['tool', 'errors', 'warnings', 'fixed'],
+  },
 };
 
 export const ALL_EVENT_KINDS = new Set(Object.keys(EVENT_SCHEMAS));
+
+// --- Event Factory ---
+// Monotonic counter for unique event IDs within a session.
+let eventCounter = 0;
+
+/**
+ * Reset the event counter. Exported for test determinism.
+ */
+export function resetEventCounter() {
+  eventCounter = 0;
+}
+
+/**
+ * Generate a unique event ID.
+ * @param {number} timestamp
+ * @returns {string}
+ */
+function generateEventId(timestamp) {
+  return `evt_${timestamp}_${++eventCounter}`;
+}
+
+/**
+ * Generate a content fingerprint for an event.
+ * Hashes kind + sorted data keys/values for stable deduplication.
+ * @param {string} kind
+ * @param {object} data
+ * @returns {string}
+ */
+function fingerprintEvent(kind, data) {
+  const keys = Object.keys(data).sort();
+  const parts = keys.map((k) => `${k}=${JSON.stringify(data[k])}`);
+  return simpleHash(`${kind}:${parts.join(',')}`);
+}
 
 /**
  * Validate an event object against its schema.
@@ -178,16 +250,23 @@ export function validateEvent(event) {
 /**
  * Create a canonical domain event.
  * Validates that the kind is known and required fields are present.
+ * Assigns a unique ID and content fingerprint.
  * @param {string} kind - One of the event kind constants
  * @param {object} data - Event-specific payload
- * @returns {{ kind: string, timestamp: number }}
+ * @returns {{ id: string, kind: string, timestamp: number, fingerprint: string }}
  * @throws {Error} If kind is unknown or required fields are missing
  */
 export function createEvent(kind, data = {}) {
-  const event = { kind, timestamp: Date.now(), ...data };
+  const timestamp = Date.now();
+  const event = { kind, timestamp, ...data };
   const { valid, errors } = validateEvent(event);
   if (!valid) {
     throw new Error(`Invalid event: ${errors.join('; ')}`);
+  }
+  // Assign ID and fingerprint as envelope metadata (after validation)
+  event.id = generateEventId(timestamp);
+  if (event.fingerprint === undefined) {
+    event.fingerprint = fingerprintEvent(kind, data);
   }
   return event;
 }

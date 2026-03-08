@@ -57,13 +57,14 @@ Establish the conceptual architecture, documentation, and event model that conne
 
 Extend the existing event system (`domain/events.js`, `domain/event-bus.js`) into the formal canonical event model.
 
-- [ ] Full event type taxonomy (developer signals, governance events, session events)
+- [x] Full event type taxonomy (developer signals, governance events, session events)
 - [x] Event schema validation
 - [x] Governance event types: `InvariantViolation`, `UnauthorizedAction`, `PolicyDenied`, `BlastRadiusExceeded`, `MergeGuardFailure`
 - [x] Session event types: `RunStarted`, `RunEnded`, `CheckpointReached`
-- [ ] Event factory with fingerprint generation
-- [ ] Event store interface (persist, query, replay)
-- [ ] Tests for all event types and lifecycle
+- [x] Developer signal event types: `FileSaved`, `TestCompleted`, `BuildCompleted`, `CommitCreated`, `CodeReviewed`, `DeployCompleted`, `LintCompleted`
+- [x] Event factory with fingerprint generation
+- [x] Event store interface (persist, query, replay)
+- [x] Tests for all event types and lifecycle
 
 ## Phase 2 — AgentGuard Governance Runtime
 

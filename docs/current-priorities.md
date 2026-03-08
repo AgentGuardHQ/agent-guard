@@ -63,11 +63,14 @@ The following systems are built and operational:
 
 ## What Is Next
 
-### Phase 1 — Canonical Event Model
-- Extend `domain/events.js` with the full event type taxonomy (governance events, session events)
-- Implement formal event schema validation
+### Phase 1 — Canonical Event Model ~~(complete)~~
+- ~~Extend `domain/events.js` with the full event type taxonomy (governance events, session events)~~ (done)
+- ~~Implement formal event schema validation~~ (done)
 - ~~Add governance event types: `InvariantViolation`, `UnauthorizedAction`, `PolicyDenied`, `BlastRadiusExceeded`, `MergeGuardFailure`~~ (done)
-- Define event persistence format for replay
+- ~~Add developer signal event types: `FileSaved`, `TestCompleted`, `BuildCompleted`, `CommitCreated`, `CodeReviewed`, `DeployCompleted`, `LintCompleted`~~ (done)
+- ~~Event factory with fingerprint generation~~ (done)
+- ~~Event store interface with in-memory implementation~~ (done)
+- ~~Tests for all event types and lifecycle~~ (done)
 
 ### Phase 2 — AgentGuard Governance Runtime
 - Action Authorization Boundary (AAB) implementation
