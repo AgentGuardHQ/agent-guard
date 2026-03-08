@@ -160,10 +160,10 @@ export function showBugDex(monsters: MonsterLike[]): void {
     const rarity = RARITY_STYLE[mon.rarity || 'common'] || RARITY_STYLE.common;
 
     console.log(
-      `  ${BOLD}#${String(mon.id).padStart(2, '0')}${RESET} ${rarity.color}${mon.name}${RESET}${rarityTag}`,
+      `  ${BOLD}#${String(mon.id).padStart(2, '0')}${RESET} ${rarity.color}${mon.name}${RESET}${rarityTag}`
     );
     console.log(
-      `      ${DIM}Type:${RESET} ${typeColor}${mon.type}${RESET}  ${DIM}HP:${RESET} ${mon.hp}  ${DIM}XP:${RESET} ${mon.xp}  ${DIM}Maps to:${RESET} ${mon.errorType}`,
+      `      ${DIM}Type:${RESET} ${typeColor}${mon.type}${RESET}  ${DIM}HP:${RESET} ${mon.hp}  ${DIM}XP:${RESET} ${mon.xp}  ${DIM}Maps to:${RESET} ${mon.errorType}`
     );
     console.log();
   }
@@ -172,17 +172,19 @@ export function showBugDex(monsters: MonsterLike[]): void {
 export function showHelp(): void {
   console.log();
   console.log(
-    `  ${BOLD}BugMon${RESET} ${DIM}— Pokemon-style encounters for runtime errors.${RESET}`,
+    `  ${BOLD}BugMon${RESET} ${DIM}— Pokemon-style encounters for runtime errors.${RESET}`
   );
   console.log();
   console.log(`  ${BOLD}Usage:${RESET}`);
   console.log(
-    `    ${FG.green}bugmon${RESET} ${FG.white}<script.js>${RESET}         Run a file, catch bugs as monsters`,
+    `    ${FG.green}bugmon${RESET} ${FG.white}<script.js>${RESET}         Run a file, catch bugs as monsters`
   );
   console.log(
-    `    ${FG.green}bugmon${RESET} ${FG.white}--bugdex${RESET}            Show all known BugMon`,
+    `    ${FG.green}bugmon${RESET} ${FG.white}--bugdex${RESET}            Show all known BugMon`
   );
-  console.log(`    ${FG.green}bugmon${RESET} ${FG.white}--help${RESET}              Show this help`);
+  console.log(
+    `    ${FG.green}bugmon${RESET} ${FG.white}--help${RESET}              Show this help`
+  );
   console.log();
   console.log(`  ${BOLD}Examples:${RESET}`);
   console.log(`    ${DIM}$${RESET} bugmon server.js`);

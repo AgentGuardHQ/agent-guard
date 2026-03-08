@@ -73,7 +73,7 @@ export function recordEncounter(
   monster: { id: number; name: string },
   errorMessage: string,
   file: string | null,
-  line: number | null,
+  line: number | null
 ): { xpGained: number; isNew: boolean; data: BugDexData } {
   const data = loadBugDex();
   const isNew = !data.seen[monster.id];

@@ -73,7 +73,7 @@ export function renderEncounter(
   monster: MonsterLike,
   error: ErrorLike,
   location: LocationInfo | null,
-  _confidence: number | null,
+  _confidence: number | null
 ): void {
   const typeColor = TYPE_COLORS[monster.type] || 'white';
   const art = TYPE_ART[monster.type] || TYPE_ART.frontend;
@@ -98,7 +98,7 @@ export function renderEncounter(
 
   const hpBar = renderHPBar(monster.hp, monster.hp, 10);
   lines.push(
-    row(`  Type: ${color(monster.type.toUpperCase(), typeColor)}    HP: ${hpBar} ${monster.hp}`),
+    row(`  Type: ${color(monster.type.toUpperCase(), typeColor)}    HP: ${hpBar} ${monster.hp}`)
   );
   lines.push(empty());
 
@@ -130,7 +130,7 @@ export function renderEncounter(
 
 export function renderBugDex(
   dexData: { seen?: Record<number, number> },
-  allMonsters: MonsterLike[],
+  allMonsters: MonsterLike[]
 ): void {
   const seen = dexData.seen || {};
   const total = allMonsters.length;
@@ -143,7 +143,7 @@ export function renderBugDex(
   lines.push(bold(color('  ╚══════════════════════════════════════╝', 'cyan')));
   lines.push('');
   lines.push(
-    `  Discovered: ${bold(`${discovered}/${total}`)} (${Math.round((discovered / total) * 100)}%)`,
+    `  Discovered: ${bold(`${discovered}/${total}`)} (${Math.round((discovered / total) * 100)}%)`
   );
   lines.push('');
 
@@ -156,11 +156,11 @@ export function renderBugDex(
       const type = color(monster.type.padEnd(10), typeColor);
       const encounters = dim(`x${count}`);
       lines.push(
-        `  ${color('#' + String(monster.id).padStart(2, '0'), 'gray')} ${bold(name)} ${type} ${encounters}`,
+        `  ${color('#' + String(monster.id).padStart(2, '0'), 'gray')} ${bold(name)} ${type} ${encounters}`
       );
     } else {
       lines.push(
-        `  ${color('#' + String(monster.id).padStart(2, '0'), 'gray')} ${dim('???'.padEnd(20))} ${dim('???'.padEnd(10))}`,
+        `  ${color('#' + String(monster.id).padStart(2, '0'), 'gray')} ${dim('???'.padEnd(20))} ${dim('???'.padEnd(10))}`
       );
     }
   }
@@ -189,7 +189,7 @@ export function renderStats(stats: StatsLike): void {
 export function renderParty(party: MonsterLike[]): void {
   if (!party || party.length === 0) {
     process.stdout.write(
-      '\n  No BugMon in your party yet.\n  Run "bugmon watch --cache -- <command>" to start caching!\n\n',
+      '\n  No BugMon in your party yet.\n  Run "bugmon watch --cache -- <command>" to start caching!\n\n'
     );
     return;
   }
@@ -222,7 +222,7 @@ export function renderEncounterPrompt(monster: MonsterLike): void {
   lines.push(color('  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', typeColor));
   lines.push(`  ${bold(`A wild ${color(monster.name, typeColor)} appeared!`)}`);
   lines.push(
-    `  Type: ${color(monster.type.toUpperCase(), typeColor)}  HP: ${monster.hp}  ATK: ${monster.attack}  SPD: ${monster.speed}`,
+    `  Type: ${color(monster.type.toUpperCase(), typeColor)}  HP: ${monster.hp}  ATK: ${monster.attack}  SPD: ${monster.speed}`
   );
   lines.push(color('  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', typeColor));
   lines.push('');
@@ -253,7 +253,7 @@ export function renderBossEncounter(boss: BossLike): void {
   const typeColor = TYPE_COLORS[boss.type] || 'white';
   const hpBar = renderHPBar(boss.hp, boss.hp, 10);
   lines.push(
-    row(`  Type: ${color(boss.type.toUpperCase(), typeColor)}    HP: ${hpBar} ${boss.hp}`),
+    row(`  Type: ${color(boss.type.toUpperCase(), typeColor)}    HP: ${hpBar} ${boss.hp}`)
   );
   lines.push(empty());
 
@@ -279,7 +279,7 @@ export function renderBossEncounter(boss: BossLike): void {
 export function renderCombo(
   streak: number,
   tier: { label: string; multiplier: number } | null,
-  bonusXP: number,
+  bonusXP: number
 ): void {
   if (!tier) return;
 

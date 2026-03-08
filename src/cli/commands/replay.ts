@@ -26,7 +26,7 @@ export function registerReplayCommand(program: Command): void {
           kind?: string;
           actor?: string;
           limit: string;
-        },
+        }
       ) => {
         const logger = pino({ name: 'bugmon-replay' });
         const fs = await import('node:fs');
@@ -72,6 +72,6 @@ export function registerReplayCommand(program: Command): void {
         if (events.length > limit) {
           console.log(`  ... and ${events.length - limit} more events`);
         }
-      },
+      }
     );
 }

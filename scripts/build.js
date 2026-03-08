@@ -82,7 +82,7 @@ function minifyCSS(css) {
 function inlineSprites() {
   if (noSprites) return '';
 
-  const spriteDir = path.join(ROOT, 'game', 'sprites');
+  const spriteDir = path.join(ROOT, 'src', 'game', 'sprites');
   const pngs = fs.readdirSync(spriteDir).filter(f => f.endsWith('.png'));
 
   if (pngs.length === 0) return '';
@@ -131,7 +131,7 @@ const inlineScript = inlineScriptMatch ? inlineScriptMatch[1] : '';
 // esbuild resolves the dependency graph automatically from the entry point,
 // eliminating the need for manual MODULE_ORDER and regex import/export stripping.
 const esbuildResult = buildSync({
-  entryPoints: [path.join(ROOT, 'game', 'game.js')],
+  entryPoints: [path.join(DIST, 'game', 'game.js')],
   bundle: true,
   format: 'iife',
   minify: true,
@@ -182,7 +182,7 @@ if (emitSourceMap && terserResult.map) {
 
 // --- Copy sprite PNGs for lazy loading (when not inlined) ---
 if (noSprites) {
-  const spriteDir = path.join(ROOT, 'game', 'sprites');
+  const spriteDir = path.join(ROOT, 'src', 'game', 'sprites');
   const distSprites = path.join(DIST, 'sprites');
   if (!fs.existsSync(distSprites)) fs.mkdirSync(distSprites, { recursive: true });
   const pngs = fs.existsSync(spriteDir) ? fs.readdirSync(spriteDir).filter(f => f.endsWith('.png')) : [];

@@ -25,7 +25,7 @@ function shade(hex: string, amt: number): string {
       .map((c) =>
         Math.max(0, Math.min(255, c | 0))
           .toString(16)
-          .padStart(2, '0'),
+          .padStart(2, '0')
       )
       .join('')
   );

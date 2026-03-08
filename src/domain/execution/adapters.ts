@@ -26,7 +26,7 @@ export function createAdapterRegistry(): AdapterRegistry {
 
   async function execute(
     action: CanonicalAction,
-    decisionRecord: DecisionRecord,
+    decisionRecord: DecisionRecord
   ): Promise<ExecutionResult> {
     if (!decisionRecord || decisionRecord.decision !== DECISION.ALLOW) {
       return {
@@ -104,7 +104,9 @@ export function createDryRunAdapter(): {
   return {
     adapter,
     getLog: () => [...log],
-    clear: () => { log.length = 0; },
+    clear: () => {
+      log.length = 0;
+    },
   };
 }
 

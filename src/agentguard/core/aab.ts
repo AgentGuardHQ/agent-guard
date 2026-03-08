@@ -112,7 +112,7 @@ export function normalizeIntent(rawAction: RawAgentAction | null): NormalizedInt
 
 export function authorize(
   rawAction: RawAgentAction | null,
-  policies: LoadedPolicy[],
+  policies: LoadedPolicy[]
 ): AuthorizationResult {
   const intent = normalizeIntent(rawAction);
   const events: DomainEvent[] = [];
@@ -133,7 +133,7 @@ export function authorize(
         reason: result.reason,
         agentId: intent.agent,
         scope: intent.target,
-      }),
+      })
     );
 
     return { intent, result, events };
@@ -150,7 +150,7 @@ export function authorize(
           reason: result.reason,
           agentId: intent.agent,
           file: intent.target,
-        }),
+        })
       );
     } else {
       events.push(
@@ -159,7 +159,7 @@ export function authorize(
           reason: result.reason,
           agentId: intent.agent,
           scope: intent.target,
-        }),
+        })
       );
     }
   }
@@ -182,7 +182,7 @@ export function authorize(
           filesAffected: intent.filesAffected,
           limit: tightestLimit,
           action: intent.action,
-        }),
+        })
       );
     }
   }

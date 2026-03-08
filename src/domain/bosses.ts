@@ -14,7 +14,7 @@ export function checkBossEncounter(
   bosses: readonly BossDefinition[],
   triggers: Readonly<Record<string, BossTrigger>>,
   errorCounts: Map<string, number>,
-  latestMessage: string,
+  latestMessage: string
 ): { boss: BossDefinition; trigger: string } | null {
   for (const [triggerId, trigger] of Object.entries(triggers)) {
     if (trigger.errorTypes) {

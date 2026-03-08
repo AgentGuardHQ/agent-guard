@@ -72,18 +72,24 @@ export function validateBugDexEntry(entry: Record<string, unknown>): {
   }
 
   if (entry.type && !VALID_TYPES.includes(entry.type as ValidType)) {
-    errors.push(`Invalid type: "${entry.type as string}". Must be one of: ${VALID_TYPES.join(', ')}`);
+    errors.push(
+      `Invalid type: "${entry.type as string}". Must be one of: ${VALID_TYPES.join(', ')}`
+    );
   }
 
   if (entry.rarity && !VALID_RARITIES.includes(entry.rarity as ValidRarity)) {
-    errors.push(`Invalid rarity: "${entry.rarity as string}". Must be one of: ${VALID_RARITIES.join(', ')}`);
+    errors.push(
+      `Invalid rarity: "${entry.rarity as string}". Must be one of: ${VALID_RARITIES.join(', ')}`
+    );
   }
 
   for (const [stat, range] of Object.entries(STAT_RANGES)) {
     if (typeof entry[stat] !== 'number') {
       errors.push(`${stat} must be a number`);
     } else if ((entry[stat] as number) < range.min || (entry[stat] as number) > range.max) {
-      errors.push(`${stat} must be between ${range.min} and ${range.max}, got ${entry[stat] as number}`);
+      errors.push(
+        `${stat} must be between ${range.min} and ${range.max}, got ${entry[stat] as number}`
+      );
     }
   }
 

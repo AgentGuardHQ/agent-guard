@@ -1,32 +1,14 @@
 // BugMon — Entry point and game loop (TypeScript)
 
-import {
-  initRenderer,
-  drawMap,
-  drawPlayer,
-  drawBattle,
-  clear,
-} from './engine/game-renderer.js';
+import { initRenderer, drawMap, drawPlayer, drawBattle, clear } from './engine/game-renderer.js';
 import { clearJustPressed, simulatePress, simulateRelease } from './engine/input.js';
 import { getState, setState, STATES } from './engine/state.js';
 import { getMap } from './world/map.js';
 import { getPlayer, updatePlayer } from './world/player.js';
 import { checkEncounter } from './world/encounters.js';
-import {
-  startBattle,
-  getBattle,
-  updateBattle,
-  movesData,
-} from './battle/battle-engine.js';
-import {
-  startTransition,
-  updateTransition,
-  drawTransitionOverlay,
-} from './engine/transition.js';
-import {
-  clearPendingEvolution,
-  getEvolutionProgress,
-} from './evolution/evolution.js';
+import { startBattle, getBattle, updateBattle, movesData } from './battle/battle-engine.js';
+import { startTransition, updateTransition, drawTransitionOverlay } from './engine/transition.js';
+import { clearPendingEvolution, getEvolutionProgress } from './evolution/evolution.js';
 import {
   updateEvolutionAnimation,
   drawEvolutionAnimation,

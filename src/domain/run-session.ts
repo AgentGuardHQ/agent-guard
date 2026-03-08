@@ -20,17 +20,25 @@ import type {
   Severity,
 } from '../core/types.js';
 import { simpleHash } from './hash.js';
-import { createComboState, recordResolution, recordFailure, applyComboXP, getTier } from './combo.js';
+import {
+  createComboState,
+  recordResolution,
+  recordFailure,
+  applyComboXP,
+  getTier,
+} from './combo.js';
 
 /** Default idle/active severity threshold. Severity 1-2 auto-resolve. */
 const DEFAULT_IDLE_THRESHOLD: Severity = 2;
 
 /** Create a new run session. */
-export function createRun(options: {
-  playerLevel?: number;
-  repo?: string;
-  idleThreshold?: number;
-} = {}): RunSession {
+export function createRun(
+  options: {
+    playerLevel?: number;
+    repo?: string;
+    idleThreshold?: number;
+  } = {}
+): RunSession {
   const now = Date.now();
   return {
     runId: `run_${now}_${simpleHash(String(now + Math.random()))}`,
@@ -58,7 +66,7 @@ export function getEncounterMode(run: RunSession, severity: number): EncounterMo
 /** Record an encounter in the run. */
 export function addEncounter(
   run: RunSession,
-  encounter: Omit<RunEncounter, 'timestamp' | 'resolved'>,
+  encounter: Omit<RunEncounter, 'timestamp' | 'resolved'>
 ): { run: RunSession; brokeStreak: number } {
   const entry: RunEncounter = {
     ...encounter,
@@ -81,7 +89,7 @@ export function addEncounter(
 /** Record a resolution in the run. */
 export function addResolution(
   run: RunSession,
-  resolution: { monsterId: number; monsterName: string; baseXP: number },
+  resolution: { monsterId: number; monsterName: string; baseXP: number }
 ): {
   run: RunSession;
   multiplier: number;
@@ -90,7 +98,11 @@ export function addResolution(
   bonusXP: number;
 } {
   const { state: comboState, multiplier, tier } = recordResolution(run.combo);
-  const { state: xpState, totalXP, bonusXP } = applyComboXP(comboState, resolution.baseXP, multiplier);
+  const {
+    state: xpState,
+    totalXP,
+    bonusXP,
+  } = applyComboXP(comboState, resolution.baseXP, multiplier);
 
   const entry: RunResolution = {
     monsterId: resolution.monsterId,
@@ -132,7 +144,7 @@ export function addResolution(
 /** Record a boss defeat in the run. */
 export function addBossDefeat(
   run: RunSession,
-  boss: { bossId: string; bossName: string; xp: number },
+  boss: { bossId: string; bossName: string; xp: number }
 ): RunSession {
   return {
     ...run,

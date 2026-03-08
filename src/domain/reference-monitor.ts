@@ -41,8 +41,20 @@ interface MonitorOptions {
 }
 
 interface MonitorInstance {
-  authorize(type: string, target: string, justification: string, metadata?: Record<string, unknown>): AuthorizeResult;
-  authorizeBatch(actions: readonly { type: string; target: string; justification: string; metadata?: Record<string, unknown> }[]): { allowed: boolean; results: AuthorizeResult[] };
+  authorize(
+    type: string,
+    target: string,
+    justification: string,
+    metadata?: Record<string, unknown>
+  ): AuthorizeResult;
+  authorizeBatch(
+    actions: readonly {
+      type: string;
+      target: string;
+      justification: string;
+      metadata?: Record<string, unknown>;
+    }[]
+  ): { allowed: boolean; results: AuthorizeResult[] };
   getTrail(): DecisionRecord[];
   getPolicyHash(): string;
   getStats(): { total: number; allowed: number; denied: number; escalated: number };
@@ -60,7 +72,10 @@ export function createMonitor(policy: Policy, options: MonitorOptions = {}): Mon
   const onEscalate = options.onEscalate || null;
 
   const trail: DecisionRecord[] = [];
-  function createDecisionRecordFn(action: CanonicalAction, result: { decision: Decision; reason: string; capability?: unknown }): DecisionRecord {
+  function createDecisionRecordFn(
+    action: CanonicalAction,
+    result: { decision: Decision; reason: string; capability?: unknown }
+  ): DecisionRecord {
     const record: DecisionRecord = {
       actionId: action.id,
       decision: result.decision,
@@ -80,7 +95,7 @@ export function createMonitor(policy: Policy, options: MonitorOptions = {}): Mon
     type: string,
     target: string,
     justification: string,
-    metadata: Record<string, unknown> = {},
+    metadata: Record<string, unknown> = {}
   ): AuthorizeResult {
     const action = createAction(type, target, justification, metadata);
 
@@ -115,10 +130,15 @@ export function createMonitor(policy: Policy, options: MonitorOptions = {}): Mon
   }
 
   function authorizeBatch(
-    actions: readonly { type: string; target: string; justification: string; metadata?: Record<string, unknown> }[],
+    actions: readonly {
+      type: string;
+      target: string;
+      justification: string;
+      metadata?: Record<string, unknown>;
+    }[]
   ): { allowed: boolean; results: AuthorizeResult[] } {
     const results = actions.map((a) =>
-      authorize(a.type, a.target, a.justification, a.metadata || {}),
+      authorize(a.type, a.target, a.justification, a.metadata || {})
     );
     const allowed = results.every((r) => r.allowed);
     return { allowed, results };

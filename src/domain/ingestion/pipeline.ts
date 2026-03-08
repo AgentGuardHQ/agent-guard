@@ -46,7 +46,7 @@ export function ingest(rawText: string): DomainEvent[] {
         severity: bugEvent.severity,
         fingerprint: (error as { fingerprint?: string }).fingerprint || fingerprint(error),
         bugEvent,
-      }),
+      })
     );
   }
 

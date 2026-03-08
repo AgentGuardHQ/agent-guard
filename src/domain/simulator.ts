@@ -67,7 +67,7 @@ export function simulate(
   strategy: Strategy,
   numBattles: number,
   baseSeed: number,
-  strategyName?: string,
+  strategyName?: string
 ): SimulateResult {
   const stats: Record<string, MonsterStats> = {};
 
@@ -99,7 +99,7 @@ export function simulate(
 
       const battlesPerMatchup = Math.max(
         1,
-        Math.floor(numBattles / ((monsters.length * (monsters.length - 1)) / 2)),
+        Math.floor(numBattles / ((monsters.length * (monsters.length - 1)) / 2))
       );
 
       for (let k = 0; k < battlesPerMatchup; k++) {
@@ -168,7 +168,7 @@ export function compareStrategies(
   numBattles: number,
   baseSeed: number,
   nameA: string,
-  nameB: string,
+  nameB: string
 ): CompareResult {
   const winsA = { total: 0, battles: 0 };
   const winsB = { total: 0, battles: 0 };
@@ -182,7 +182,7 @@ export function compareStrategies(
       const monB = monsters[j];
       const battlesPerMatchup = Math.max(
         1,
-        Math.floor(numBattles / ((monsters.length * (monsters.length - 1)) / 2)),
+        Math.floor(numBattles / ((monsters.length * (monsters.length - 1)) / 2))
       );
 
       let aWins = 0;
@@ -239,7 +239,7 @@ export function compareAllStrategies(
   typeChart: TypeChart,
   strategies: Record<string, StrategyEntry>,
   numBattles: number,
-  baseSeed: number,
+  baseSeed: number
 ): CompareAllResult {
   const names = Object.keys(strategies);
   const results: CompareResult[] = [];
@@ -257,7 +257,7 @@ export function compareAllStrategies(
         numBattles,
         baseSeed + (i * names.length + j) * 100000,
         strategies[nameA].name,
-        strategies[nameB].name,
+        strategies[nameB].name
       );
       results.push(result);
     }
@@ -277,7 +277,7 @@ export function runBattle(
   typeChart: TypeChart,
   strategyA: Strategy,
   strategyB: Strategy,
-  rng: { random: () => number; seed: number },
+  rng: { random: () => number; seed: number }
 ): SimulationResult {
   return simulateBattle(monA, monB, movesData, { effectiveness: typeChart }, 100, {
     strategyA,

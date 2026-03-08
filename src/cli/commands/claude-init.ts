@@ -53,7 +53,7 @@ export async function claudeInit(args: string[] = []): Promise<void> {
       settings = JSON.parse(readFileSync(settingsPath, 'utf8')) as Settings;
     } catch {
       process.stderr.write(
-        `  ${FG.yellow}Warning:${RESET} Could not parse ${settingsLabel}, creating fresh config.\n`,
+        `  ${FG.yellow}Warning:${RESET} Could not parse ${settingsLabel}, creating fresh config.\n`
       );
       settings = {};
     }
@@ -61,7 +61,7 @@ export async function claudeInit(args: string[] = []): Promise<void> {
 
   if (hasBugMonHook(settings)) {
     process.stderr.write(
-      `  ${FG.yellow}Already configured.${RESET} BugMon hook found in ${settingsLabel}.\n`,
+      `  ${FG.yellow}Already configured.${RESET} BugMon hook found in ${settingsLabel}.\n`
     );
     process.stderr.write(`  ${DIM}Use --remove to uninstall.${RESET}\n\n`);
     return;
@@ -84,10 +84,12 @@ export async function claudeInit(args: string[] = []): Promise<void> {
 
   writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf8');
 
-  process.stderr.write(`  ${FG.green}✓${RESET}  Hook installed in ${FG.cyan}${settingsLabel}${RESET}\n`);
+  process.stderr.write(
+    `  ${FG.green}✓${RESET}  Hook installed in ${FG.cyan}${settingsLabel}${RESET}\n`
+  );
   process.stderr.write(`  ${DIM}Command: ${hookCommand}${RESET}\n\n`);
   process.stderr.write(
-    `  ${FG.green}${BOLD}Done!${RESET} BugMon encounters will trigger on errors in Claude Code.\n`,
+    `  ${FG.green}${BOLD}Done!${RESET} BugMon encounters will trigger on errors in Claude Code.\n`
   );
   process.stderr.write(`  ${DIM}Run "bugmon dex" to view your collection.${RESET}\n`);
   process.stderr.write(`  ${DIM}Use "bugmon claude-init --remove" to uninstall.${RESET}\n\n`);
@@ -96,7 +98,7 @@ export async function claudeInit(args: string[] = []): Promise<void> {
 function removeHook(settingsPath: string, settingsLabel: string): void {
   if (!existsSync(settingsPath)) {
     process.stderr.write(
-      `  ${DIM}No settings file found at ${settingsLabel}. Nothing to remove.${RESET}\n\n`,
+      `  ${DIM}No settings file found at ${settingsLabel}. Nothing to remove.${RESET}\n\n`
     );
     return;
   }
@@ -111,7 +113,7 @@ function removeHook(settingsPath: string, settingsLabel: string): void {
 
   if (!hasBugMonHook(settings)) {
     process.stderr.write(
-      `  ${DIM}No BugMon hook found in ${settingsLabel}. Nothing to remove.${RESET}\n\n`,
+      `  ${DIM}No BugMon hook found in ${settingsLabel}. Nothing to remove.${RESET}\n\n`
     );
     return;
   }
@@ -131,9 +133,11 @@ function removeHook(settingsPath: string, settingsLabel: string): void {
 
   writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf8');
 
-  process.stderr.write(`  ${FG.green}✓${RESET}  Hook removed from ${FG.cyan}${settingsLabel}${RESET}\n`);
   process.stderr.write(
-    `  ${DIM}BugMon encounters will no longer trigger in Claude Code.${RESET}\n\n`,
+    `  ${FG.green}✓${RESET}  Hook removed from ${FG.cyan}${settingsLabel}${RESET}\n`
+  );
+  process.stderr.write(
+    `  ${DIM}BugMon encounters will no longer trigger in Claude Code.${RESET}\n\n`
   );
 }
 

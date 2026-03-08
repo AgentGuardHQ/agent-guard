@@ -44,7 +44,7 @@ function computeMaxSeverity(decision: EvalResult, violations: InvariantCheck[]):
 function generateSummary(
   intent: NormalizedIntent,
   decision: EvalResult,
-  violations: InvariantCheck[],
+  violations: InvariantCheck[]
 ): string {
   const parts: string[] = [];
 

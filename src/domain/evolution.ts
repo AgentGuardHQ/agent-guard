@@ -15,7 +15,7 @@ import type {
  */
 export function findTrigger(
   monsterId: number,
-  evolutionData: EvolutionData | null,
+  evolutionData: EvolutionData | null
 ): { trigger: EvolutionTrigger; chain: EvolutionChain } | null {
   if (!evolutionData) return null;
   for (const chain of evolutionData.chains) {
@@ -33,7 +33,7 @@ export function checkEvolution(
   monster: Bugmon,
   events: Record<string, number>,
   evolutionData: EvolutionData | null,
-  monstersData: readonly Bugmon[],
+  monstersData: readonly Bugmon[]
 ): EvolutionResult | null {
   if (!monster.evolvesTo) return null;
   const match = findTrigger(monster.id, evolutionData);
@@ -56,7 +56,7 @@ export function checkPartyEvolutions(
   party: readonly Bugmon[],
   events: Record<string, number>,
   evolutionData: EvolutionData | null,
-  monstersData: readonly Bugmon[],
+  monstersData: readonly Bugmon[]
 ): EvolutionResult | null {
   for (let i = 0; i < party.length; i++) {
     const result = checkEvolution(party[i], events, evolutionData, monstersData);
@@ -80,7 +80,7 @@ export function getEvolutionProgress(
   monster: Bugmon,
   events: Record<string, number>,
   evolutionData: EvolutionData | null,
-  monstersData: readonly Bugmon[] | null,
+  monstersData: readonly Bugmon[] | null
 ): EvolutionProgress | null {
   if (!monster.evolvesTo) return null;
   const match = findTrigger(monster.id, evolutionData);

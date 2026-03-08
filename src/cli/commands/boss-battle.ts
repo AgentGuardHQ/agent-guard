@@ -107,9 +107,7 @@ export async function interactiveBossBattle(boss: BossLike): Promise<BossResult>
 
   process.stderr.write('\n');
   process.stderr.write(c('  ╔══════════════════════════════════════════════╗\n', 'red'));
-  process.stderr.write(
-    c('  ║', 'red') + b(c(`  BOSS BATTLE! ${enemy.name}`, 'red')) + '\n',
-  );
+  process.stderr.write(c('  ║', 'red') + b(c(`  BOSS BATTLE! ${enemy.name}`, 'red')) + '\n');
   process.stderr.write(c('  ╚══════════════════════════════════════════════╝\n', 'red'));
 
   if (enemy.description) {
@@ -119,10 +117,10 @@ export async function interactiveBossBattle(boss: BossLike): Promise<BossResult>
   while (true) {
     process.stderr.write('\n');
     process.stderr.write(
-      `  ${b(c(enemy.name, 'red'))} ${c(`[${enemy.type}]`, 'gray')}  ${hpBar(enemy.currentHP, enemy.hp)}\n`,
+      `  ${b(c(enemy.name, 'red'))} ${c(`[${enemy.type}]`, 'gray')}  ${hpBar(enemy.currentHP, enemy.hp)}\n`
     );
     process.stderr.write(
-      `  ${b(playerMon.name)} ${c(`[${playerMon.type}]`, 'gray')}  ${hpBar(playerMon.currentHP, playerMon.hp)}\n`,
+      `  ${b(playerMon.name)} ${c(`[${playerMon.type}]`, 'gray')}  ${hpBar(playerMon.currentHP, playerMon.hp)}\n`
     );
     process.stderr.write('\n');
 
@@ -148,7 +146,7 @@ export async function interactiveBossBattle(boss: BossLike): Promise<BossResult>
         if (eff > 1) effLabel = c(' (super effective)', 'green');
         else if (eff < 1) effLabel = c(' (not effective)', 'red');
         process.stderr.write(
-          `  ${c(`[${i + 1}]`, 'yellow')} ${move.name} ${c(`[${move.type}]`, 'gray')} PWR:${move.power}${effLabel}\n`,
+          `  ${c(`[${i + 1}]`, 'yellow')} ${move.name} ${c(`[${move.type}]`, 'gray')} PWR:${move.power}${effLabel}\n`
         );
       });
       process.stderr.write(`  ${c('[0]', 'yellow')} Back\n`);
@@ -160,8 +158,7 @@ export async function interactiveBossBattle(boss: BossLike): Promise<BossResult>
       if (moveIdx < 0 || moveIdx >= playerMoves.length) continue;
 
       const playerMove = playerMoves[moveIdx];
-      const enemyMove =
-        effectiveEnemyMoves[Math.floor(Math.random() * effectiveEnemyMoves.length)];
+      const enemyMove = effectiveEnemyMoves[Math.floor(Math.random() * effectiveEnemyMoves.length)];
 
       const playerFirst = playerMon.speed >= enemy.speed;
       const turnOrder = playerFirst
@@ -209,7 +206,7 @@ export async function interactiveBossBattle(boss: BossLike): Promise<BossResult>
 
           if (enemy.defeatCondition) {
             process.stderr.write(
-              `\n  ${c('To truly defeat this boss:', 'cyan')} ${enemy.defeatCondition}\n`,
+              `\n  ${c('To truly defeat this boss:', 'cyan')} ${enemy.defeatCondition}\n`
             );
           }
           process.stderr.write('\n');
@@ -251,7 +248,7 @@ function calcDamage(
   attacker: Combatant,
   move: MoveData,
   defender: Combatant,
-  typeChart: Record<string, Record<string, number>>,
+  typeChart: Record<string, Record<string, number>>
 ): { damage: number; effText: string } {
   const power = move.power || 5;
   const attack = attacker.attack || 5;
@@ -262,7 +259,7 @@ function calcDamage(
 
   const damage = Math.max(
     1,
-    Math.floor((power + attack - Math.floor(defense / 2) + randomBonus) * mult * crit),
+    Math.floor((power + attack - Math.floor(defense / 2) + randomBonus) * mult * crit)
   );
 
   let effText = '';
@@ -280,7 +277,7 @@ function getParty(): MonsterLike[] {
 
   const dataDir = join(__dirname, '..', '..', '..', 'ecosystem', 'data');
   const monsters = JSON.parse(
-    readFileSync(join(dataDir, 'monsters.json'), 'utf8'),
+    readFileSync(join(dataDir, 'monsters.json'), 'utf8')
   ) as MonsterLike[];
   const starters = monsters.filter((m) => m.rarity === 'common');
   const starter = starters[Math.floor(Math.random() * starters.length)];

@@ -121,14 +121,14 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
     severity: 2,
     check(state) {
       const manifestChanged = (state.modifiedFiles || []).some(
-        (f) => f === 'package.json' || f.endsWith('/package.json'),
+        (f) => f === 'package.json' || f.endsWith('/package.json')
       );
       const lockfileChanged = (state.modifiedFiles || []).some(
         (f) =>
           f === 'package-lock.json' ||
           f === 'yarn.lock' ||
           f === 'pnpm-lock.yaml' ||
-          f.endsWith('/package-lock.json'),
+          f.endsWith('/package-lock.json')
       );
 
       if (!manifestChanged) {

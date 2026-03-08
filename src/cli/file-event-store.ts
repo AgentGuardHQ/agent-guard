@@ -2,7 +2,14 @@
 // Implements the EventStore interface from src/domain/event-store.ts
 // Each session gets its own JSONL file for efficient append-only writes.
 
-import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync, appendFileSync } from 'node:fs';
+import {
+  readFileSync,
+  writeFileSync,
+  mkdirSync,
+  existsSync,
+  readdirSync,
+  appendFileSync,
+} from 'node:fs';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 import type { DomainEvent, EventFilter, EventStore } from '../core/types.js';
@@ -35,7 +42,7 @@ export function createFileEventStore(sessionId?: string): EventStore & { session
 
     append(event: DomainEvent): void {
       const { valid, errors } = validateEvent(
-        event as unknown as Record<string, unknown>,
+        event as unknown as Record<string, unknown>
       ) as ValidationResult;
       if (!valid) {
         throw new Error(`Cannot append invalid event: ${errors.join('; ')}`);

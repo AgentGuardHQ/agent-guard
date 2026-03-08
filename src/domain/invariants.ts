@@ -3,7 +3,13 @@
 // Produces InvariantViolation events when constraints are broken.
 // No DOM, no Node.js APIs — pure functions.
 
-import type { DomainEvent, InvariantType, DomainInvariantDef, ValidationResult, Severity } from '../core/types.js';
+import type {
+  DomainEvent,
+  InvariantType,
+  DomainInvariantDef,
+  ValidationResult,
+  Severity,
+} from '../core/types.js';
 import { createEvent, INVARIANT_VIOLATION } from './events.js';
 import { simpleHash } from './hash.js';
 
@@ -46,7 +52,10 @@ interface DependencyContext {
 
 type EvalContext = TestResultContext | ActionContext | DependencyContext;
 
-function evaluateTestResult(_invariant: DomainInvariantDef, context: TestResultContext): EvalResult {
+function evaluateTestResult(
+  _invariant: DomainInvariantDef,
+  context: TestResultContext
+): EvalResult {
   const passed = context.result === 'pass';
   return {
     violated: !passed,
@@ -58,18 +67,32 @@ function evaluateTestResult(_invariant: DomainInvariantDef, context: TestResultC
   };
 }
 
-function extractForbiddenAction(condition: { field: string; operator: string; value: unknown }): string | null {
+function extractForbiddenAction(condition: {
+  field: string;
+  operator: string;
+  value: unknown;
+}): string | null {
   // The condition is structured as { field: 'action', operator: '!==', value: 'shell.exec' }
-  if (condition.field === 'action' && (condition.operator === '!==' || condition.operator === '!=')) {
+  if (
+    condition.field === 'action' &&
+    (condition.operator === '!==' || condition.operator === '!=')
+  ) {
     return condition.value as string;
   }
   // Fallback: try parsing from string representation
-  const condStr = typeof condition === 'string' ? condition : `${condition.field} ${condition.operator} '${condition.value}'`;
+  const condStr =
+    typeof condition === 'string'
+      ? condition
+      : `${condition.field} ${condition.operator} '${condition.value}'`;
   const match = condStr.match(/action\s*!==?\s*'([^']+)'/);
   return match ? match[1] : null;
 }
 
-function extractForbiddenDependency(condition: { field: string; operator: string; value: unknown }): {
+function extractForbiddenDependency(condition: {
+  field: string;
+  operator: string;
+  value: unknown;
+}): {
   sourceLayer: string;
   targetLayer: string;
 } | null {
@@ -94,7 +117,8 @@ function evaluateAction(invariant: DomainInvariantDef, context: ActionContext): 
 
 function evaluateDependency(invariant: DomainInvariantDef, context: DependencyContext): EvalResult {
   const forbidden = extractForbiddenDependency(invariant.condition);
-  if (!forbidden) return { violated: false, expected: 'no forbidden dependencies', actual: 'clean' };
+  if (!forbidden)
+    return { violated: false, expected: 'no forbidden dependencies', actual: 'clean' };
 
   const violated =
     context.source?.layer === forbidden.sourceLayer &&
@@ -110,10 +134,22 @@ function evaluateDependency(invariant: DomainInvariantDef, context: DependencyCo
 }
 
 // --- Evaluator Registry ---
-const EVALUATORS: Record<string, (invariant: DomainInvariantDef, context: EvalContext) => EvalResult> = {
-  [INVARIANT_TYPES.test_result]: evaluateTestResult as (inv: DomainInvariantDef, ctx: EvalContext) => EvalResult,
-  [INVARIANT_TYPES.action]: evaluateAction as (inv: DomainInvariantDef, ctx: EvalContext) => EvalResult,
-  [INVARIANT_TYPES.dependency]: evaluateDependency as (inv: DomainInvariantDef, ctx: EvalContext) => EvalResult,
+const EVALUATORS: Record<
+  string,
+  (invariant: DomainInvariantDef, context: EvalContext) => EvalResult
+> = {
+  [INVARIANT_TYPES.test_result]: evaluateTestResult as (
+    inv: DomainInvariantDef,
+    ctx: EvalContext
+  ) => EvalResult,
+  [INVARIANT_TYPES.action]: evaluateAction as (
+    inv: DomainInvariantDef,
+    ctx: EvalContext
+  ) => EvalResult,
+  [INVARIANT_TYPES.dependency]: evaluateDependency as (
+    inv: DomainInvariantDef,
+    ctx: EvalContext
+  ) => EvalResult,
 };
 
 // --- Public API ---
@@ -151,7 +187,7 @@ export function loadInvariants(config: { invariants?: unknown[] }): {
       valid.push(inv as DomainInvariantDef);
     } else {
       errors.push(
-        `Invariant "${(invObj.id as string) || (invObj.name as string) || '?'}": ${result.errors.join('; ')}`,
+        `Invariant "${(invObj.id as string) || (invObj.name as string) || '?'}": ${result.errors.join('; ')}`
       );
     }
   }
@@ -161,7 +197,7 @@ export function loadInvariants(config: { invariants?: unknown[] }): {
 
 export function evaluateInvariant(
   invariant: DomainInvariantDef,
-  context: EvalContext,
+  context: EvalContext
 ): DomainEvent | null {
   const evaluator = EVALUATORS[invariant.type];
   if (!evaluator) return null;
@@ -184,7 +220,7 @@ export function evaluateInvariant(
 
 export function evaluateAll(
   invariants: readonly DomainInvariantDef[],
-  context: EvalContext,
+  context: EvalContext
 ): DomainEvent[] {
   const violations: DomainEvent[] = [];
   for (const inv of invariants) {

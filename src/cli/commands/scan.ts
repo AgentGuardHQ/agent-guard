@@ -36,10 +36,10 @@ export async function scan(target: string): Promise<void> {
   }
 
   process.stderr.write(
-    `\n  \x1b[2mNo linting tools found (eslint, tsc) and no syntax errors detected.\x1b[0m\n`,
+    `\n  \x1b[2mNo linting tools found (eslint, tsc) and no syntax errors detected.\x1b[0m\n`
   );
   process.stderr.write(
-    `  \x1b[2mInstall eslint or add a tsconfig.json for deeper scanning.\x1b[0m\n\n`,
+    `  \x1b[2mInstall eslint or add a tsconfig.json for deeper scanning.\x1b[0m\n\n`
   );
 }
 

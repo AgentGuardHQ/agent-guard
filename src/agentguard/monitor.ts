@@ -44,7 +44,10 @@ interface RecentDenial {
 export interface Monitor {
   bus: EventBus<Record<string, unknown>>;
   store: EventStore;
-  process(rawAction: RawAgentAction | null, systemContext?: Record<string, unknown>): MonitorDecision;
+  process(
+    rawAction: RawAgentAction | null,
+    systemContext?: Record<string, unknown>
+  ): MonitorDecision;
   getStatus(): Record<string, unknown>;
   resetEscalation(): void;
 }

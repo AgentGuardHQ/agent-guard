@@ -32,7 +32,7 @@ export function drawSprite(
   x: number,
   y: number,
   width: number,
-  height: number,
+  height: number
 ): boolean {
   const img = spriteCache[name];
   if (img) {

@@ -5,7 +5,7 @@ import {
   resetDevEventCounter,
   devEventKindToDomainKind,
 } from '../../src/domain/dev-event.js';
-import type { DevEventInput } from '../../src/domain/dev-event.js';
+import type { DevEventInput as _DevEventInput } from '../../src/domain/dev-event.js';
 
 describe('domain/dev-event', () => {
   beforeEach(() => {

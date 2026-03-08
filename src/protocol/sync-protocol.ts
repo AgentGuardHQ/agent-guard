@@ -45,7 +45,7 @@ export interface TimestampedField<T> {
  */
 export function mergeField<T>(
   local: TimestampedField<T>,
-  remote: TimestampedField<T>,
+  remote: TimestampedField<T>
 ): TimestampedField<T> {
   return remote.updatedAt > local.updatedAt ? remote : local;
 }

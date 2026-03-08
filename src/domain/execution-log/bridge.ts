@@ -39,12 +39,9 @@ const DOMAIN_TO_EXECUTION_KIND: Record<string, string> = {
 
 // Override with failure kinds when the domain event indicates failure
 const FAILURE_OVERRIDES: Record<string, (event: DomainEvent) => string | null> = {
-  TestCompleted: (event) =>
-    event.result === 'fail' ? TEST_SUITE_FAILED : null,
-  BuildCompleted: (event) =>
-    event.result === 'fail' ? BUILD_FAILED : null,
-  DeployCompleted: (event) =>
-    event.result === 'fail' ? DEPLOYMENT_FAILED : null,
+  TestCompleted: (event) => (event.result === 'fail' ? TEST_SUITE_FAILED : null),
+  BuildCompleted: (event) => (event.result === 'fail' ? BUILD_FAILED : null),
+  DeployCompleted: (event) => (event.result === 'fail' ? DEPLOYMENT_FAILED : null),
 };
 
 /**
@@ -72,11 +69,7 @@ function inferSource(event: DomainEvent): EventSource {
   if (kind === 'TestCompleted' || kind === 'BuildCompleted') return 'ci';
   if (kind === 'CommitCreated' || kind === 'FileSaved') return 'git';
   if (kind === 'DeployCompleted') return 'runtime';
-  if (
-    kind === 'PolicyDenied' ||
-    kind === 'InvariantViolation' ||
-    kind === 'BlastRadiusExceeded'
-  ) {
+  if (kind === 'PolicyDenied' || kind === 'InvariantViolation' || kind === 'BlastRadiusExceeded') {
     return 'governance';
   }
   if (kind === 'ErrorObserved') return 'runtime';
@@ -99,9 +92,7 @@ function buildContext(event: DomainEvent): ExecutionContext {
  * Convert a domain event into an execution event.
  * Returns null if the domain event kind has no execution event mapping.
  */
-export function domainEventToExecutionEvent(
-  event: DomainEvent,
-): ExecutionEvent | null {
+export function domainEventToExecutionEvent(event: DomainEvent): ExecutionEvent | null {
   let executionKind = DOMAIN_TO_EXECUTION_KIND[event.kind];
   if (!executionKind) return null;
 
@@ -133,9 +124,7 @@ export function domainEventToExecutionEvent(
  * Create a bridge that automatically records domain events as execution events.
  * Returns a subscriber function compatible with the domain event system.
  */
-export function createEventBridge(
-  log: ExecutionEventLog,
-): (event: DomainEvent) => void {
+export function createEventBridge(log: ExecutionEventLog): (event: DomainEvent) => void {
   return (event: DomainEvent) => {
     const executionEvent = domainEventToExecutionEvent(event);
     if (executionEvent) {

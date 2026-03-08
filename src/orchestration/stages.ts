@@ -74,7 +74,7 @@ export function getStageIndex(stageId: string): number {
 
 export function validateStageOutput(
   stageId: string,
-  output: Record<string, unknown>,
+  output: Record<string, unknown>
 ): ValidationResult {
   const errors: string[] = [];
   const stage = getStage(stageId);
@@ -94,7 +94,7 @@ export function validateStageOutput(
 
 export function validateStageInput(
   stageId: string,
-  context: Record<string, unknown>,
+  context: Record<string, unknown>
 ): ValidationResult {
   const errors: string[] = [];
   const stage = getStage(stageId);
@@ -121,7 +121,7 @@ export function isRoleAuthorizedForStage(role: string, stageId: string): boolean
 
 export function validateFileScope(
   allowedFiles: readonly string[],
-  modifiedFiles: readonly string[],
+  modifiedFiles: readonly string[]
 ): { valid: boolean; violations: string[] } {
   const allowed = new Set(allowedFiles);
   const violations = modifiedFiles.filter((f) => !allowed.has(f));

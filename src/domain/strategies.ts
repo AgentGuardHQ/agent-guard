@@ -14,7 +14,7 @@ function getMoves(mon: Bugmon, movesData: readonly BattleMove[]): BattleMove[] {
 function getEffectiveness(
   moveType: string,
   defenderType: string,
-  typeChart: TypeChart | null,
+  typeChart: TypeChart | null
 ): number {
   if (!typeChart || !moveType || !defenderType) return 1.0;
   return typeChart[moveType]?.[defenderType] ?? 1.0;
@@ -24,7 +24,7 @@ function estimateDamage(
   attacker: Bugmon,
   move: BattleMove,
   defender: Bugmon,
-  typeChart: TypeChart | null,
+  typeChart: TypeChart | null
 ): number {
   if (move.category === 'heal') return 0;
   const base = move.power + attacker.attack - Math.floor(defender.defense / 2) + 2; // avg random
@@ -38,7 +38,7 @@ export const randomStrategy: Strategy = (
   _defender: Bugmon,
   movesData: readonly BattleMove[],
   _typeChart: TypeChart | null,
-  rng?: BattleRNG,
+  rng?: BattleRNG
 ): BattleMove => {
   const moves = getMoves(attacker, movesData);
   const rand = rng?.random ?? Math.random;
@@ -50,7 +50,7 @@ export const highestDamageStrategy: Strategy = (
   attacker: Bugmon,
   defender: Bugmon,
   movesData: readonly BattleMove[],
-  typeChart: TypeChart | null,
+  typeChart: TypeChart | null
 ): BattleMove => {
   const moves = getMoves(attacker, movesData);
   let best = moves[0];
@@ -71,7 +71,7 @@ export const typeAwareStrategy: Strategy = (
   attacker: Bugmon,
   defender: Bugmon,
   movesData: readonly BattleMove[],
-  typeChart: TypeChart | null,
+  typeChart: TypeChart | null
 ): BattleMove => {
   const moves = getMoves(attacker, movesData);
   let best = moves[0];
@@ -95,7 +95,7 @@ export const mixedStrategy: Strategy = (
   defender: Bugmon,
   movesData: readonly BattleMove[],
   typeChart: TypeChart | null,
-  rng?: BattleRNG,
+  rng?: BattleRNG
 ): BattleMove => {
   const rand = rng?.random ?? Math.random;
   if (rand() < 0.7) {
@@ -110,7 +110,7 @@ export const hpAwareStrategy: Strategy = (
   defender: Bugmon,
   movesData: readonly BattleMove[],
   typeChart: TypeChart | null,
-  rng?: BattleRNG,
+  rng?: BattleRNG
 ): BattleMove => {
   const moves = getMoves(attacker, movesData);
   const hpRatio = (attacker.currentHP ?? attacker.hp) / attacker.hp;
@@ -128,7 +128,7 @@ export const defensiveStrategy: Strategy = (
   attacker: Bugmon,
   defender: Bugmon,
   movesData: readonly BattleMove[],
-  typeChart: TypeChart | null,
+  typeChart: TypeChart | null
 ): BattleMove => {
   const moves = getMoves(attacker, movesData);
   const hpRatio = (attacker.currentHP ?? attacker.hp) / attacker.hp;
@@ -160,7 +160,7 @@ export const adaptiveStrategy: Strategy = (
   defender: Bugmon,
   movesData: readonly BattleMove[],
   typeChart: TypeChart | null,
-  rng?: BattleRNG,
+  rng?: BattleRNG
 ): BattleMove => {
   const ownHpRatio = (attacker.currentHP ?? attacker.hp) / attacker.hp;
   const oppHpRatio = (defender.currentHP ?? defender.hp) / defender.hp;

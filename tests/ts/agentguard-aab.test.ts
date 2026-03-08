@@ -5,7 +5,7 @@ import {
   detectGitAction,
   isDestructiveCommand,
 } from '../../src/agentguard/core/aab.js';
-import type { RawAgentAction } from '../../src/agentguard/core/aab.js';
+import type { RawAgentAction as _RawAgentAction } from '../../src/agentguard/core/aab.js';
 
 describe('agentguard/core/aab', () => {
   describe('detectGitAction', () => {

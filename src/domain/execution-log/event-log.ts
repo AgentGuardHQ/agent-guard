@@ -2,11 +2,7 @@
 // Stores execution events and supports query, replay, trace, and NDJSON serialization.
 // No DOM, no Node.js APIs — pure domain logic.
 
-import type {
-  ExecutionEvent,
-  ExecutionEventFilter,
-  ExecutionEventLog,
-} from '../../core/types.js';
+import type { ExecutionEvent, ExecutionEventFilter, ExecutionEventLog } from '../../core/types.js';
 import { validateExecutionEvent } from './event-schema.js';
 
 /**
@@ -26,9 +22,7 @@ export function createExecutionEventLog(): ExecutionEventLog {
 
   return {
     append(event: ExecutionEvent): void {
-      const { valid, errors } = validateExecutionEvent(
-        event as unknown as Record<string, unknown>,
-      );
+      const { valid, errors } = validateExecutionEvent(event as unknown as Record<string, unknown>);
       if (!valid) {
         throw new Error(`Cannot append invalid execution event: ${errors.join('; ')}`);
       }

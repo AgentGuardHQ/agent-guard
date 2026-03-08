@@ -458,5 +458,5 @@ export const MOVES = [
     name: 'LayerBreach',
     power: 10,
     type: 'architecture',
-  }
+  },
 ];

@@ -48,16 +48,16 @@ export interface Engine {
   getPolicyErrors(): string[];
   getPolicyCount(): number;
   getInvariantCount(): number;
-  evaluate(rawAction: RawAgentAction | null, systemContext?: Record<string, unknown>): EngineDecision;
+  evaluate(
+    rawAction: RawAgentAction | null,
+    systemContext?: Record<string, unknown>
+  ): EngineDecision;
 }
 
-function selectIntervention(
-  decision: EvalResult,
-  violations: InvariantCheck[],
-): InterventionType {
+function selectIntervention(decision: EvalResult, violations: InvariantCheck[]): InterventionType {
   const maxSeverity = Math.max(
     decision.severity || 0,
-    ...violations.map((v) => v.invariant?.severity || 0),
+    ...violations.map((v) => v.invariant?.severity || 0)
   );
 
   if (maxSeverity >= 5) return INTERVENTION.DENY;

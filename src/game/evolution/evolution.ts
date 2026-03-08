@@ -9,20 +9,20 @@ type DomainCheckEvolution = (
   monster: unknown,
   events: unknown,
   evolutionData: unknown,
-  monstersData: unknown,
+  monstersData: unknown
 ) => unknown;
 type DomainCheckPartyEvolutions = (
   party: unknown[],
   events: unknown,
   evolutionData: unknown,
-  monstersData: unknown,
+  monstersData: unknown
 ) => { from: GameMon; to: GameMon; partyIndex: number } | null;
 type DomainApplyEvolution = (monster: unknown, evolvedForm: unknown) => GameMon;
 type DomainGetEvolutionProgress = (
   monster: unknown,
   events: unknown,
   evolutionData: unknown,
-  monstersData: unknown,
+  monstersData: unknown
 ) => EvolutionProgress | null;
 
 export interface EvolutionProgress {
@@ -67,13 +67,17 @@ export function checkEvolution(monster: GameMon): unknown {
 }
 
 export function checkPartyEvolutions(
-  party: GameMon[],
+  party: GameMon[]
 ): { from: GameMon; to: GameMon; partyIndex: number } | null {
   if (!domainCheckPartyEvolutions) return null;
   return domainCheckPartyEvolutions(party, getEvents(), evolutionData, evoMonstersData);
 }
 
-export function applyEvolution(party: GameMon[], partyIndex: number, evolvedForm: GameMon): GameMon {
+export function applyEvolution(
+  party: GameMon[],
+  partyIndex: number,
+  evolvedForm: GameMon
+): GameMon {
   if (domainApplyEvolution) {
     const newMon = domainApplyEvolution(party[partyIndex], evolvedForm);
     party[partyIndex] = newMon;

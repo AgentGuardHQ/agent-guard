@@ -8,7 +8,7 @@
 import { parseErrors } from '../../core/error-parser.js';
 import { matchMonster } from '../../core/matcher.js';
 import { renderEncounter } from '../renderer.js';
-import { loadBugDex } from '../../ecosystem/storage.js';
+import { loadBugDex } from '../../protocol/storage.js';
 
 interface DemoScenario {
   name: string;
@@ -83,5 +83,7 @@ export async function demo(scenario?: string): Promise<void> {
     console.log('  \x1b[2mYou have BugMon in your party! Use --cache with watch to battle.\x1b[0m');
   }
 
-  console.log(`\n  \x1b[2mThis was a demo. Use "${process.argv[1]?.endsWith('bugmon') ? 'bugmon' : 'agentguard'} watch -- <command>" to catch real bugs.\x1b[0m\n`);
+  console.log(
+    `\n  \x1b[2mThis was a demo. Use "${process.argv[1]?.endsWith('bugmon') ? 'bugmon' : 'agentguard'} watch -- <command>" to catch real bugs.\x1b[0m\n`
+  );
 }
