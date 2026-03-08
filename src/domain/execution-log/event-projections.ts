@@ -30,10 +30,7 @@ import {
  * Walks `causedBy` references back to the root cause.
  * Returns events in chronological order (root first).
  */
-export function buildCausalChain(
-  log: ExecutionEventLog,
-  eventId: string,
-): ExecutionEvent[] {
+export function buildCausalChain(log: ExecutionEventLog, eventId: string): ExecutionEvent[] {
   return log.trace(eventId);
 }
 
@@ -69,10 +66,7 @@ function isSensitiveFile(file: string): boolean {
  * Higher score = more risk. Based on failures, violations,
  * skipped tests, sensitive file edits, and action velocity.
  */
-export function scoreAgentRun(
-  log: ExecutionEventLog,
-  agentRunId: string,
-): RiskScore {
+export function scoreAgentRun(log: ExecutionEventLog, agentRunId: string): RiskScore {
   const events = log.query({ agentRunId });
   const factors: RiskFactor[] = [];
 
@@ -120,7 +114,7 @@ export function scoreAgentRun(
   // Sensitive file edits
   const agentActions = events.filter((e) => AGENT_ACTION_KINDS.has(e.kind));
   const sensitiveEdits = agentActions.filter(
-    (e) => e.context.file && isSensitiveFile(e.context.file),
+    (e) => e.context.file && isSensitiveFile(e.context.file)
   );
   if (sensitiveEdits.length > 0) {
     const weight = sensitiveEdits.length * RISK_WEIGHTS.sensitiveFileEdit;
@@ -172,7 +166,7 @@ export interface ClusterOptions {
  */
 export function clusterFailures(
   log: ExecutionEventLog,
-  options: ClusterOptions = {},
+  options: ClusterOptions = {}
 ): FailureCluster[] {
   const windowMs = options.windowMs ?? 60_000; // 1 minute default
   const failures = log.query({}).filter((e) => FAILURE_KINDS.has(e.kind));
@@ -283,7 +277,10 @@ function getMostCommonKind(events: ExecutionEvent[]): string {
 
 // --- Encounter Mapping ---
 
-const KIND_TO_ENCOUNTER: Record<string, { encounterType: EncounterMapping['encounterType']; severity: Severity; name: string }> = {
+const KIND_TO_ENCOUNTER: Record<
+  string,
+  { encounterType: EncounterMapping['encounterType']; severity: Severity; name: string }
+> = {
   [RUNTIME_EXCEPTION]: {
     encounterType: 'monster',
     severity: 3,

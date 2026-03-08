@@ -34,14 +34,10 @@ async function loadData(): Promise<{
   const __dirname = dirname(fileURLToPath(import.meta.url));
   const root = resolve(__dirname, '..', '..', '..');
   const monsters = JSON.parse(
-    await readFile(resolve(root, 'ecosystem/data/monsters.json'), 'utf-8'),
+    await readFile(resolve(root, 'ecosystem/data/monsters.json'), 'utf-8')
   );
-  const moves = JSON.parse(
-    await readFile(resolve(root, 'ecosystem/data/moves.json'), 'utf-8'),
-  );
-  const types = JSON.parse(
-    await readFile(resolve(root, 'ecosystem/data/types.json'), 'utf-8'),
-  );
+  const moves = JSON.parse(await readFile(resolve(root, 'ecosystem/data/moves.json'), 'utf-8'));
+  const types = JSON.parse(await readFile(resolve(root, 'ecosystem/data/types.json'), 'utf-8'));
   return { monsters, moves, types };
 }
 
@@ -87,7 +83,7 @@ export function generateReport(simResult: SimulateResult): string {
       pad('L', 6) +
       pad('Avg Dmg', 10) +
       pad('Avg Turns', 10) +
-      'Status',
+      'Status'
   );
   lines.push('  ' + '-'.repeat(78));
 
@@ -109,7 +105,7 @@ export function generateReport(simResult: SimulateResult): string {
         pad(String(s.losses), 6) +
         pad(avgDmg, 10) +
         pad(avgTurns, 10) +
-        status,
+        status
     );
   }
 
@@ -121,7 +117,7 @@ export function generateReport(simResult: SimulateResult): string {
   }).length;
   const healthPct = Math.round((balanced / entries.length) * 100);
   lines.push(
-    `  Balance Health: ${healthPct}% (${balanced}/${entries.length} BugMon in balanced range)`,
+    `  Balance Health: ${healthPct}% (${balanced}/${entries.length} BugMon in balanced range)`
   );
   lines.push('');
 
@@ -159,9 +155,7 @@ export function generateReport(simResult: SimulateResult): string {
   matchups.sort((a, b) => b.dominance - a.dominance);
   const top10 = matchups.slice(0, 10);
   for (const m of top10) {
-    lines.push(
-      `  ${pad(m.winner, 20)} beats ${pad(m.loser, 20)} ${m.dominance}% (${m.record})`,
-    );
+    lines.push(`  ${pad(m.winner, 20)} beats ${pad(m.loser, 20)} ${m.dominance}% (${m.record})`);
   }
   lines.push('');
 
@@ -171,22 +165,22 @@ export function generateReport(simResult: SimulateResult): string {
 
   sorted.sort((a, b) => b.attack - a.attack);
   lines.push(
-    `  Highest ATK:   ${sorted[0].name} (${sorted[0].attack}) \u2014 ${((sorted[0].wins / sorted[0].totalBattles) * 100).toFixed(1)}% win rate`,
+    `  Highest ATK:   ${sorted[0].name} (${sorted[0].attack}) \u2014 ${((sorted[0].wins / sorted[0].totalBattles) * 100).toFixed(1)}% win rate`
   );
 
   sorted.sort((a, b) => b.defense - a.defense);
   lines.push(
-    `  Highest DEF:   ${sorted[0].name} (${sorted[0].defense}) \u2014 ${((sorted[0].wins / sorted[0].totalBattles) * 100).toFixed(1)}% win rate`,
+    `  Highest DEF:   ${sorted[0].name} (${sorted[0].defense}) \u2014 ${((sorted[0].wins / sorted[0].totalBattles) * 100).toFixed(1)}% win rate`
   );
 
   sorted.sort((a, b) => b.speed - a.speed);
   lines.push(
-    `  Highest SPD:   ${sorted[0].name} (${sorted[0].speed}) \u2014 ${((sorted[0].wins / sorted[0].totalBattles) * 100).toFixed(1)}% win rate`,
+    `  Highest SPD:   ${sorted[0].name} (${sorted[0].speed}) \u2014 ${((sorted[0].wins / sorted[0].totalBattles) * 100).toFixed(1)}% win rate`
   );
 
   sorted.sort((a, b) => b.hp - a.hp);
   lines.push(
-    `  Highest HP:    ${sorted[0].name} (${sorted[0].hp}) \u2014 ${((sorted[0].wins / sorted[0].totalBattles) * 100).toFixed(1)}% win rate`,
+    `  Highest HP:    ${sorted[0].name} (${sorted[0].hp}) \u2014 ${((sorted[0].wins / sorted[0].totalBattles) * 100).toFixed(1)}% win rate`
   );
   lines.push('');
 
@@ -216,7 +210,7 @@ export function generateComparisonReport(comparisonResult: CompareAllResult): st
       pad('A Wins', 10) +
       pad('B Wins', 10) +
       pad('Draws', 8) +
-      'A Win%',
+      'A Win%'
   );
   lines.push('  ' + '-'.repeat(72));
 
@@ -230,7 +224,7 @@ export function generateComparisonReport(comparisonResult: CompareAllResult): st
         pad(String(r.winsB), 10) +
         pad(String(r.draws), 8) +
         aRate +
-        '%',
+        '%'
     );
   }
   lines.push('');
@@ -261,13 +255,7 @@ export function generateComparisonReport(comparisonResult: CompareAllResult): st
     .sort((a, b) => b.rate - a.rate);
 
   lines.push(
-    '  ' +
-      pad('Rank', 6) +
-      pad('Strategy', 18) +
-      pad('Win%', 8) +
-      pad('W', 8) +
-      pad('L', 8) +
-      'D',
+    '  ' + pad('Rank', 6) + pad('Strategy', 18) + pad('Win%', 8) + pad('W', 8) + pad('L', 8) + 'D'
   );
   lines.push('  ' + '-'.repeat(54));
 
@@ -280,7 +268,7 @@ export function generateComparisonReport(comparisonResult: CompareAllResult): st
         pad(rate + '%', 8) +
         pad(String(r.wins), 8) +
         pad(String(r.losses), 8) +
-        String(r.draws),
+        String(r.draws)
     );
   });
 
@@ -300,17 +288,17 @@ function verboseBattle(
   monB: Bugmon,
   movesData: readonly BattleMove[],
   typeChart: TypeChart,
-  strategy: StrategyEntry,
+  strategy: StrategyEntry
 ): SimulationResult {
   console.log(`\n${'='.repeat(50)}`);
   console.log(`  ${monA.name} (${monA.type}) vs ${monB.name} (${monB.type})`);
   console.log(`  Strategy: ${strategy.name}`);
   console.log(`${'='.repeat(50)}`);
   console.log(
-    `  ${monA.name}: HP ${monA.hp} | ATK ${monA.attack} | DEF ${monA.defense} | SPD ${monA.speed}`,
+    `  ${monA.name}: HP ${monA.hp} | ATK ${monA.attack} | DEF ${monA.defense} | SPD ${monA.speed}`
   );
   console.log(
-    `  ${monB.name}: HP ${monB.hp} | ATK ${monB.attack} | DEF ${monB.defense} | SPD ${monB.speed}`,
+    `  ${monB.name}: HP ${monB.hp} | ATK ${monB.attack} | DEF ${monB.defense} | SPD ${monB.speed}`
   );
   console.log();
 
@@ -338,8 +326,7 @@ function verboseBattle(
   }
 
   console.log();
-  const winner =
-    result.winner === 'A' ? monA.name : result.winner === 'B' ? monB.name : 'Draw';
+  const winner = result.winner === 'A' ? monA.name : result.winner === 'B' ? monB.name : 'Draw';
   console.log(`Winner: ${winner} (${result.turns} turns)`);
   console.log();
 
@@ -352,7 +339,7 @@ function runStatistical(
   movesData: readonly BattleMove[],
   typeChart: TypeChart,
   runs: number,
-  strategy: StrategyEntry,
+  strategy: StrategyEntry
 ): void {
   let winsA = 0;
   let winsB = 0;
@@ -379,7 +366,7 @@ function roundRobin(
   movesData: readonly BattleMove[],
   typeChart: TypeChart,
   runs: number,
-  strategy: StrategyEntry,
+  strategy: StrategyEntry
 ): void {
   console.log(`\nFull Roster Round-Robin (${runs} battles each, ${strategy.name})\n`);
 
@@ -447,7 +434,10 @@ export function registerSimulateCommand(program: Command): void {
     .description('Run battle simulations for balance analysis')
     .option('--runs <n>', 'Number of battles for statistical analysis')
     .option('--all', 'Full roster round-robin')
-    .option('--compare [strategies...]', 'Compare strategies (optionally specify two strategy keys)')
+    .option(
+      '--compare [strategies...]',
+      'Compare strategies (optionally specify two strategy keys)'
+    )
     .option('--strategy <name>', 'AI strategy to use', 'mixed')
     .option('--strategy-key <name>', 'Alias for --strategy', 'mixed')
     .option('--battles <n>', 'Number of battles (for --all/--compare modes)', '10000')
@@ -464,7 +454,7 @@ export function registerSimulateCommand(program: Command): void {
           strategyKey?: string;
           battles?: string;
           seed?: string;
-        },
+        }
       ) => {
         const { monsters, moves, types } = await loadData();
         const typeChart = types.effectiveness;
@@ -481,20 +471,17 @@ export function registerSimulateCommand(program: Command): void {
         // --- Compare mode ---
         if (options.compare !== undefined) {
           const numBattles = parseInt(options.battles || '5000', 10);
-          const compareArgs =
-            Array.isArray(options.compare) ? options.compare : [];
+          const compareArgs = Array.isArray(options.compare) ? options.compare : [];
 
           if (compareArgs.length >= 2) {
             const [keyA, keyB] = compareArgs;
             if (!STRATEGIES[keyA] || !STRATEGIES[keyB]) {
-              console.error(
-                `Unknown strategy. Available: ${Object.keys(STRATEGIES).join(', ')}`,
-              );
+              console.error(`Unknown strategy. Available: ${Object.keys(STRATEGIES).join(', ')}`);
               process.exit(1);
             }
 
             console.log(
-              `Comparing "${STRATEGIES[keyA].name}" vs "${STRATEGIES[keyB].name}" (${numBattles} battles, seed: ${seed})...`,
+              `Comparing "${STRATEGIES[keyA].name}" vs "${STRATEGIES[keyB].name}" (${numBattles} battles, seed: ${seed})...`
             );
             console.log('');
 
@@ -508,7 +495,7 @@ export function registerSimulateCommand(program: Command): void {
               numBattles,
               seed,
               STRATEGIES[keyA].name,
-              STRATEGIES[keyB].name,
+              STRATEGIES[keyB].name
             );
             const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
 
@@ -521,7 +508,7 @@ export function registerSimulateCommand(program: Command): void {
             console.log('');
           } else {
             console.log(
-              `Comparing all ${Object.keys(STRATEGIES).length} strategies (${numBattles} battles each, seed: ${seed})...`,
+              `Comparing all ${Object.keys(STRATEGIES).length} strategies (${numBattles} battles each, seed: ${seed})...`
             );
             console.log('');
 
@@ -532,7 +519,7 @@ export function registerSimulateCommand(program: Command): void {
               typeChart,
               STRATEGIES,
               numBattles,
-              seed,
+              seed
             );
             const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
 
@@ -554,7 +541,7 @@ export function registerSimulateCommand(program: Command): void {
           } else {
             // --all --battles N: full statistical report (from simulation/cli.js)
             console.log(
-              `Running ${numBattles} battles with "${strategy.name}" strategy (seed: ${seed})...`,
+              `Running ${numBattles} battles with "${strategy.name}" strategy (seed: ${seed})...`
             );
             console.log('');
 
@@ -566,7 +553,7 @@ export function registerSimulateCommand(program: Command): void {
               strategy.fn,
               numBattles,
               seed,
-              strategy.name,
+              strategy.name
             );
             const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
 
@@ -584,14 +571,7 @@ export function registerSimulateCommand(program: Command): void {
           const monB = findMonster(monsters, monBName);
 
           if (options.runs) {
-            runStatistical(
-              monA,
-              monB,
-              moves,
-              typeChart,
-              parseInt(options.runs, 10),
-              strategy,
-            );
+            runStatistical(monA, monB, moves, typeChart, parseInt(options.runs, 10), strategy);
           } else {
             verboseBattle(monA, monB, moves, typeChart, strategy);
           }
@@ -603,6 +583,6 @@ export function registerSimulateCommand(program: Command): void {
         let b = Math.floor(Math.random() * (monsters.length - 1));
         if (b >= a) b++;
         verboseBattle(monsters[a], monsters[b], moves, typeChart, strategy);
-      },
+      }
     );
 }

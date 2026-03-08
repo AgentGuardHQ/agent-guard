@@ -70,10 +70,7 @@ function matchScope(scopePatterns: string[], target: string): boolean {
   return false;
 }
 
-function matchConditions(
-  conditions: PolicyRule['conditions'],
-  intent: NormalizedIntent,
-): boolean {
+function matchConditions(conditions: PolicyRule['conditions'], intent: NormalizedIntent): boolean {
   if (!conditions) return true;
 
   if (conditions.scope && !matchScope(conditions.scope, intent.target)) {

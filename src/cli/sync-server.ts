@@ -88,7 +88,7 @@ export function startSyncServer(): Promise<SyncServerResult> {
           version: 1,
           clients: clients.size,
           uptime: process.uptime(),
-        }),
+        })
       );
       return;
     }
@@ -118,14 +118,14 @@ export function startSyncServer(): Promise<SyncServerResult> {
         'Upgrade: websocket\r\n' +
         'Connection: Upgrade\r\n' +
         `Sec-WebSocket-Accept: ${accept}\r\n` +
-        '\r\n',
+        '\r\n'
     );
 
     const client: WSClient = { socket, alive: true };
     clients.add(client);
 
     process.stderr.write(
-      `  \x1b[32m✓\x1b[0m Browser connected (${clients.size} client${clients.size > 1 ? 's' : ''})\n`,
+      `  \x1b[32m✓\x1b[0m Browser connected (${clients.size} client${clients.size > 1 ? 's' : ''})\n`
     );
 
     sendToClient(client, { type: MSG_CLI_STATE, data: getCLIState() });
@@ -147,7 +147,9 @@ export function startSyncServer(): Promise<SyncServerResult> {
             const msg = JSON.parse(frame.payload as string) as WSMessage;
             handleClientMessage(client, msg);
           } catch (err) {
-            process.stderr.write(`  \x1b[33m⚠\x1b[0m Malformed WebSocket message: ${(err as Error).message}\n`);
+            process.stderr.write(
+              `  \x1b[33m⚠\x1b[0m Malformed WebSocket message: ${(err as Error).message}\n`
+            );
           }
         }
       }
@@ -156,7 +158,7 @@ export function startSyncServer(): Promise<SyncServerResult> {
     socket.on('close', () => {
       clients.delete(client);
       process.stderr.write(
-        `  \x1b[33m⚡\x1b[0m Browser disconnected (${clients.size} client${clients.size > 1 ? 's' : ''})\n`,
+        `  \x1b[33m⚡\x1b[0m Browser disconnected (${clients.size} client${clients.size > 1 ? 's' : ''})\n`
       );
     });
 
@@ -283,7 +285,7 @@ function mergeBrowserState(browserState: Record<string, unknown>): void {
       stats.totalEncounters = Math.max(stats.totalEncounters || 0, bs.totalEncounters || 0);
       stats.totalCached = Math.max(
         stats.totalCached || stats.totalCaught || 0,
-        bs.totalCached || 0,
+        bs.totalCached || 0
       );
       stats.xp = Math.max(stats.xp || 0, bs.xp || 0);
     }
@@ -292,7 +294,9 @@ function mergeBrowserState(browserState: Record<string, unknown>): void {
   (dex as Record<string, unknown>).updatedAt = now;
 
   if (mergeConflicts > 0) {
-    process.stderr.write(`  \x1b[33m⚠\x1b[0m Merge: ${mergeConflicts} field conflict(s) resolved\n`);
+    process.stderr.write(
+      `  \x1b[33m⚠\x1b[0m Merge: ${mergeConflicts} field conflict(s) resolved\n`
+    );
   }
 
   saveBugDex(dex as Parameters<typeof saveBugDex>[0]);
@@ -386,14 +390,16 @@ function sendToClient(client: WSClient, msg: WSMessage): void {
     const frame = encodeFrame(JSON.stringify({ ...msg, seq: nextSeq() }));
     client.socket.write(frame);
   } catch (err) {
-    process.stderr.write(`  \x1b[31m✗\x1b[0m Failed to send to client: ${(err as Error).message}\n`);
+    process.stderr.write(
+      `  \x1b[31m✗\x1b[0m Failed to send to client: ${(err as Error).message}\n`
+    );
   }
 }
 
 export function notifyBrowsers(
   broadcast: (msg: WSMessage) => void,
   event: string,
-  _data: unknown,
+  _data: unknown
 ): void {
   broadcast({ type: MSG_CLI_EVENT, event, data: getCLIState() });
 }

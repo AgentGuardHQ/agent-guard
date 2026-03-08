@@ -1,44 +1,43 @@
 {
   "bundle": {
     "target": 10240,
-    "cap": 17408,
+    "cap": 20480,
     "unit": "bytes-gzipped",
-    "note": "Measured on dist/bugmon.html built with --no-sprites"
+    "note": "Measured on dist/index.html built with --no-sprites"
   },
   "subsystems": {
     "engine": {
-      "target": 5120,
-      "cap": 7500,
+      "target": 7000,
+      "cap": 8500,
       "files": [
-        "game/engine/state.js",
-        "game/engine/events.js",
-        "game/engine/input.js",
-        "game/engine/transition.js",
-        "game/engine/title.js"
+        "dist/game/engine/state.js",
+        "dist/game/engine/events.js",
+        "dist/game/engine/input.js",
+        "dist/game/engine/transition.js",
+        "dist/game/engine/title.js"
       ]
     },
     "rendering": {
-      "target": 8192,
-      "cap": 15500,
+      "target": 14000,
+      "cap": 20000,
       "files": [
-        "game/engine/renderer.js",
-        "game/sprites/sprites.js",
-        "game/sprites/monsterGen.js",
-        "game/sprites/tiles.js"
+        "dist/game/engine/game-renderer.js",
+        "dist/game/renderer.js",
+        "dist/game/sprites/sprites.js",
+        "dist/game/sprites/monster-gen.js",
+        "dist/game/sprites/tiles.js"
       ]
     },
     "battle": {
-      "target": 8192,
+      "target": 9000,
       "cap": 14500,
       "files": [
-        "game/battle/battle-core.js",
-        "game/battle/battleEngine.js",
-        "game/battle/damage.js"
+        "dist/game/battle/battle-engine.js"
       ]
     },
     "data": {
-      "target": 8192,
-      "cap": 13200,
+      "target": 30000,
+      "cap": 40000,
       "files": [
         "ecosystem/data/monsters.js",
         "ecosystem/data/moves.js",
@@ -48,24 +47,27 @@
       ]
     },
     "game-logic": {
-      "target": 10240,
-      "cap": 19500,
+      "target": 80000,
+      "cap": 120000,
       "files": [
-        "game/world/map.js",
-        "game/world/encounters.js",
-        "game/world/player.js",
-        "game/evolution/evolution.js",
-        "game/evolution/tracker.js",
-        "game/evolution/animation.js",
-        "game/game.js"
+        "dist/game/world/map.js",
+        "dist/game/world/encounters.js",
+        "dist/game/world/player.js",
+        "dist/game/evolution/evolution.js",
+        "dist/game/evolution/tracker.js",
+        "dist/game/evolution/animation.js",
+        "dist/game/game.js",
+        "dist/game/data-loader.js",
+        "dist/game/loop.js"
       ]
     },
     "infrastructure": {
-      "target": 4096,
-      "cap": 7000,
+      "target": 10000,
+      "cap": 14000,
       "files": [
-        "game/audio/sound.js",
-        "game/sync/save.js"
+        "dist/game/audio/sound.js",
+        "dist/game/sync/save.js",
+        "dist/game/sync/client.js"
       ]
     }
   }

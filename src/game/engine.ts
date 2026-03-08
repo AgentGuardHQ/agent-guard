@@ -130,11 +130,10 @@ export class GameEngine {
       type: this.currentMonster.type,
     };
 
-    const result = this.calcDamage(
-      { attack: this.currentMonster.attack },
-      monsterMove,
-      { defense: this.player.defense, type: 'backend' as MonsterType }
-    );
+    const result = this.calcDamage({ attack: this.currentMonster.attack }, monsterMove, {
+      defense: this.player.defense,
+      type: 'backend' as MonsterType,
+    });
 
     this.player.hp = Math.max(0, this.player.hp - result.damage);
     this.eventBus.emit('PlayerDamage', { amount: result.damage, source: this.currentMonster.name });
@@ -152,7 +151,8 @@ export class GameEngine {
   ): DamageResult {
     const effectiveness = TYPE_CHART[move.type]?.[defender.type] ?? 1.0;
     const randomBonus = Math.floor(this.rng() * 3) + 1;
-    const baseDamage = move.power + attacker.attack - Math.floor(defender.defense / 2) + randomBonus;
+    const baseDamage =
+      move.power + attacker.attack - Math.floor(defender.defense / 2) + randomBonus;
     const damage = Math.max(1, Math.floor(baseDamage * effectiveness));
 
     return {

@@ -3,11 +3,7 @@
 
 import type { DomainEvent } from '../../core/types.js';
 import { createEvent, INVARIANT_VIOLATION } from '../../domain/events.js';
-import type {
-  AgentGuardInvariant,
-  InvariantCheckResult,
-  SystemState,
-} from './definitions.js';
+import type { AgentGuardInvariant, InvariantCheckResult, SystemState } from './definitions.js';
 
 export interface InvariantCheck {
   holds: boolean;
@@ -15,10 +11,7 @@ export interface InvariantCheck {
   result: InvariantCheckResult;
 }
 
-export function checkInvariant(
-  invariant: AgentGuardInvariant,
-  state: SystemState,
-): InvariantCheck {
+export function checkInvariant(invariant: AgentGuardInvariant, state: SystemState): InvariantCheck {
   const result = invariant.check(state);
   return {
     holds: result.holds,
@@ -29,7 +22,7 @@ export function checkInvariant(
 
 export function checkAllInvariants(
   invariants: AgentGuardInvariant[],
-  state: SystemState,
+  state: SystemState
 ): {
   violations: InvariantCheck[];
   events: DomainEvent[];
@@ -54,7 +47,7 @@ export function checkAllInvariants(
             severity: invariant.severity,
             description: invariant.description,
           },
-        }),
+        })
       );
     }
   }
@@ -74,7 +67,8 @@ export function buildSystemState(context: Record<string, unknown> = {}): SystemS
     forcePush: (context.forcePush as boolean) || false,
     isPush: (context.isPush as boolean) || false,
     testsPass: context.testsPass as boolean | undefined,
-    filesAffected: (context.filesAffected as number) || ((context.modifiedFiles as string[]) || []).length,
+    filesAffected:
+      (context.filesAffected as number) || ((context.modifiedFiles as string[]) || []).length,
     blastRadiusLimit: (context.blastRadiusLimit as number) || 20,
     protectedBranches: (context.protectedBranches as string[]) || ['main', 'master'],
   };

@@ -57,7 +57,9 @@ export function getSyncStatus(): {
 export function pushToCLI(state: unknown): boolean {
   if (!ws || ws.readyState !== WebSocket.OPEN) return false;
   try {
-    ws.send(JSON.stringify({ type: MSG_BROWSER_STATE, data: state, seq: nextSeq(), v: PROTOCOL_VERSION }));
+    ws.send(
+      JSON.stringify({ type: MSG_BROWSER_STATE, data: state, seq: nextSeq(), v: PROTOCOL_VERSION })
+    );
     return true;
   } catch (err) {
     console.warn('[BugMon Sync] Failed to push state:', err);
@@ -96,11 +98,18 @@ function attemptConnection(): void {
 
   ws.onmessage = (event: MessageEvent) => {
     try {
-      const msg = JSON.parse(event.data as string) as { type: string; seq?: number; data?: unknown; event?: string };
+      const msg = JSON.parse(event.data as string) as {
+        type: string;
+        seq?: number;
+        data?: unknown;
+        event?: string;
+      };
       // Detect out-of-order delivery
       if (msg.seq !== undefined) {
         if (msg.seq <= lastReceivedSeq) {
-          console.warn(`[BugMon Sync] Out-of-order message: got seq ${msg.seq}, expected > ${lastReceivedSeq}`);
+          console.warn(
+            `[BugMon Sync] Out-of-order message: got seq ${msg.seq}, expected > ${lastReceivedSeq}`
+          );
         }
         lastReceivedSeq = msg.seq;
       }

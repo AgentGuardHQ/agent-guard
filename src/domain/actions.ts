@@ -2,7 +2,13 @@
 // All agent execution requests are normalized into these action objects.
 // No DOM, no Node.js APIs — pure data definitions.
 
-import type { ActionClass, ActionDefinition, Decision, CanonicalAction, ValidationResult } from '../core/types.js';
+import type {
+  ActionClass,
+  ActionDefinition,
+  Decision,
+  CanonicalAction,
+  ValidationResult,
+} from '../core/types.js';
 import { simpleHash } from './hash.js';
 
 // --- Action Classes ---
@@ -108,7 +114,7 @@ export function createAction(
   type: string,
   target: string,
   justification: string,
-  metadata: Record<string, unknown> = {},
+  metadata: Record<string, unknown> = {}
 ): CanonicalAction {
   const action: Record<string, unknown> = { type, target, justification, ...metadata };
 

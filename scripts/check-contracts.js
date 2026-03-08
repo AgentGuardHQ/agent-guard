@@ -24,6 +24,16 @@ const MODULE_PATHS = {
   'domain/rng': '../dist/domain/rng.js',
   'domain/strategies': '../dist/domain/strategies.js',
   'domain/simulator': '../dist/domain/simulator.js',
+  'domain/bosses': '../dist/domain/bosses.js',
+  'domain/dev-event': '../dist/domain/dev-event.js',
+  'domain/entities': '../dist/domain/entities.js',
+  'domain/correlation': '../dist/domain/correlation.js',
+  'domain/risk': '../dist/domain/risk.js',
+  'domain/projections': '../dist/domain/projections.js',
+  'domain/platform-store': '../dist/domain/platform-store.js',
+  'domain/execution-log/event-schema': '../dist/domain/execution-log/event-schema.js',
+  'domain/execution-log/event-log': '../dist/domain/execution-log/event-log.js',
+  'domain/execution-log/event-projections': '../dist/domain/execution-log/event-projections.js',
 };
 
 console.log('Checking module contracts...\n');

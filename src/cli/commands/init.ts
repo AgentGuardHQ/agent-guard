@@ -29,7 +29,7 @@ export async function init(options: { force?: boolean } = {}): Promise<void> {
 
   process.stderr.write('\n');
   process.stderr.write(
-    `  ${BOLD}BugMon Init${RESET} — Installing git hooks for evolution tracking\n\n`,
+    `  ${BOLD}BugMon Init${RESET} — Installing git hooks for evolution tracking\n\n`
   );
 
   for (const hookName of HOOK_NAMES) {
@@ -37,13 +37,15 @@ export async function init(options: { force?: boolean } = {}): Promise<void> {
     const destPath = join(hooksDir, hookName);
 
     if (!existsSync(sourcePath)) {
-      process.stderr.write(`  ${FG.yellow}⚠${RESET}  ${hookName}: source hook not found, skipping\n`);
+      process.stderr.write(
+        `  ${FG.yellow}⚠${RESET}  ${hookName}: source hook not found, skipping\n`
+      );
       continue;
     }
 
     if (existsSync(destPath) && !options.force) {
       process.stderr.write(
-        `  ${FG.yellow}⚠${RESET}  ${hookName}: already exists ${DIM}(use --force to overwrite)${RESET}\n`,
+        `  ${FG.yellow}⚠${RESET}  ${hookName}: already exists ${DIM}(use --force to overwrite)${RESET}\n`
       );
       continue;
     }
@@ -59,11 +61,11 @@ export async function init(options: { force?: boolean } = {}): Promise<void> {
 
   if (installed > 0) {
     process.stderr.write(
-      `  ${FG.green}${BOLD}Done!${RESET} ${installed} hook${installed > 1 ? 's' : ''} installed.\n`,
+      `  ${FG.green}${BOLD}Done!${RESET} ${installed} hook${installed > 1 ? 's' : ''} installed.\n`
     );
     process.stderr.write(`  ${DIM}Commits and merges will now track evolution progress.${RESET}\n`);
     process.stderr.write(
-      `  ${DIM}Activity is saved to ${FG.cyan}.events.json${RESET}${DIM} in your repo root.${RESET}\n`,
+      `  ${DIM}Activity is saved to ${FG.cyan}.events.json${RESET}${DIM} in your repo root.${RESET}\n`
     );
   } else {
     process.stderr.write(`  ${DIM}No hooks were installed.${RESET}\n`);

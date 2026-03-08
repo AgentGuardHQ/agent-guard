@@ -110,7 +110,7 @@ export function drawPlayer(player: PlayerLike): void {
 export function drawBattle(
   battle: BattleView,
   movesData: MoveData[],
-  typeColors?: Record<string, string>,
+  typeColors?: Record<string, string>
 ): void {
   if (!ctx) return;
 
@@ -186,7 +186,7 @@ function drawHPBar(
   y: number,
   width: number,
   current: number,
-  max: number,
+  max: number
 ): void {
   const pct = Math.max(0, current / max);
   ctx.fillStyle = '#333';

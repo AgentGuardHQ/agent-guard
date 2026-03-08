@@ -84,10 +84,12 @@ export function serializeHistory(history: RunHistory): {
 }
 
 /** Deserialize history from storage (arrays become Sets). */
-export function deserializeHistory(data: {
-  runs?: RunSummaryEntry[];
-  allTime?: Omit<AllTimeStats, 'uniqueMonsters'> & { uniqueMonsters?: number[] };
-} | null): RunHistory {
+export function deserializeHistory(
+  data: {
+    runs?: RunSummaryEntry[];
+    allTime?: Omit<AllTimeStats, 'uniqueMonsters'> & { uniqueMonsters?: number[] };
+  } | null
+): RunHistory {
   if (!data || !data.allTime) return createHistory();
   return {
     runs: data.runs || [],
@@ -105,7 +107,7 @@ export function getRecentRuns(history: RunHistory, count = 10): RunSummaryEntry[
 
 /** Compute per-monster stats from history. */
 export function getMonsterStats(
-  _runs: readonly RunSummaryEntry[],
+  _runs: readonly RunSummaryEntry[]
 ): Map<number, { encounters: number; resolved: number }> {
   const stats = new Map<number, { encounters: number; resolved: number }>();
   // This operates on run-level data; for per-monster detail,

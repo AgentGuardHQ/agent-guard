@@ -164,13 +164,22 @@ export function updateBattle(dt: number): void {
 function doExecuteTurn(playerMove: MoveData): void {
   if (!battle) return;
   const typeChart = typeData ? typeData.effectiveness || null : null;
-  const enemyMove = pickEnemyMove(battle.enemy as unknown as Bugmon, movesData as unknown as BattleMove[], Math.random()) as MoveData;
+  const enemyMove = pickEnemyMove(
+    battle.enemy as unknown as Bugmon,
+    movesData as unknown as BattleMove[],
+    Math.random()
+  ) as MoveData;
 
   const domainState = createBattleState(
     battle.playerMon as unknown as Bugmon,
-    battle.enemy as unknown as Bugmon,
+    battle.enemy as unknown as Bugmon
   );
-  const result = executeTurn(domainState, playerMove as unknown as BattleMove, enemyMove as unknown as BattleMove, typeChart) as {
+  const result = executeTurn(
+    domainState,
+    playerMove as unknown as BattleMove,
+    enemyMove as unknown as BattleMove,
+    typeChart
+  ) as {
     state: { playerMon: { currentHP: number }; enemy: { currentHP: number } };
     events: BattleEvent[];
   };
@@ -232,7 +241,8 @@ function formatMoveMessage(event: BattleEvent): string {
   let msg = `${event.attacker} used ${event.move}! ${event.damage} damage!`;
   if (event.critical) msg += ' Critical hit!';
   if (event.effectiveness !== undefined && event.effectiveness > 1.0) msg += ' Super effective!';
-  else if (event.effectiveness !== undefined && event.effectiveness < 1.0) msg += ' Not very effective...';
+  else if (event.effectiveness !== undefined && event.effectiveness < 1.0)
+    msg += ' Not very effective...';
   return msg;
 }
 
@@ -270,15 +280,24 @@ function doAttemptCache(): void {
 function doEnemyCounterAttack(): void {
   if (!battle) return;
   const typeChart = typeData ? typeData.effectiveness || null : null;
-  const enemyMove = pickEnemyMove(battle.enemy as unknown as Bugmon, movesData as unknown as BattleMove[], Math.random()) as MoveData;
+  const enemyMove = pickEnemyMove(
+    battle.enemy as unknown as Bugmon,
+    movesData as unknown as BattleMove[],
+    Math.random()
+  ) as MoveData;
 
   const fakeState = createBattleState(
     { ...battle.playerMon, speed: 0 } as unknown as Bugmon,
-    { ...battle.enemy, speed: 999 } as unknown as Bugmon,
+    { ...battle.enemy, speed: 999 } as unknown as Bugmon
   );
   const playerMove = movesData.find((m) => m.id === battle!.playerMon.moves[0]);
   if (!playerMove) return;
-  const result = executeTurn(fakeState, playerMove as unknown as BattleMove, enemyMove as unknown as BattleMove, typeChart) as {
+  const result = executeTurn(
+    fakeState,
+    playerMove as unknown as BattleMove,
+    enemyMove as unknown as BattleMove,
+    typeChart
+  ) as {
     state: { playerMon: { currentHP: number } };
     events: BattleEvent[];
   };
@@ -289,7 +308,7 @@ function doEnemyCounterAttack(): void {
     (e) =>
       e.side === 'enemy' ||
       (e.type === BUGMON_FAINTED && e.side === 'player') ||
-      (e.type === PASSIVE_ACTIVATED && e.side === 'enemy'),
+      (e.type === PASSIVE_ACTIVATED && e.side === 'enemy')
   );
 
   if (enemyEvents.length > 0) {

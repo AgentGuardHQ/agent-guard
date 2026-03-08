@@ -37,7 +37,11 @@ interface WatchState {
   currentRun: RunSession;
 }
 
-export function watch(command: string, args: string[], options: WatchOptions = {}): Promise<number> {
+export function watch(
+  command: string,
+  args: string[],
+  options: WatchOptions = {}
+): Promise<number> {
   if (!command || typeof command !== 'string' || command.trim().length === 0) {
     process.stderr.write('bugmon: watch requires a non-empty command\n');
     return Promise.resolve(1);
@@ -146,7 +150,7 @@ export function watch(command: string, args: string[], options: WatchOptions = {
 
       recorder.end(code || 0);
       process.stderr.write(
-        `  \x1b[2mSession recorded: bugmon replay ${recorder.sessionId}\x1b[0m\n`,
+        `  \x1b[2mSession recorded: bugmon replay ${recorder.sessionId}\x1b[0m\n`
       );
 
       resolve(code || 0);
@@ -157,7 +161,7 @@ export function watch(command: string, args: string[], options: WatchOptions = {
 async function processInteractiveQueue(
   queue: ParsedError[],
   options: WatchOptions,
-  state: WatchState,
+  state: WatchState
 ): Promise<RunSession> {
   while (queue.length > 0) {
     const error = queue.shift()!;
@@ -191,7 +195,7 @@ async function processInteractiveQueue(
       monster,
       error.message,
       location?.file || null,
-      location?.line || null,
+      location?.line || null
     );
 
     const bossCheck = checkBossEncounter(state.errorCounts, error.message);
@@ -262,7 +266,7 @@ async function processInteractiveQueue(
 
     if (options.openBrowser && location?.file) {
       process.stderr.write(
-        `  \x1b[2mOpen in browser: file://${location.file}${location.line ? '#L' + location.line : ''}\x1b[0m\n\n`,
+        `  \x1b[2mOpen in browser: file://${location.file}${location.line ? '#L' + location.line : ''}\x1b[0m\n\n`
       );
     }
   }
@@ -270,10 +274,7 @@ async function processInteractiveQueue(
   return state.currentRun;
 }
 
-function processErrors(
-  text: string,
-  state: Omit<WatchState, 'autoWalker'>,
-): RunSession {
+function processErrors(text: string, state: Omit<WatchState, 'autoWalker'>): RunSession {
   const errors = parseErrors(text);
 
   for (const error of errors) {
@@ -307,7 +308,7 @@ function processErrors(
       monster,
       error.message,
       location?.file || null,
-      location?.line || null,
+      location?.line || null
     );
 
     const bossCheck = checkBossEncounter(state.errorCounts, error.message);

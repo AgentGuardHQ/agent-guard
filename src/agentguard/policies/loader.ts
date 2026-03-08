@@ -99,7 +99,11 @@ export function validatePolicy(policy: unknown): ValidationResult {
   }
 
   if (p.severity !== undefined) {
-    if (typeof p.severity !== 'number' || (p.severity as number) < 1 || (p.severity as number) > 5) {
+    if (
+      typeof p.severity !== 'number' ||
+      (p.severity as number) < 1 ||
+      (p.severity as number) > 5
+    ) {
       errors.push('Severity must be a number between 1 and 5');
     }
   }

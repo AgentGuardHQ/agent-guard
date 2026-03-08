@@ -92,10 +92,7 @@ export const FAILURE_KINDS = new Set<string>([
 ]);
 
 /** Kinds that represent governance violations */
-export const VIOLATION_KINDS = new Set<string>([
-  POLICY_VIOLATION_DETECTED,
-  INVARIANT_CHECK_FAILED,
-]);
+export const VIOLATION_KINDS = new Set<string>([POLICY_VIOLATION_DETECTED, INVARIANT_CHECK_FAILED]);
 
 /** Kinds that represent agent actions */
 export const AGENT_ACTION_KINDS = new Set<string>([
@@ -121,7 +118,7 @@ function fingerprintExecutionEvent(
   kind: string,
   actor: string,
   source: string,
-  payload: Record<string, unknown>,
+  payload: Record<string, unknown>
 ): string {
   const payloadKeys = Object.keys(payload).sort();
   const parts = payloadKeys.map((k) => `${k}=${JSON.stringify(payload[k])}`);
@@ -133,9 +130,7 @@ function fingerprintExecutionEvent(
 /**
  * Validate an execution event object.
  */
-export function validateExecutionEvent(
-  event: Record<string, unknown>,
-): ValidationResult {
+export function validateExecutionEvent(event: Record<string, unknown>): ValidationResult {
   const errors: string[] = [];
 
   if (!event || typeof event !== 'object') {
@@ -151,21 +146,29 @@ export function validateExecutionEvent(
 
   const validActors: Actor[] = ['human', 'agent', 'system'];
   if (event.actor && !validActors.includes(event.actor as Actor)) {
-    errors.push(`Invalid actor: ${event.actor as string}. Must be one of: ${validActors.join(', ')}`);
+    errors.push(
+      `Invalid actor: ${event.actor as string}. Must be one of: ${validActors.join(', ')}`
+    );
   }
 
   const validSources: EventSource[] = ['cli', 'ci', 'git', 'runtime', 'editor', 'governance'];
   if (event.source && !validSources.includes(event.source as EventSource)) {
     errors.push(
-      `Invalid source: ${event.source as string}. Must be one of: ${validSources.join(', ')}`,
+      `Invalid source: ${event.source as string}. Must be one of: ${validSources.join(', ')}`
     );
   }
 
-  if (event.context !== undefined && (typeof event.context !== 'object' || event.context === null)) {
+  if (
+    event.context !== undefined &&
+    (typeof event.context !== 'object' || event.context === null)
+  ) {
     errors.push('ExecutionEvent context must be an object');
   }
 
-  if (event.payload !== undefined && (typeof event.payload !== 'object' || event.payload === null)) {
+  if (
+    event.payload !== undefined &&
+    (typeof event.payload !== 'object' || event.payload === null)
+  ) {
     errors.push('ExecutionEvent payload must be an object');
   }
 
@@ -189,7 +192,7 @@ export interface CreateExecutionEventOptions {
  */
 export function createExecutionEvent(
   kind: string,
-  options: CreateExecutionEventOptions,
+  options: CreateExecutionEventOptions
 ): ExecutionEvent {
   const timestamp = options.timestamp ?? Date.now();
   const context = options.context ?? {};
@@ -209,9 +212,7 @@ export function createExecutionEvent(
     ...(options.causedBy ? { causedBy: options.causedBy } : {}),
   };
 
-  const { valid, errors } = validateExecutionEvent(
-    event as unknown as Record<string, unknown>,
-  );
+  const { valid, errors } = validateExecutionEvent(event as unknown as Record<string, unknown>);
   if (!valid) {
     throw new Error(`Invalid execution event: ${errors.join('; ')}`);
   }

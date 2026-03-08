@@ -32,7 +32,7 @@ export function shouldEncounter(tile: number, rand: () => number = Math.random):
  */
 export function pickWeightedRandom(
   monsters: readonly Bugmon[],
-  rand: () => number = Math.random,
+  rand: () => number = Math.random
 ): Bugmon {
   let totalWeight = 0;
   for (const mon of monsters) {
@@ -76,7 +76,7 @@ export function checkEncounter(
   tile: number,
   monsters: readonly Bugmon[],
   rand: () => number = Math.random,
-  context?: EncounterContext,
+  context?: EncounterContext
 ): Bugmon | null {
   if (!shouldEncounter(tile, rand)) return null;
 

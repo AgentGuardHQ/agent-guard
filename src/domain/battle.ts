@@ -30,10 +30,7 @@ export function isHealMove(move: BattleMove): boolean {
   return move.category === 'heal';
 }
 
-export function calcHealing(
-  move: BattleMove,
-  bugmon: Bugmon,
-): { healing: number } {
+export function calcHealing(move: BattleMove, bugmon: Bugmon): { healing: number } {
   const restored = Math.min(move.power, bugmon.hp - (bugmon.currentHP ?? bugmon.hp));
   return { healing: Math.max(0, restored) };
 }
@@ -43,7 +40,7 @@ export function calcDamage(
   move: BattleMove,
   defender: Bugmon,
   typeChart: TypeChart | null,
-  rng: BattleRNG = {},
+  rng: BattleRNG = {}
 ): BattleDamageResult {
   const rand = rng.random ? rng.random : Math.random;
   const randomBonus = Math.floor(rand() * 3) + 1;
@@ -88,7 +85,7 @@ export function resolveMove(
   move: BattleMove,
   defender: Bugmon,
   typeChart: TypeChart | null,
-  rng: BattleRNG = {},
+  rng: BattleRNG = {}
 ): MoveResult {
   if (isHealMove(move)) {
     return { ...calcHealing(move, attacker), damage: 0, effectiveness: 1.0, critical: false };
@@ -126,7 +123,7 @@ export function attemptCache(enemyMon: Bugmon, roll: number): boolean {
 export function pickEnemyMove(
   enemy: Bugmon,
   movesData: readonly BattleMove[],
-  roll: number,
+  roll: number
 ): BattleMove | undefined {
   const moveId = enemy.moves[Math.floor(roll * enemy.moves.length)];
   return movesData.find((m) => m.id === moveId);
@@ -146,7 +143,7 @@ export function executeTurn(
   playerMove: BattleMove,
   enemyMove: BattleMove,
   typeChart: TypeChart | null,
-  rolls: BattleRNG = {},
+  rolls: BattleRNG = {}
 ): TurnResult {
   const events: BattleEvent[] = [];
   let { playerMon, enemy } = state;
@@ -268,7 +265,7 @@ export type Strategy = (
   defender: Bugmon,
   movesData: readonly BattleMove[],
   typeChart: TypeChart | null,
-  rng?: BattleRNG,
+  rng?: BattleRNG
 ) => BattleMove;
 
 export interface SimulationOptions {
@@ -298,11 +295,12 @@ export function simulateBattle(
   movesData: readonly BattleMove[],
   typeChart: TypeChart | Record<string, unknown>,
   maxTurns = 100,
-  options: SimulationOptions = {},
+  options: SimulationOptions = {}
 ): BattleState | SimulationResult {
   let state = createBattleState(monA, monB);
   const typeEffectiveness = typeChart
-    ? ((typeChart as Record<string, unknown>).effectiveness as TypeChart) || (typeChart as TypeChart)
+    ? ((typeChart as Record<string, unknown>).effectiveness as TypeChart) ||
+      (typeChart as TypeChart)
     : null;
   const { strategyA, strategyB, rng } = options;
 
@@ -316,11 +314,14 @@ export function simulateBattle(
     function doAttack(
       attacker: Bugmon,
       move: BattleMove,
-      defender: Bugmon,
+      defender: Bugmon
     ): { fainted: boolean; attacker: Bugmon; defender: Bugmon } {
       if (isHealMove(move)) {
         const healed = Math.min(move.power, attacker.hp - attacker.currentHP);
-        const healedAttacker = { ...attacker, currentHP: Math.min(attacker.hp, attacker.currentHP + move.power) };
+        const healedAttacker = {
+          ...attacker,
+          currentHP: Math.min(attacker.hp, attacker.currentHP + move.power),
+        };
         log.push({
           type: MOVE_USED,
           side: '',

@@ -58,14 +58,12 @@ export function resetFrequencies(): void {
  */
 export function classify(
   parsedError: ParsedError,
-  context?: { file?: string; line?: number },
+  context?: { file?: string; line?: number }
 ): ClassifiedBugEvent {
   const file = context?.file || parsedError.file || null;
   const line = context?.line || parsedError.line || null;
 
-  const id = simpleHash(
-    `${parsedError.type}:${parsedError.message}:${file || ''}:${line || ''}`,
-  );
+  const id = simpleHash(`${parsedError.type}:${parsedError.message}:${file || ''}:${line || ''}`);
 
   const freq = (frequencyMap.get(id) || 0) + 1;
   frequencyMap.set(id, freq);

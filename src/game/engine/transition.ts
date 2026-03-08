@@ -55,7 +55,7 @@ export function drawTransitionOverlay(
   ctx: CanvasRenderingContext2D,
   w: number,
   h: number,
-  mapDrawFn: () => void,
+  mapDrawFn: () => void
 ): void {
   if (!transition) return;
   mapDrawFn();

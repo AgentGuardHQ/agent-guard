@@ -67,7 +67,7 @@ export function executeStage(
   run: PipelineRun,
   stageId: string,
   handler: StageHandler,
-  options: ExecuteStageOptions = {},
+  options: ExecuteStageOptions = {}
 ): StageResult {
   const now = options.now || Date.now;
   const result: StageResult = {
@@ -83,9 +83,7 @@ export function executeStage(
   if (options.agentRole) {
     if (!isRoleAuthorizedForStage(options.agentRole, stageId)) {
       result.status = STAGE_STATUS.FAILED;
-      result.errors.push(
-        `Role "${options.agentRole}" is not authorized for stage "${stageId}"`,
-      );
+      result.errors.push(`Role "${options.agentRole}" is not authorized for stage "${stageId}"`);
       result.completedAt = now();
       run.results.push(result);
       return result;
@@ -128,14 +126,11 @@ export function executeStage(
   // Gate 4: File scope enforcement (for build stage)
   if (stageId === 'build' && run.context.files && output.changes) {
     const modifiedFiles = Object.keys(output.changes as Record<string, unknown>);
-    const scopeCheck = validateFileScope(
-      run.context.files as readonly string[],
-      modifiedFiles,
-    );
+    const scopeCheck = validateFileScope(run.context.files as readonly string[], modifiedFiles);
     if (!scopeCheck.valid) {
       result.status = STAGE_STATUS.FAILED;
       result.errors.push(
-        `File scope violation: unauthorized modifications to: ${scopeCheck.violations.join(', ')}`,
+        `File scope violation: unauthorized modifications to: ${scopeCheck.violations.join(', ')}`
       );
       result.completedAt = now();
       run.results.push(result);
@@ -160,7 +155,7 @@ interface RunPipelineOptions extends CreateRunOptions {
 export function runPipeline(
   task: string,
   handlers: Record<string, StageHandler>,
-  options: RunPipelineOptions = {},
+  options: RunPipelineOptions = {}
 ): PipelineRun {
   const run = createPipelineRun(task, options);
   run.status = 'running';

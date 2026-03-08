@@ -63,7 +63,7 @@ export function registerScoreCommand(program: Command): void {
           for (const cluster of clusters) {
             const file = cluster.commonFile ? ` in ${cluster.commonFile}` : '';
             console.log(
-              `    - ${cluster.events.length} failures${file} (severity: ${cluster.severity})`,
+              `    - ${cluster.events.length} failures${file} (severity: ${cluster.severity})`
             );
           }
         }

@@ -19,7 +19,7 @@ interface ViolationMatch {
 /** Map an InvariantViolation event to a BugMon monster for encounter. */
 export function violationToMonster(
   violationEvent: DomainEvent & { metadata?: { type?: string; severity?: number } },
-  monstersData: readonly Bugmon[],
+  monstersData: readonly Bugmon[]
 ): ViolationMatch | null {
   const type = violationEvent.metadata?.type;
   const severity = violationEvent.metadata?.severity || 3;

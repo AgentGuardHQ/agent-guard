@@ -104,7 +104,9 @@ export function getUserFrame(frames: StackFrame[]): StackFrame | null {
   return frames.find((f) => !isInternalFrame(f.file)) || frames[0] || null;
 }
 
-export function extractLocation(text: string): { file: string; line: number; column: number | null } | null {
+export function extractLocation(
+  text: string
+): { file: string; line: number; column: number | null } | null {
   const match = text.match(SIMPLE_LOCATION_RE);
   if (match && !isInternalFrame(match[1])) {
     return {

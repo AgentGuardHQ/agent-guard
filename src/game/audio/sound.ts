@@ -46,7 +46,13 @@ export function toggleMute(): boolean {
   return muted;
 }
 
-function tone(freq: number, dur: number, type?: OscillatorType, vol?: number, fade?: boolean): void {
+function tone(
+  freq: number,
+  dur: number,
+  type?: OscillatorType,
+  vol?: number,
+  fade?: boolean
+): void {
   if (!ok() || !audioCtx || !masterGain) return;
   try {
     const o = audioCtx.createOscillator();
@@ -131,7 +137,7 @@ export function playFootstep(): void {
 
 export function playEncounterAlert(): void {
   [523, 659, 784, 1047].forEach((f, i) =>
-    delayed(() => tone(f, 0.1, 'square', 0.35, true), i * 100),
+    delayed(() => tone(f, 0.1, 'square', 0.35, true), i * 100)
   );
 }
 
@@ -150,7 +156,7 @@ export function playFaint(): void {
 
 export function playCaptureSuccess(): void {
   [523, 659, 784, 1047, 1319].forEach((f, i) =>
-    delayed(() => tone(f, i === 4 ? 0.25 : 0.12, 'sine', 0.35, true), i * 120),
+    delayed(() => tone(f, i === 4 ? 0.25 : 0.12, 'sine', 0.35, true), i * 120)
   );
 }
 
@@ -161,16 +167,16 @@ export function playCaptureFailure(): void {
 
 export function playBattleVictory(): void {
   [262, 330, 392, 523, 659].forEach((f, i) =>
-    delayed(() => tone(f, i === 4 ? 0.35 : 0.14, 'sine', 0.35, true), i * 140),
+    delayed(() => tone(f, i === 4 ? 0.35 : 0.14, 'sine', 0.35, true), i * 140)
   );
 }
 
 export function playEvolution(): void {
   sweep(200, 800, 1.5, 'sine', 0.2);
   [523, 659, 784, 880, 1047, 1319, 1568].forEach((f, i) =>
-    delayed(() => tone(f, 0.3, 'sine', 0.15, true), 500 + i * 350),
+    delayed(() => tone(f, 0.3, 'sine', 0.15, true), 500 + i * 350)
   );
   [784, 988, 1175, 1568].forEach((f, i) =>
-    delayed(() => tone(f, i === 3 ? 0.5 : 0.2, 'sine', 0.3, true), 3200 + i * 200),
+    delayed(() => tone(f, i === 3 ? 0.5 : 0.2, 'sine', 0.3, true), 3200 + i * 200)
   );
 }

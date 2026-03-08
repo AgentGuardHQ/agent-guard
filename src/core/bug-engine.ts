@@ -20,7 +20,10 @@ const SOURCE_TO_MONSTER_TYPE: Record<string, MonsterType> = {
 };
 
 /** Base stats scaled by severity */
-const SEVERITY_STATS: Record<Severity, { hp: number; attack: number; defense: number; speed: number }> = {
+const SEVERITY_STATS: Record<
+  Severity,
+  { hp: number; attack: number; defense: number; speed: number }
+> = {
   1: { hp: 20, attack: 5, defense: 3, speed: 4 },
   2: { hp: 30, attack: 8, defense: 5, speed: 5 },
   3: { hp: 45, attack: 12, defense: 8, speed: 7 },

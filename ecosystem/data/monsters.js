@@ -670,8 +670,15 @@ export const MONSTERS = [
     theme: 'broken system invariant',
     evolution: null,
     passive: null,
-    errorPatterns: ['invariant', 'constraint violated', 'postcondition failed', 'precondition failed', 'tests failed'],
-    fixTip: 'A system invariant has been violated. Check the invariant definition and ensure the system property holds true.',
+    errorPatterns: [
+      'invariant',
+      'constraint violated',
+      'postcondition failed',
+      'precondition failed',
+      'tests failed',
+    ],
+    fixTip:
+      'A system invariant has been violated. Check the invariant definition and ensure the system property holds true.',
   },
   {
     id: 33,
@@ -688,8 +695,15 @@ export const MONSTERS = [
     theme: 'unauthorized agent action',
     evolution: null,
     passive: null,
-    errorPatterns: ['unauthorized', 'forbidden action', 'shell.exec', 'scope violation', 'permission denied'],
-    fixTip: 'An agent attempted an unauthorized action. Review the action scope and ensure agents operate within declared boundaries.',
+    errorPatterns: [
+      'unauthorized',
+      'forbidden action',
+      'shell.exec',
+      'scope violation',
+      'permission denied',
+    ],
+    fixTip:
+      'An agent attempted an unauthorized action. Review the action scope and ensure agents operate within declared boundaries.',
   },
   {
     id: 34,
@@ -706,7 +720,14 @@ export const MONSTERS = [
     theme: 'dependency cycle violation',
     evolution: null,
     passive: null,
-    errorPatterns: ['dependency cycle', 'circular import', 'layer violation', 'core depends on game', 'architecture violation'],
-    fixTip: 'A dependency boundary has been crossed. Ensure modules respect the layered architecture and dependencies flow in the correct direction.',
-  }
+    errorPatterns: [
+      'dependency cycle',
+      'circular import',
+      'layer violation',
+      'core depends on game',
+      'architecture violation',
+    ],
+    fixTip:
+      'A dependency boundary has been crossed. Ensure modules respect the layered architecture and dependencies flow in the correct direction.',
+  },
 ];

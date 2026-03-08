@@ -8,7 +8,10 @@
 import type { BugEvent, Monster, MonsterType, Severity } from '../../core/types.js';
 
 /** Stat templates indexed by severity */
-const SEVERITY_TEMPLATES: Record<Severity, { hp: number; attack: number; defense: number; speed: number }> = {
+const SEVERITY_TEMPLATES: Record<
+  Severity,
+  { hp: number; attack: number; defense: number; speed: number }
+> = {
   1: { hp: 20, attack: 5, defense: 3, speed: 4 },
   2: { hp: 30, attack: 8, defense: 5, speed: 5 },
   3: { hp: 45, attack: 12, defense: 8, speed: 7 },

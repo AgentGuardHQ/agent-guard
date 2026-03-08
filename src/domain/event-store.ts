@@ -18,7 +18,7 @@ export function createInMemoryStore(): EventStore {
   return {
     append(event: DomainEvent): void {
       const { valid, errors } = validateEvent(
-        event as unknown as Record<string, unknown>,
+        event as unknown as Record<string, unknown>
       ) as ValidationResult;
       if (!valid) {
         throw new Error(`Cannot append invalid event: ${errors.join('; ')}`);

@@ -33,12 +33,7 @@ export async function claudeHook(): Promise<void> {
     const { monster } = matchMonster(error);
     if (!monster) process.exit(0);
 
-    const { xpGained, isNew, data: dexData } = recordEncounter(
-      monster,
-      error.message,
-      null,
-      null,
-    );
+    const { xpGained, isNew, data: dexData } = recordEncounter(monster, error.message, null, null);
 
     const allMonsters = getAllMonsters();
     const seenCount = Object.keys(dexData.seen || {}).length;
@@ -49,11 +44,11 @@ export async function claudeHook(): Promise<void> {
 
     process.stdout.write('\n');
     process.stdout.write(
-      `  \x1b[1m\x1b[31mWild ${monster.name} appeared!\x1b[0m ${typeTag} HP:${monster.hp}${newTag}\n`,
+      `  \x1b[1m\x1b[31mWild ${monster.name} appeared!\x1b[0m ${typeTag} HP:${monster.hp}${newTag}\n`
     );
     process.stdout.write(`  \x1b[2m${error.message.slice(0, 80)}\x1b[0m\n`);
     process.stdout.write(
-      `  \x1b[32m+${xpGained} XP\x1b[0m | BugDex: ${seenCount}/${totalCount} | Lv.${dexData.stats.level}\n`,
+      `  \x1b[32m+${xpGained} XP\x1b[0m | BugDex: ${seenCount}/${totalCount} | Lv.${dexData.stats.level}\n`
     );
     process.stdout.write('\n');
   } catch {

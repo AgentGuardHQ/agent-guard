@@ -31,7 +31,13 @@ export class SourceRegistry {
   private eventBus: EventBus<SourceEventMap>;
   private ingest: (raw: string) => DomainEvent[];
 
-  constructor({ eventBus, ingest }: { eventBus?: EventBus<SourceEventMap>; ingest?: (raw: string) => DomainEvent[] }) {
+  constructor({
+    eventBus,
+    ingest,
+  }: {
+    eventBus?: EventBus<SourceEventMap>;
+    ingest?: (raw: string) => DomainEvent[];
+  }) {
     if (!eventBus) throw new Error('SourceRegistry requires an eventBus');
     if (typeof ingest !== 'function') throw new Error('SourceRegistry requires an ingest function');
     this.eventBus = eventBus;

@@ -36,11 +36,7 @@ export function updateEvolutionAnimation(dt: number): boolean {
   return false;
 }
 
-export function drawEvolutionAnimation(
-  ctx: CanvasRenderingContext2D,
-  w: number,
-  h: number,
-): void {
+export function drawEvolutionAnimation(ctx: CanvasRenderingContext2D, w: number, h: number): void {
   if (!evoAnim) return;
   ctx.fillStyle = '#0a0a1a';
   ctx.fillRect(0, 0, w, h);
@@ -83,7 +79,7 @@ function drawMon(
   cx: number,
   cy: number,
   size: number,
-  alpha: number,
+  alpha: number
 ): void {
   ctx.globalAlpha = alpha;
   const x = cx - size / 2;

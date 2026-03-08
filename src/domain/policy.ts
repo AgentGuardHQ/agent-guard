@@ -79,7 +79,7 @@ export function validatePolicy(policy: unknown): ValidationResult {
 /** Evaluate an action against a policy. */
 export function evaluate(
   action: { type: string; target: string },
-  policy: Policy,
+  policy: Policy
 ): PolicyEvalResult {
   const { type, target } = action;
 
@@ -162,13 +162,7 @@ export function createDevPolicy(overrides: Partial<Policy> = {}): Policy {
       'git.branch.create:*',
       'git.checkout:*',
     ],
-    deny: [
-      'deploy.trigger:*',
-      'infra.apply:*',
-      'infra.destroy:*',
-      'npm.publish:*',
-      'git.reset:*',
-    ],
+    deny: ['deploy.trigger:*', 'infra.apply:*', 'infra.destroy:*', 'npm.publish:*', 'git.reset:*'],
     protectedPaths: [],
     protectedBranches: ['main', 'master', 'production'],
     ...overrides,

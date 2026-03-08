@@ -1,7 +1,17 @@
 // bugmon resolve — mark bugs as fixed and earn XP
 
-import { loadBugDex, saveBugDex, resolveLastUnresolved, resolveAllUnresolved } from '../../protocol/storage.js';
-import { createComboState, recordResolution, applyComboXP, formatCombo } from '../../domain/combo.js';
+import {
+  loadBugDex,
+  saveBugDex,
+  resolveLastUnresolved,
+  resolveAllUnresolved,
+} from '../../protocol/storage.js';
+import {
+  createComboState,
+  recordResolution,
+  applyComboXP,
+  formatCombo,
+} from '../../domain/combo.js';
 import { RESET, BOLD, DIM, FG } from '../colors.js';
 import type { ComboTier } from '../../core/types.js';
 
@@ -53,10 +63,12 @@ export async function resolve(args: string[]): Promise<void> {
     }
 
     process.stderr.write('\n');
-    process.stderr.write(`  ${FG.green}${BOLD}Resolved ${count} bug${count > 1 ? 's' : ''}!${RESET}\n`);
+    process.stderr.write(
+      `  ${FG.green}${BOLD}Resolved ${count} bug${count > 1 ? 's' : ''}!${RESET}\n`
+    );
     process.stderr.write(`  ${FG.yellow}+${xpGained} XP${RESET}\n`);
     if (totalBonusXP > 0) {
-      const cc = lastTier ? (COMBO_COLORS[lastTier.label] || FG.yellow) : FG.yellow;
+      const cc = lastTier ? COMBO_COLORS[lastTier.label] || FG.yellow : FG.yellow;
       process.stderr.write(`  ${cc}+${totalBonusXP} bonus XP (combo)${RESET}\n`);
     }
     if (combo.streak >= 2 && lastTier) {
@@ -93,7 +105,7 @@ export async function resolve(args: string[]): Promise<void> {
     process.stderr.write(`  ${FG.green}${BOLD}Bug resolved!${RESET}\n`);
     process.stderr.write(`  ${FG.yellow}+${xp} XP${RESET}\n`);
     if (bonusXP > 0) {
-      const cc = tier ? (COMBO_COLORS[tier.label] || FG.yellow) : FG.yellow;
+      const cc = tier ? COMBO_COLORS[tier.label] || FG.yellow : FG.yellow;
       process.stderr.write(`  ${cc}+${bonusXP} bonus XP (combo)${RESET}\n`);
     }
     if (combo.streak >= 2 && tier) {
@@ -111,7 +123,7 @@ export async function resolve(args: string[]): Promise<void> {
 
 function calculateLevel(xp: number): number {
   let level = 1;
-  while (((level + 1) * level) / 2 * 100 <= xp) {
+  while ((((level + 1) * level) / 2) * 100 <= xp) {
     level++;
   }
   return level;

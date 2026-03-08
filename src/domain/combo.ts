@@ -61,7 +61,7 @@ export function recordFailure(state: ComboState): {
 export function applyComboXP(
   state: ComboState,
   baseXP: number,
-  multiplier: number,
+  multiplier: number
 ): { state: ComboState; totalXP: number; bonusXP: number } {
   const totalXP = Math.floor(baseXP * multiplier);
   const bonusXP = totalXP - baseXP;

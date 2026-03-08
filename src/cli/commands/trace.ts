@@ -46,7 +46,9 @@ export function registerTraceCommand(program: Command): void {
         const prefix = i === 0 ? '  [ROOT] ' : `  ${'  '.repeat(i)}-> `;
         const label = i === chain.length - 1 ? ' [TARGET]' : '';
 
-        console.log(`${prefix}[${time}] ${event.actor}/${event.source} ${event.kind}${ctx}${label}`);
+        console.log(
+          `${prefix}[${time}] ${event.actor}/${event.source} ${event.kind}${ctx}${label}`
+        );
         console.log(`${' '.repeat(prefix.length)}id: ${event.id}`);
 
         if (Object.keys(event.payload).length > 0) {
@@ -56,9 +58,7 @@ export function registerTraceCommand(program: Command): void {
         }
       }
 
-      console.log(
-        `\nRoot cause: ${chain[0].kind} by ${chain[0].actor} via ${chain[0].source}`,
-      );
+      console.log(`\nRoot cause: ${chain[0].kind} by ${chain[0].actor} via ${chain[0].source}`);
       if (chain[0].context.file) {
         console.log(`File: ${chain[0].context.file}`);
       }

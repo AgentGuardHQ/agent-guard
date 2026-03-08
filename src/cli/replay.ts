@@ -88,7 +88,7 @@ export async function replay(args: string[]): Promise<void> {
     const sessions = listSessions(1);
     if (sessions.length === 0) {
       process.stderr.write(
-        '\n  No sessions recorded yet.\n  Run "bugmon watch -- <command>" to start recording.\n\n',
+        '\n  No sessions recorded yet.\n  Run "bugmon watch -- <command>" to start recording.\n\n'
       );
       return;
     }
@@ -103,7 +103,7 @@ export async function replay(args: string[]): Promise<void> {
   const session = loadSession(sessionId) as SessionData | null;
   if (!session) {
     process.stderr.write(
-      `\n  Session "${sessionId}" not found.\n  Run "bugmon replay" to list available sessions.\n\n`,
+      `\n  Session "${sessionId}" not found.\n  Run "bugmon replay" to list available sessions.\n\n`
     );
     return;
   }
@@ -126,7 +126,7 @@ function renderSessionList(): void {
 
   if (sessions.length === 0) {
     process.stderr.write(
-      '\n  No sessions recorded yet.\n  Run "bugmon watch -- <command>" to start recording.\n\n',
+      '\n  No sessions recorded yet.\n  Run "bugmon watch -- <command>" to start recording.\n\n'
     );
     return;
   }
@@ -169,7 +169,7 @@ function replayTimeline(session: SessionData, filterKind: string | null): void {
 
   if (events.length === 0) {
     process.stderr.write(
-      `\n  Session "${session.id}" has no events${filterKind ? ` matching "${filterKind}"` : ''}.\n\n`,
+      `\n  Session "${session.id}" has no events${filterKind ? ` matching "${filterKind}"` : ''}.\n\n`
     );
     return;
   }
@@ -193,7 +193,7 @@ function replayTimeline(session: SessionData, filterKind: string | null): void {
     const warning = isWarningEvent(event) ? color(' !!', 'red') : '';
 
     lines.push(
-      `  ${dim(elapsed)} ${color(display.icon, display.color)} ${bold(display.label)}${warning}`,
+      `  ${dim(elapsed)} ${color(display.icon, display.color)} ${bold(display.label)}${warning}`
     );
     if (detail) {
       lines.push(`           ${dim(detail)}`);
@@ -236,7 +236,7 @@ async function replayStepMode(session: SessionData, filterKind: string | null): 
     const progress = dim(`[${i + 1}/${events.length}]`);
 
     process.stdout.write(
-      `  ${progress} ${dim(elapsed)} ${color(display.icon, display.color)} ${bold(display.label)}${warning}\n`,
+      `  ${progress} ${dim(elapsed)} ${color(display.icon, display.color)} ${bold(display.label)}${warning}\n`
     );
     if (detail) {
       process.stdout.write(`           ${dim(detail)}\n`);
@@ -270,7 +270,7 @@ function renderSessionStats(session: SessionData): void {
   const encounters = counts['ENCOUNTER_STARTED'] || 0;
   const battles = counts['BATTLE_ENDED'] || 0;
   const victories = events.filter(
-    (e) => e.kind === 'BATTLE_ENDED' && e.result === 'victory',
+    (e) => e.kind === 'BATTLE_ENDED' && e.result === 'victory'
   ).length;
 
   const lines: string[] = [];
@@ -363,7 +363,7 @@ function renderInlineSummary(lines: string[], events: ReplayEvent[]): void {
   const errors = events.filter((e) => e.kind === 'ErrorObserved').length;
   const encounters = events.filter((e) => e.kind === 'ENCOUNTER_STARTED').length;
   const resolved = events.filter(
-    (e) => e.kind === 'BATTLE_ENDED' && (e.result === 'victory' || e.result === 'resolved'),
+    (e) => e.kind === 'BATTLE_ENDED' && (e.result === 'victory' || e.result === 'resolved')
   ).length;
 
   const parts: string[] = [];

@@ -65,7 +65,7 @@ export function createBugEvent(
   message: string,
   file: string | null = null,
   line: number | null = null,
-  severity: number | null = null,
+  severity: number | null = null
 ): BugEventData {
   const id = simpleHash(`${type}:${message}:${file || ''}:${line || ''}`);
 
@@ -127,7 +127,7 @@ export interface MonsterData {
 
 export function bugEventToMonster(
   bugEvent: BugEventData,
-  monstersData: MonsterData[],
+  monstersData: MonsterData[]
 ): { monster: MonsterData; confidence: number } {
   const fullText = bugEvent.message.toLowerCase();
 

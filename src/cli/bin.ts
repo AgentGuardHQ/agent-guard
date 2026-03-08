@@ -129,7 +129,7 @@ async function main() {
         const party = dex.party as unknown[] | undefined;
         if (!party || party.length === 0) {
           process.stderr.write(
-            "\n  \x1b[1m\x1b[33mFirst time? You'll get a starter BugMon for your party!\x1b[0m\n",
+            "\n  \x1b[1m\x1b[33mFirst time? You'll get a starter BugMon for your party!\x1b[0m\n"
           );
           process.stderr.write('  \x1b[2mFix errors to cache the BugMon that appear.\x1b[0m\n\n');
         }
@@ -179,7 +179,7 @@ async function main() {
       saveBugDex(data as Parameters<typeof saveBugDex>[0]);
       if (healed > 0) {
         process.stderr.write(
-          `\n  \x1b[32m\x1b[1mYour party has been fully healed!\x1b[0m (${healed} BugMon restored)\n\n`,
+          `\n  \x1b[32m\x1b[1mYour party has been fully healed!\x1b[0m (${healed} BugMon restored)\n\n`
         );
       } else {
         process.stderr.write('\n  \x1b[2mYour party is already at full health.\x1b[0m\n\n');
@@ -297,9 +297,9 @@ async function main() {
       const { fileURLToPath } = await import('node:url');
       const { dirname, join } = await import('node:path');
       const __dir = dirname(fileURLToPath(import.meta.url));
-      const pkg = JSON.parse(
-        readFileSync(join(__dir, '..', '..', 'package.json'), 'utf8'),
-      ) as { version: string };
+      const pkg = JSON.parse(readFileSync(join(__dir, '..', '..', 'package.json'), 'utf8')) as {
+        version: string;
+      };
       console.log(`agentguard v${pkg.version}`);
       break;
     }
