@@ -1,4 +1,8 @@
 // Event Bus - decoupled communication between game systems
+//
+// TODO(roadmap/ts-migration): Consolidate with domain/event-bus.js (canonical implementation)
+//   domain/event-bus.js has off(), clear(), and unsubscribe returns that this version lacks.
+//   The Events constants below should also move to domain/events.js.
 
 class EventBus {
   constructor() {
