@@ -117,9 +117,29 @@ describe('agentguard/core/aab', () => {
         { tool: 'Write', file: 'src/a.ts', filesAffected: 10 },
         policies,
       );
-      // Should generate blast radius event
+      // Should generate blast radius event (10 files * 1.5 write multiplier = 15 > limit 5)
       const blastEvent = result.events.find(e => e.kind === 'BlastRadiusExceeded');
       expect(blastEvent).toBeTruthy();
+      // Should include blast radius computation result
+      expect(result.blastRadius).toBeDefined();
+      expect(result.blastRadius!.weightedScore).toBeGreaterThan(5);
+      expect(result.blastRadius!.exceeded).toBe(true);
+    });
+
+    it('returns blastRadius result when policy has limits', () => {
+      const policies = [{
+        id: 'limit-blast',
+        name: 'Blast Limit',
+        rules: [{ action: '*', effect: 'allow' as const, conditions: { limit: 100 } }],
+        severity: 3,
+      }];
+      const result = authorize(
+        { tool: 'Read', file: 'src/a.ts', filesAffected: 1 },
+        policies,
+      );
+      // Read action with 1 file: score = 1 * 0.1 = 0.1, should not exceed limit 100
+      expect(result.blastRadius).toBeDefined();
+      expect(result.blastRadius!.exceeded).toBe(false);
     });
   });
 });

@@ -11,6 +11,8 @@ import {
   UNAUTHORIZED_ACTION,
   BLAST_RADIUS_EXCEEDED,
 } from '../events/schema.js';
+import { computeBlastRadius } from './blast-radius.js';
+import type { BlastRadiusResult } from './blast-radius.js';
 
 export interface RawAgentAction {
   tool?: string;
@@ -28,6 +30,7 @@ export interface AuthorizationResult {
   intent: NormalizedIntent;
   result: EvalResult;
   events: DomainEvent[];
+  blastRadius?: BlastRadiusResult;
 }
 
 const TOOL_ACTION_MAP: Record<string, string> = {
@@ -164,22 +167,30 @@ export function authorize(
     }
   }
 
-  // TODO(roadmap): Phase 2 — Implement full blast radius computation engine
-  // (dependency graph analysis, transitive impact scoring, configurable thresholds)
-  if (intent.filesAffected !== undefined) {
-    let tightestLimit = Infinity;
-    for (const policy of policies) {
-      for (const rule of policy.rules) {
-        if (rule.conditions?.limit !== undefined) {
-          tightestLimit = Math.min(tightestLimit, rule.conditions.limit);
-        }
+  // Blast radius computation engine (Phase 2)
+  // Computes a weighted score from action type, path sensitivity, and file count,
+  // then checks against the tightest policy limit.
+  let blastRadius: BlastRadiusResult | undefined;
+
+  let tightestLimit = Infinity;
+  for (const policy of policies) {
+    for (const rule of policy.rules) {
+      if (rule.conditions?.limit !== undefined) {
+        tightestLimit = Math.min(tightestLimit, rule.conditions.limit);
       }
     }
+  }
 
-    if (intent.filesAffected > tightestLimit) {
+  if (tightestLimit < Infinity) {
+    blastRadius = computeBlastRadius(intent, tightestLimit);
+
+    if (blastRadius.exceeded) {
       events.push(
         createEvent(BLAST_RADIUS_EXCEEDED, {
-          filesAffected: intent.filesAffected,
+          filesAffected: blastRadius.rawCount,
+          weightedScore: blastRadius.weightedScore,
+          riskLevel: blastRadius.riskLevel,
+          factors: blastRadius.factors.map((f) => f.reason),
           limit: tightestLimit,
           action: intent.action,
         })
@@ -187,7 +198,7 @@ export function authorize(
     }
   }
 
-  return { intent, result, events };
+  return { intent, result, events, blastRadius };
 }
 
 export { detectGitAction, isDestructiveCommand };
