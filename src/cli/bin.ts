@@ -130,7 +130,7 @@ async function main() {
 
     case 'claude-hook': {
       const { claudeHook } = await import('./commands/claude-hook.js');
-      await claudeHook();
+      await claudeHook(args[1]); // 'pre' or 'post'
       break;
     }
 
@@ -178,7 +178,7 @@ function printHelp(): void {
 
   \x1b[1mIntegration:\x1b[0m
     agentguard claude-init                    Set up Claude Code hook integration
-    agentguard claude-hook                    PostToolUse hook handler (internal)
+    agentguard claude-hook                    PreToolUse/PostToolUse hook handler (internal)
 
   \x1b[1mMeta:\x1b[0m
     agentguard --version                      Show version

@@ -1,7 +1,11 @@
-// AgentGuard Claude Code hook — PostToolUse handler for governance integration
+// AgentGuard Claude Code hook — PreToolUse governance + PostToolUse error monitoring.
+// PreToolUse: routes actions through the kernel for policy/invariant enforcement.
+// PostToolUse: reports Bash stderr errors (informational only).
 // Always exits 0 — hooks must never fail.
 
-export async function claudeHook(): Promise<void> {
+import type { ClaudeCodeHookPayload } from '../../adapters/claude-code.js';
+
+export async function claudeHook(hookType?: string): Promise<void> {
   try {
     const input = await readStdin();
     if (!input) process.exit(0);
@@ -11,25 +15,98 @@ export async function claudeHook(): Promise<void> {
       data = JSON.parse(input) as Record<string, unknown>;
     } catch {
       process.exit(0);
+      return;
     }
 
-    if (data!.tool_name !== 'Bash') process.exit(0);
+    // Determine hook type: explicit CLI arg > payload field > inference from tool_output
+    const isPreToolUse =
+      hookType === 'pre' ||
+      data.hook === 'PreToolUse' ||
+      (!hookType && !data.tool_output);
 
-    const output = (data!.tool_output || {}) as Record<string, unknown>;
-    const exitCode = (output.exit_code ?? output.exitCode ?? 0) as number;
-    const stderr = (output.stderr || '') as string;
-
-    if (exitCode !== 0 && stderr.trim()) {
-      process.stdout.write('\n');
-      process.stdout.write(
-        `  \x1b[1m\x1b[31mError detected:\x1b[0m ${stderr.trim().split('\n')[0].slice(0, 80)}\n`
-      );
-      process.stdout.write('\n');
+    if (isPreToolUse) {
+      await handlePreToolUse(data as unknown as ClaudeCodeHookPayload);
+    } else {
+      handlePostToolUse(data);
     }
   } catch {
     // Swallow all errors — hooks must never fail
   }
   process.exit(0);
+}
+
+async function handlePreToolUse(payload: ClaudeCodeHookPayload): Promise<void> {
+  const { processClaudeCodeHook, formatHookResponse } = await import(
+    '../../adapters/claude-code.js'
+  );
+  const { createKernel } = await import('../../kernel/kernel.js');
+  const { createJsonlSink } = await import('../../events/jsonl.js');
+  const { createDecisionJsonlSink } = await import('../../events/decision-jsonl.js');
+  const { createTelemetryDecisionSink } = await import('../../telemetry/runtimeLogger.js');
+  const { loadPolicyDefs } = await import('../policy-resolver.js');
+
+  // Ensure hook field is set
+  const normalizedPayload: ClaudeCodeHookPayload = {
+    ...payload,
+    hook: 'PreToolUse',
+  };
+
+  // Load policy (fail-open: empty policy if none found)
+  let policyDefs: unknown[] = [];
+  try {
+    policyDefs = loadPolicyDefs();
+  } catch {
+    // Policy loading failure is non-fatal — continue with no policy (allow all)
+  }
+
+  // Generate run ID
+  const runId = `hook_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
+  // Create sinks (swallow errors — directories may not exist yet)
+  let jsonlSink, decisionSink, telemetrySink;
+  try {
+    jsonlSink = createJsonlSink({ runId });
+    decisionSink = createDecisionJsonlSink({ runId });
+    telemetrySink = createTelemetryDecisionSink();
+  } catch {
+    // Sink creation failure is non-fatal
+  }
+
+  // Build kernel — dryRun: true because Claude Code handles execution
+  const kernel = createKernel({
+    runId,
+    policyDefs,
+    dryRun: true,
+    sinks: jsonlSink ? [jsonlSink] : [],
+    decisionSinks: [decisionSink, telemetrySink].filter(Boolean) as import('../../kernel/decisions/types.js').DecisionSink[],
+  });
+
+  const result = await processClaudeCodeHook(kernel, normalizedPayload);
+  kernel.shutdown();
+
+  // If denied, output to stdout — this tells Claude Code to block the action
+  if (!result.allowed) {
+    const response = formatHookResponse(result);
+    if (response) {
+      process.stdout.write(response);
+    }
+  }
+}
+
+function handlePostToolUse(data: Record<string, unknown>): void {
+  if (data.tool_name !== 'Bash') return;
+
+  const output = (data.tool_output || {}) as Record<string, unknown>;
+  const exitCode = (output.exit_code ?? output.exitCode ?? 0) as number;
+  const stderr = (output.stderr || '') as string;
+
+  if (exitCode !== 0 && stderr.trim()) {
+    process.stdout.write('\n');
+    process.stdout.write(
+      `  \x1b[1m\x1b[31mError detected:\x1b[0m ${stderr.trim().split('\n')[0].slice(0, 80)}\n`
+    );
+    process.stdout.write('\n');
+  }
 }
 
 function readStdin(): Promise<string> {

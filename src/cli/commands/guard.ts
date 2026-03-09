@@ -1,15 +1,13 @@
 // CLI command: agentguard guard — start the governed action runtime.
 // Reads stdin for action proposals (JSON), evaluates them, writes results to stdout.
 
-import { readFileSync, existsSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { createKernel } from '../../kernel/kernel.js';
 import type { KernelConfig } from '../../kernel/kernel.js';
 import { createLiveRegistry } from '../../adapters/registry.js';
 import { createJsonlSink } from '../../events/jsonl.js';
 import { createDecisionJsonlSink } from '../../events/decision-jsonl.js';
 import { createTelemetryDecisionSink } from '../../telemetry/runtimeLogger.js';
-import { loadYamlPolicy } from '../../policy/yaml-loader.js';
+import { loadPolicyDefs } from '../policy-resolver.js';
 import {
   renderBanner,
   renderKernelResult,
@@ -30,47 +28,10 @@ export interface GuardOptions {
   simulate?: boolean;
 }
 
-function loadPolicyFile(policyPath: string): unknown[] {
-  const absPath = resolve(policyPath);
-  if (!existsSync(absPath)) {
-    process.stderr.write(`  \x1b[31mError:\x1b[0m Policy file not found: ${absPath}\n`);
-    process.exit(1);
-  }
-
-  const content = readFileSync(absPath, 'utf8');
-
-  if (absPath.endsWith('.yaml') || absPath.endsWith('.yml')) {
-    const policy = loadYamlPolicy(content, policyPath);
-    return [{ id: policy.id, name: policy.name, rules: policy.rules, severity: policy.severity }];
-  }
-
-  try {
-    const parsed = JSON.parse(content) as unknown;
-    return Array.isArray(parsed) ? parsed : [parsed];
-  } catch {
-    process.stderr.write(`  \x1b[31mError:\x1b[0m Failed to parse policy file: ${absPath}\n`);
-    process.exit(1);
-  }
-}
-
-function findDefaultPolicy(): string | null {
-  const candidates = [
-    'agentguard.yaml',
-    'agentguard.yml',
-    'agentguard.json',
-    '.agentguard.yaml',
-    '.agentguard.yml',
-  ];
-  for (const name of candidates) {
-    if (existsSync(name)) return name;
-  }
-  return null;
-}
-
 export async function guard(_args: string[], options: GuardOptions = {}): Promise<number> {
   // Resolve policy
-  const policyPath = options.policy || findDefaultPolicy();
-  const policyDefs = policyPath ? loadPolicyFile(policyPath) : [];
+  const policyDefs = loadPolicyDefs(options.policy);
+  const policyPath = options.policy;
 
   // Build simulator registry (enabled by default)
   const simulators = createSimulatorRegistry();

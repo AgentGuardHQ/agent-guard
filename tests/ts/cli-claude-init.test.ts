@@ -21,7 +21,7 @@ beforeEach(() => {
 });
 
 describe('claudeInit', () => {
-  it('creates fresh settings with hook on first install', async () => {
+  it('creates fresh settings with both PreToolUse and PostToolUse hooks on first install', async () => {
     vi.mocked(existsSync).mockReturnValue(false);
 
     await claudeInit([]);
@@ -31,13 +31,45 @@ describe('claudeInit', () => {
 
     const written = JSON.parse(vi.mocked(writeFileSync).mock.calls[0][1] as string);
     expect(written.hooks).toBeDefined();
+
+    // PreToolUse — governance enforcement for all tools
+    expect(written.hooks.PreToolUse).toHaveLength(1);
+    expect(written.hooks.PreToolUse[0].matcher).toBeUndefined(); // no matcher = match all
+    expect(written.hooks.PreToolUse[0].hooks[0].type).toBe('command');
+    expect(written.hooks.PreToolUse[0].hooks[0].command).toContain('claude-hook');
+    expect(written.hooks.PreToolUse[0].hooks[0].command).toContain('pre');
+
+    // PostToolUse — error monitoring for Bash
     expect(written.hooks.PostToolUse).toHaveLength(1);
     expect(written.hooks.PostToolUse[0].matcher).toBe('Bash');
     expect(written.hooks.PostToolUse[0].hooks[0].type).toBe('command');
     expect(written.hooks.PostToolUse[0].hooks[0].command).toContain('claude-hook');
+    expect(written.hooks.PostToolUse[0].hooks[0].command).toContain('post');
   });
 
-  it('detects already-configured hook and warns', async () => {
+  it('detects already-configured hook in PreToolUse and warns', async () => {
+    vi.mocked(existsSync).mockReturnValue(true);
+    vi.mocked(readFileSync).mockReturnValue(
+      JSON.stringify({
+        hooks: {
+          PreToolUse: [
+            {
+              hooks: [{ type: 'command', command: 'node /path/to/claude-hook.js pre' }],
+            },
+          ],
+        },
+      })
+    );
+
+    await claudeInit([]);
+
+    expect(writeFileSync).not.toHaveBeenCalled();
+    expect(process.stderr.write).toHaveBeenCalledWith(
+      expect.stringContaining('Already configured')
+    );
+  });
+
+  it('detects already-configured hook in PostToolUse and warns', async () => {
     vi.mocked(existsSync).mockReturnValue(true);
     vi.mocked(readFileSync).mockReturnValue(
       JSON.stringify({
@@ -45,7 +77,7 @@ describe('claudeInit', () => {
           PostToolUse: [
             {
               matcher: 'Bash',
-              hooks: [{ type: 'command', command: 'node /path/to/claude-hook.js' }],
+              hooks: [{ type: 'command', command: 'node /path/to/claude-hook.js post' }],
             },
           ],
         },
@@ -66,7 +98,7 @@ describe('claudeInit', () => {
 
     await claudeInit([]);
 
-    // Should still install the hook (with fresh config)
+    // Should still install hooks (with fresh config)
     expect(writeFileSync).toHaveBeenCalledTimes(1);
     expect(process.stderr.write).toHaveBeenCalledWith(
       expect.stringContaining('Warning')
@@ -100,15 +132,20 @@ describe('claudeInit', () => {
     );
   });
 
-  it('removes hook with --remove flag', async () => {
+  it('removes hooks from both PreToolUse and PostToolUse with --remove flag', async () => {
     vi.mocked(existsSync).mockReturnValue(true);
     vi.mocked(readFileSync).mockReturnValue(
       JSON.stringify({
         hooks: {
+          PreToolUse: [
+            {
+              hooks: [{ type: 'command', command: 'node /path/to/claude-hook.js pre' }],
+            },
+          ],
           PostToolUse: [
             {
               matcher: 'Bash',
-              hooks: [{ type: 'command', command: 'node /path/to/claude-hook.js' }],
+              hooks: [{ type: 'command', command: 'node /path/to/claude-hook.js post' }],
             },
           ],
         },
@@ -119,7 +156,7 @@ describe('claudeInit', () => {
 
     expect(writeFileSync).toHaveBeenCalledTimes(1);
     const written = JSON.parse(vi.mocked(writeFileSync).mock.calls[0][1] as string);
-    // hooks and PostToolUse should be cleaned up (empty)
+    // Both hook types should be cleaned up
     expect(written.hooks).toBeUndefined();
   });
 
@@ -128,10 +165,15 @@ describe('claudeInit', () => {
     vi.mocked(readFileSync).mockReturnValue(
       JSON.stringify({
         hooks: {
+          PreToolUse: [
+            {
+              hooks: [{ type: 'command', command: 'node /path/to/claude-hook.js pre' }],
+            },
+          ],
           PostToolUse: [
             {
               matcher: 'Bash',
-              hooks: [{ type: 'command', command: 'node /path/to/claude-hook.js' }],
+              hooks: [{ type: 'command', command: 'node /path/to/claude-hook.js post' }],
             },
           ],
         },
@@ -170,17 +212,22 @@ describe('claudeInit', () => {
     vi.mocked(readFileSync).mockReturnValue(
       JSON.stringify({
         hooks: {
+          PreToolUse: [
+            {
+              hooks: [{ type: 'command', command: 'node /path/to/claude-hook.js pre' }],
+            },
+            { matcher: 'Write', hooks: [{ type: 'command', command: 'echo custom-pre' }] },
+          ],
           PostToolUse: [
             {
               matcher: 'Bash',
-              hooks: [{ type: 'command', command: 'node /path/to/claude-hook.js' }],
+              hooks: [{ type: 'command', command: 'node /path/to/claude-hook.js post' }],
             },
             {
               matcher: 'Write',
               hooks: [{ type: 'command', command: 'echo custom' }],
             },
           ],
-          PreToolUse: [{ matcher: '*', hooks: [{ type: 'command', command: 'echo pre' }] }],
         },
       })
     );
@@ -188,10 +235,11 @@ describe('claudeInit', () => {
     await claudeInit(['--remove']);
 
     const written = JSON.parse(vi.mocked(writeFileSync).mock.calls[0][1] as string);
-    // PostToolUse should retain the Write matcher
+    // PreToolUse should retain the custom Write hook
+    expect(written.hooks.PreToolUse).toHaveLength(1);
+    expect(written.hooks.PreToolUse[0].matcher).toBe('Write');
+    // PostToolUse should retain the custom Write hook
     expect(written.hooks.PostToolUse).toHaveLength(1);
     expect(written.hooks.PostToolUse[0].matcher).toBe('Write');
-    // PreToolUse should be untouched
-    expect(written.hooks.PreToolUse).toBeDefined();
   });
 });

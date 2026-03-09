@@ -19,6 +19,7 @@ interface HookEntry {
 
 interface Settings {
   hooks?: {
+    PreToolUse?: HookEntry[];
     PostToolUse?: HookEntry[];
     [key: string]: unknown;
   };
@@ -67,17 +68,27 @@ export async function claudeInit(args: string[] = []): Promise<void> {
     return;
   }
 
-  const hookCommand = `node ${hookScript}`;
-
   if (!settings.hooks) settings.hooks = {};
-  if (!settings.hooks.PostToolUse) settings.hooks.PostToolUse = [];
 
+  // PreToolUse — governance enforcement (routes all tool calls through the kernel)
+  if (!settings.hooks.PreToolUse) settings.hooks.PreToolUse = [];
+  settings.hooks.PreToolUse.push({
+    hooks: [
+      {
+        type: 'command',
+        command: `node ${hookScript} pre`,
+      },
+    ],
+  });
+
+  // PostToolUse — error monitoring (Bash stderr reporting)
+  if (!settings.hooks.PostToolUse) settings.hooks.PostToolUse = [];
   settings.hooks.PostToolUse.push({
     matcher: 'Bash',
     hooks: [
       {
         type: 'command',
-        command: hookCommand,
+        command: `node ${hookScript} post`,
       },
     ],
   });
@@ -85,11 +96,12 @@ export async function claudeInit(args: string[] = []): Promise<void> {
   writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf8');
 
   process.stderr.write(
-    `  ${FG.green}✓${RESET}  Hook installed in ${FG.cyan}${settingsLabel}${RESET}\n`
+    `  ${FG.green}✓${RESET}  Hooks installed in ${FG.cyan}${settingsLabel}${RESET}\n`
   );
-  process.stderr.write(`  ${DIM}Command: ${hookCommand}${RESET}\n\n`);
+  process.stderr.write(`  ${DIM}PreToolUse:  governance enforcement (all tools)${RESET}\n`);
+  process.stderr.write(`  ${DIM}PostToolUse: error monitoring (Bash)${RESET}\n\n`);
   process.stderr.write(
-    `  ${FG.green}${BOLD}Done!${RESET} AgentGuard governance will monitor errors in Claude Code.\n`
+    `  ${FG.green}${BOLD}Done!${RESET} AgentGuard governance will enforce policies on all Claude Code actions.\n`
   );
   process.stderr.write(`  ${DIM}Run "agentguard inspect --last" to view action history.${RESET}\n`);
   process.stderr.write(`  ${DIM}Use "agentguard claude-init --remove" to uninstall.${RESET}\n\n`);
@@ -118,15 +130,24 @@ function removeHook(settingsPath: string, settingsLabel: string): void {
     return;
   }
 
-  const postToolUse = settings.hooks?.PostToolUse || [];
-  settings.hooks!.PostToolUse = postToolUse.filter((entry) => {
-    const hooks = entry.hooks || [];
-    return !hooks.some((h) => h.command && h.command.includes(HOOK_MARKER));
-  });
+  const filterAgentGuard = (entries: HookEntry[]) =>
+    entries.filter((entry) => {
+      const hooks = entry.hooks || [];
+      return !hooks.some((h) => h.command && h.command.includes(HOOK_MARKER));
+    });
 
+  const preToolUse = settings.hooks?.PreToolUse || [];
+  settings.hooks!.PreToolUse = filterAgentGuard(preToolUse);
+  if (settings.hooks!.PreToolUse!.length === 0) {
+    delete settings.hooks!.PreToolUse;
+  }
+
+  const postToolUse = settings.hooks?.PostToolUse || [];
+  settings.hooks!.PostToolUse = filterAgentGuard(postToolUse);
   if (settings.hooks!.PostToolUse!.length === 0) {
     delete settings.hooks!.PostToolUse;
   }
+
   if (Object.keys(settings.hooks!).length === 0) {
     delete settings.hooks;
   }
@@ -142,8 +163,10 @@ function removeHook(settingsPath: string, settingsLabel: string): void {
 }
 
 function hasAgentGuardHook(settings: Settings): boolean {
+  const preToolUse = settings?.hooks?.PreToolUse || [];
   const postToolUse = settings?.hooks?.PostToolUse || [];
-  return postToolUse.some((entry) => {
+  const allEntries = [...preToolUse, ...postToolUse];
+  return allEntries.some((entry) => {
     const hooks = entry.hooks || [];
     return hooks.some((h) => h.command && h.command.includes(HOOK_MARKER));
   });
