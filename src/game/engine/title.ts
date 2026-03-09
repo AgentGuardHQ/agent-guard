@@ -1,8 +1,10 @@
-// Title screen
+// Title screen — premium dark aesthetic with gold accents
 
 import { wasPressed } from './input.js';
 import { hasSave } from '../sync/save.js';
 import { playMenuNav, playMenuConfirm } from '../audio/sound.js';
+import { Color, Font, CANVAS_W, CANVAS_H, glow, clearGlow, glassPanel } from '../theme.js';
+import { getLoot } from '../dungeon/loot.js';
 
 let menuIndex = 0;
 let elapsed = 0;
@@ -15,84 +17,120 @@ function initTitle(): void {
   elapsed = 0;
 }
 
-export function updateTitle(dt: number): 'continue' | 'new' | null {
+export type TitleResult = 'continue' | 'new' | 'grimoire' | null;
+
+export function updateTitle(dt: number): TitleResult {
   initTitle();
   elapsed += dt;
 
-  const canContinue = hasSave();
-  const optionCount = canContinue ? 2 : 1;
+  const options = getOptions();
 
-  if (wasPressed('ArrowUp') || wasPressed('ArrowLeft')) {
+  if (wasPressed('ArrowUp')) {
     menuIndex = Math.max(0, menuIndex - 1);
     playMenuNav();
   }
-  if (wasPressed('ArrowDown') || wasPressed('ArrowRight')) {
-    menuIndex = Math.min(optionCount - 1, menuIndex + 1);
+  if (wasPressed('ArrowDown')) {
+    menuIndex = Math.min(options.length - 1, menuIndex + 1);
     playMenuNav();
   }
 
   if (wasPressed('Enter') || wasPressed(' ')) {
     playMenuConfirm();
     initialized = false;
-    if (canContinue && menuIndex === 0) return 'continue';
-    return 'new';
+    const selected = options[menuIndex];
+    if (selected === 'CONTINUE RUN') return 'continue';
+    if (selected === 'START RUN') return 'new';
+    if (selected === 'GRIMOIRE') return 'grimoire';
   }
   return null;
+}
+
+function getOptions(): string[] {
+  const opts: string[] = [];
+  if (hasSave()) opts.push('CONTINUE RUN');
+  opts.push('START RUN');
+  opts.push('GRIMOIRE');
+  return opts;
 }
 
 export function drawTitle(ctx: CanvasRenderingContext2D): void {
   const t = elapsed / 1000;
 
-  ctx.fillStyle = '#08081a';
-  ctx.fillRect(0, 0, 480, 320);
+  // Background
+  const grad = ctx.createLinearGradient(0, 0, 0, CANVAS_H);
+  grad.addColorStop(0, Color.bgDeep);
+  grad.addColorStop(1, Color.bgPrimary);
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
 
-  // Stars (deterministic from index)
-  ctx.fillStyle = 'rgba(255,255,255,0.3)';
-  for (let i = 0; i < 40; i++) {
+  // Stars
+  for (let i = 0; i < 50; i++) {
     const h = (i * 9301 + 49297) % 233280;
-    ctx.fillRect(h % 480, (h * 7 + i * 131) % 320, 1, 1);
+    const x = h % CANVAS_W;
+    const y = (h * 7 + i * 131) % CANVAS_H;
+    const bright = 0.15 + (((i * 7919) % 100) / 100) * 0.35;
+    const twinkle = Math.sin(t * 1.5 + i * 0.7) * 0.1;
+    ctx.fillStyle = `rgba(255,255,255,${(bright + twinkle).toFixed(2)})`;
+    ctx.fillRect(x, y, ((i * 1301) % 3) === 0 ? 2 : 1, 1);
   }
 
   // Title
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.font = 'bold 36px monospace';
-  ctx.shadowColor = '#e94560';
-  ctx.shadowBlur = 12;
-  ctx.fillStyle = '#e94560';
-  ctx.fillText('BUGMON', 240, 70);
-  ctx.shadowBlur = 0;
+  ctx.font = Font.title;
+  glow(ctx, Color.goldGlow, 20);
+  ctx.fillStyle = Color.gold;
+  ctx.fillText('BUGMON', CANVAS_W / 2, 55);
+  clearGlow(ctx);
+
+  // Subtitle
+  ctx.font = Font.small;
+  ctx.fillStyle = Color.textSecondary;
+  ctx.fillText('Idle Dungeon Runner', CANVAS_W / 2, 80);
 
   // Tagline
-  ctx.font = '11px monospace';
-  ctx.fillStyle = `rgba(0,255,255,${0.4 + Math.sin(t * 2.2) * 0.15})`;
-  ctx.fillText("// Gotta Cache 'Em All", 240, 100);
+  const tagAlpha = 0.35 + Math.sin(t * 2) * 0.1;
+  ctx.font = Font.label;
+  ctx.fillStyle = `rgba(6,182,212,${tagAlpha.toFixed(2)})`;
+  ctx.fillText("// Gotta Cache 'Em All", CANVAS_W / 2, 98);
+
+  // Stats panel (if player has history)
+  const loot = getLoot();
+  if (loot.totalRuns > 0) {
+    glassPanel(ctx, CANVAS_W / 2 - 90, 110, 180, 24);
+    ctx.font = Font.label;
+    ctx.fillStyle = Color.textMuted;
+    ctx.fillText(
+      `Runs: ${loot.totalRuns}  |  High: F${loot.highFloor}  |  Gold: ${loot.gold}`,
+      CANVAS_W / 2,
+      126
+    );
+  }
 
   // Menu
-  const canContinue = hasSave();
-  const options = canContinue ? ['CONTINUE', 'NEW GAME'] : ['NEW GAME'];
+  const options = getOptions();
+  const menuStartY = loot.totalRuns > 0 ? 150 : 130;
 
   options.forEach((opt, i) => {
-    const y = 155 + i * 30;
+    const y = menuStartY + i * 30;
     const sel = i === menuIndex;
+
     if (sel) {
-      ctx.strokeStyle = '#e94560';
-      ctx.lineWidth = 1;
-      ctx.shadowColor = '#e94560';
-      ctx.shadowBlur = 8;
-      ctx.strokeRect(175, y - 11, 130, 22);
-      ctx.shadowBlur = 0;
+      glassPanel(ctx, CANVAS_W / 2 - 80, y - 12, 160, 24);
+      ctx.fillStyle = Color.glassHighlight;
+      ctx.fillRect(CANVAS_W / 2 - 78, y - 10, 156, 20);
     }
-    ctx.font = sel ? 'bold 13px monospace' : '12px monospace';
-    ctx.fillStyle = sel ? '#fff' : 'rgba(255,255,255,0.35)';
-    ctx.fillText(opt, 240, y);
+
+    ctx.font = sel ? Font.bodyBold : Font.body;
+    ctx.fillStyle = sel ? Color.gold : Color.textSecondary;
+    ctx.fillText(opt, CANVAS_W / 2, y + 3);
   });
 
   // Prompt
-  if (Math.sin(t * 3) > 0) {
-    ctx.font = '10px monospace';
-    ctx.fillStyle = 'rgba(255,255,255,0.25)';
-    ctx.fillText('[ENTER] to select', 240, 230);
+  if (Math.sin(t * 2.5) > 0) {
+    ctx.font = Font.label;
+    ctx.fillStyle = Color.textDisabled;
+    ctx.fillText('[ENTER] to select', CANVAS_W / 2, CANVAS_H - 30);
   }
 
   ctx.textAlign = 'left';

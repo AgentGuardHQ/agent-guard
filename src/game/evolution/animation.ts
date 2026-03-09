@@ -2,6 +2,7 @@
 
 import { playEvolution } from '../audio/sound.js';
 import { drawSprite } from '../sprites/sprites.js';
+import { Color, Font, glow, clearGlow } from '../theme.js';
 
 interface MonLike {
   name: string;
@@ -38,7 +39,7 @@ export function updateEvolutionAnimation(dt: number): boolean {
 
 export function drawEvolutionAnimation(ctx: CanvasRenderingContext2D, w: number, h: number): void {
   if (!evoAnim) return;
-  ctx.fillStyle = '#0a0a1a';
+  ctx.fillStyle = Color.bgDeep;
   ctx.fillRect(0, 0, w, h);
 
   const cx = w / 2;
@@ -92,10 +93,12 @@ function drawMon(
 }
 
 function drawText(ctx: CanvasRenderingContext2D, text: string, x: number, y: number): void {
-  ctx.fillStyle = '#fff';
-  ctx.font = '16px monospace';
+  glow(ctx, Color.accentCyan, 8);
+  ctx.fillStyle = Color.textPrimary;
+  ctx.font = Font.body;
   ctx.textAlign = 'center';
   ctx.fillText(text, x, y);
+  clearGlow(ctx);
   ctx.textAlign = 'left';
 }
 

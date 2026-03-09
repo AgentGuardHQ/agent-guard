@@ -4,15 +4,18 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>BugMon</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      background: #1a1a2e;
+      background: #0F0F23;
       display: flex;
       flex-direction: column;
       align-items: center;
       min-height: 100vh;
-      font-family: monospace;
+      font-family: 'DM Sans', sans-serif;
       overflow: hidden;
       touch-action: none;
       -webkit-touch-callout: none;
@@ -32,8 +35,10 @@
     canvas {
       border: 2px solid #16213e;
       image-rendering: pixelated;
-      max-width: 100%;
+      image-rendering: crisp-edges;
+      width: min(100vw - 16px, 960px);
       height: auto;
+      aspect-ratio: 480 / 320;
     }
 
     /* Touch controls - hidden on desktop, shown on touch devices */
@@ -169,7 +174,13 @@
 <body>
   <div id="game-container" style="position:relative;">
     <canvas id="game" width="480" height="320"></canvas>
-    <div id="mute-btn" style="position:absolute;top:8px;right:8px;cursor:pointer;color:#fff;font-size:20px;z-index:10;opacity:0.7;">&#x1f50a;</div>
+    <div id="mute-btn" style="position:absolute;top:8px;right:8px;cursor:pointer;z-index:10;opacity:0.7;" title="Toggle sound">
+      <svg id="mute-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#E2E8F0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+        <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+        <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+      </svg>
+    </div>
     <div id="dev-toggle">&gt;_ DEV</div>
     <div id="dev-panel">
       <h3>DEV ACTIVITY</h3>
@@ -235,8 +246,13 @@
 
     document.getElementById('mute-btn').addEventListener('click', () => {
       unlock();
-      const muted = toggleMute();
-      document.getElementById('mute-btn').innerHTML = muted ? '&#x1f507;' : '&#x1f50a;';
+      const isMuted = toggleMute();
+      const svg = document.getElementById('mute-icon');
+      if (isMuted) {
+        svg.innerHTML = '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line>';
+      } else {
+        svg.innerHTML = '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>';
+      }
     });
 
     document.querySelectorAll('[data-key]').forEach(btn => {

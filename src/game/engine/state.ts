@@ -11,6 +11,8 @@ export const STATES = {
   BATTLE: 'BATTLE',
   EVOLVING: 'EVOLVING',
   MENU: 'MENU',
+  GRIMOIRE: 'GRIMOIRE',
+  DUNGEON: 'DUNGEON',
 } as const;
 
 export type GameState = (typeof STATES)[keyof typeof STATES];
