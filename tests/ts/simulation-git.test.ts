@@ -1,6 +1,9 @@
 // Tests for Git Simulator
 import { describe, it, expect } from 'vitest';
-import { createGitSimulator } from '../../src/kernel/simulation/git-simulator.js';
+import {
+  createGitSimulator,
+  isValidBranchName,
+} from '../../src/kernel/simulation/git-simulator.js';
 
 describe('GitSimulator', () => {
   const simulator = createGitSimulator();
@@ -17,25 +20,45 @@ describe('GitSimulator', () => {
 
   it('supports git.force-push', () => {
     expect(
-      simulator.supports({ action: 'git.force-push', target: 'main', agent: 'test', destructive: false })
+      simulator.supports({
+        action: 'git.force-push',
+        target: 'main',
+        agent: 'test',
+        destructive: false,
+      })
     ).toBe(true);
   });
 
   it('supports git.merge', () => {
     expect(
-      simulator.supports({ action: 'git.merge', target: 'feature', agent: 'test', destructive: false })
+      simulator.supports({
+        action: 'git.merge',
+        target: 'feature',
+        agent: 'test',
+        destructive: false,
+      })
     ).toBe(true);
   });
 
   it('supports git.branch.delete', () => {
     expect(
-      simulator.supports({ action: 'git.branch.delete', target: 'feature', agent: 'test', destructive: false })
+      simulator.supports({
+        action: 'git.branch.delete',
+        target: 'feature',
+        agent: 'test',
+        destructive: false,
+      })
     ).toBe(true);
   });
 
   it('does not support file actions', () => {
     expect(
-      simulator.supports({ action: 'file.write', target: 'test.ts', agent: 'test', destructive: false })
+      simulator.supports({
+        action: 'file.write',
+        target: 'test.ts',
+        agent: 'test',
+        destructive: false,
+      })
     ).toBe(false);
   });
 
@@ -96,5 +119,98 @@ describe('GitSimulator', () => {
     expect(Array.isArray(result.predictedChanges)).toBe(true);
     expect(typeof result.blastRadius).toBe('number');
     expect(['low', 'medium', 'high']).toContain(result.riskLevel);
+  });
+});
+
+describe('isValidBranchName', () => {
+  it('accepts valid branch names', () => {
+    expect(isValidBranchName('main')).toBe(true);
+    expect(isValidBranchName('feature/add-login')).toBe(true);
+    expect(isValidBranchName('release-1.0.0')).toBe(true);
+    expect(isValidBranchName('fix_bug_123')).toBe(true);
+    expect(isValidBranchName('user/feature.branch')).toBe(true);
+  });
+
+  it('rejects empty or overly long names', () => {
+    expect(isValidBranchName('')).toBe(false);
+    expect(isValidBranchName('a'.repeat(256))).toBe(false);
+  });
+
+  it('rejects names with shell metacharacters', () => {
+    expect(isValidBranchName('main; rm -rf /')).toBe(false);
+    expect(isValidBranchName('main && echo pwned')).toBe(false);
+    expect(isValidBranchName('main | cat /etc/passwd')).toBe(false);
+    expect(isValidBranchName('$(whoami)')).toBe(false);
+    expect(isValidBranchName('`whoami`')).toBe(false);
+    expect(isValidBranchName("main'")).toBe(false);
+    expect(isValidBranchName('main"')).toBe(false);
+  });
+
+  it('rejects directory traversal', () => {
+    expect(isValidBranchName('../etc/passwd')).toBe(false);
+    expect(isValidBranchName('feature/../main')).toBe(false);
+  });
+
+  it('rejects names starting with hyphen', () => {
+    expect(isValidBranchName('-branch')).toBe(false);
+    expect(isValidBranchName('--version')).toBe(false);
+  });
+
+  it('rejects names ending with .lock', () => {
+    expect(isValidBranchName('branch.lock')).toBe(false);
+  });
+});
+
+describe('GitSimulator input sanitization', () => {
+  const simulator = createGitSimulator();
+
+  it('rejects malicious branch name on push', async () => {
+    const result = await simulator.simulate(
+      {
+        action: 'git.push',
+        target: 'main; rm -rf /',
+        branch: 'main; rm -rf /',
+        agent: 'test',
+        destructive: false,
+      },
+      {}
+    );
+
+    expect(result.riskLevel).toBe('high');
+    expect(result.details.invalidBranch).toBe(true);
+    expect(result.predictedChanges.some((c) => c.includes('Rejected invalid branch name'))).toBe(
+      true
+    );
+  });
+
+  it('rejects command substitution in branch name on merge', async () => {
+    const result = await simulator.simulate(
+      {
+        action: 'git.merge',
+        target: '$(whoami)',
+        agent: 'test',
+        destructive: false,
+      },
+      {}
+    );
+
+    expect(result.riskLevel).toBe('high');
+    expect(result.details.invalidBranch).toBe(true);
+  });
+
+  it('rejects backtick injection in branch name', async () => {
+    const result = await simulator.simulate(
+      {
+        action: 'git.push',
+        branch: '`cat /etc/passwd`',
+        target: '',
+        agent: 'test',
+        destructive: false,
+      },
+      {}
+    );
+
+    expect(result.riskLevel).toBe('high');
+    expect(result.details.invalidBranch).toBe(true);
   });
 });

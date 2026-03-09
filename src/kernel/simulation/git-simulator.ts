@@ -1,11 +1,23 @@
 // Git simulator — predicts impact of git operations.
 // Runs git commands to assess risk without modifying state.
 
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import type { NormalizedIntent } from '../../policy/evaluator.js';
 import type { ActionSimulator, SimulationResult } from './types.js';
 
 const GIT_ACTIONS = new Set(['git.push', 'git.force-push', 'git.merge', 'git.branch.delete']);
+
+/** Valid git ref characters: alphanumeric, hyphens, underscores, dots, slashes */
+const SAFE_BRANCH_RE = /^[a-zA-Z0-9._\-/]+$/;
+
+/** Validate a branch name to prevent command injection */
+export function isValidBranchName(name: string): boolean {
+  if (!name || name.length > 255) return false;
+  if (!SAFE_BRANCH_RE.test(name)) return false;
+  // Reject directory traversal and git special refs
+  if (name.includes('..') || name.startsWith('-') || name.endsWith('.lock')) return false;
+  return true;
+}
 
 export function createGitSimulator(): ActionSimulator {
   return {
@@ -36,22 +48,27 @@ export function createGitSimulator(): ActionSimulator {
       // Count unpushed commits
       const branch = intent.branch || intent.target || '';
       if (branch && (intent.action === 'git.push' || intent.action === 'git.force-push')) {
-        try {
-          const count = execSync(`git rev-list --count origin/${branch}..HEAD`, {
-            encoding: 'utf8',
-            timeout: 5000,
-          }).trim();
-          const unpushed = parseInt(count, 10);
-          if (!isNaN(unpushed)) {
-            details.unpushedCommits = unpushed;
-            blastRadius = Math.max(blastRadius, unpushed);
-            predictedChanges.push(`${unpushed} unpushed commit(s) to ${branch}`);
-            if (unpushed > 10) riskLevel = riskLevel === 'high' ? 'high' : 'medium';
+        if (!isValidBranchName(branch)) {
+          details.invalidBranch = true;
+          riskLevel = 'high';
+          predictedChanges.push(`Rejected invalid branch name: ${branch}`);
+        } else
+          try {
+            const count = execFileSync('git', ['rev-list', '--count', `origin/${branch}..HEAD`], {
+              encoding: 'utf8',
+              timeout: 5000,
+            }).trim();
+            const unpushed = parseInt(count, 10);
+            if (!isNaN(unpushed)) {
+              details.unpushedCommits = unpushed;
+              blastRadius = Math.max(blastRadius, unpushed);
+              predictedChanges.push(`${unpushed} unpushed commit(s) to ${branch}`);
+              if (unpushed > 10) riskLevel = riskLevel === 'high' ? 'high' : 'medium';
+            }
+          } catch {
+            // Branch may not have a remote — not an error
+            details.remoteTrackingError = true;
           }
-        } catch {
-          // Branch may not have a remote — not an error
-          details.remoteTrackingError = true;
-        }
       }
 
       // Check for protected branch push
@@ -64,21 +81,26 @@ export function createGitSimulator(): ActionSimulator {
 
       // Git merge: check for conflicts
       if (intent.action === 'git.merge' && branch) {
-        try {
-          const diffStat = execSync(`git diff --stat HEAD...${branch}`, {
-            encoding: 'utf8',
-            timeout: 5000,
-          }).trim();
-          const fileCount = (diffStat.match(/\d+ files? changed/)?.[0] || '').match(/\d+/)?.[0];
-          if (fileCount) {
-            const count = parseInt(fileCount, 10);
-            blastRadius = Math.max(blastRadius, count);
-            predictedChanges.push(`Merge would affect ${count} file(s)`);
-            if (count > 20) riskLevel = riskLevel === 'high' ? 'high' : 'medium';
+        if (!isValidBranchName(branch)) {
+          details.invalidBranch = true;
+          riskLevel = 'high';
+          predictedChanges.push(`Rejected invalid branch name: ${branch}`);
+        } else
+          try {
+            const diffStat = execFileSync('git', ['diff', '--stat', `HEAD...${branch}`], {
+              encoding: 'utf8',
+              timeout: 5000,
+            }).trim();
+            const fileCount = (diffStat.match(/\d+ files? changed/)?.[0] || '').match(/\d+/)?.[0];
+            if (fileCount) {
+              const count = parseInt(fileCount, 10);
+              blastRadius = Math.max(blastRadius, count);
+              predictedChanges.push(`Merge would affect ${count} file(s)`);
+              if (count > 20) riskLevel = riskLevel === 'high' ? 'high' : 'medium';
+            }
+          } catch {
+            details.mergeSimError = true;
           }
-        } catch {
-          details.mergeSimError = true;
-        }
       }
 
       // Branch delete

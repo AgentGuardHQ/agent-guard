@@ -1,6 +1,9 @@
 // Tests for Package Simulator
 import { describe, it, expect } from 'vitest';
-import { createPackageSimulator } from '../../src/kernel/simulation/package-simulator.js';
+import {
+  createPackageSimulator,
+  parseNpmInstallArgs,
+} from '../../src/kernel/simulation/package-simulator.js';
 
 describe('PackageSimulator', () => {
   const simulator = createPackageSimulator();
@@ -128,5 +131,54 @@ describe('PackageSimulator', () => {
     expect(result).toHaveProperty('simulatorId');
     expect(result).toHaveProperty('durationMs');
     expect(result.simulatorId).toBe('package-simulator');
+  });
+});
+
+describe('parseNpmInstallArgs', () => {
+  it('extracts package names from simple install', () => {
+    expect(parseNpmInstallArgs('npm install lodash')).toEqual(['lodash']);
+  });
+
+  it('extracts scoped packages', () => {
+    expect(parseNpmInstallArgs('npm install @types/node')).toEqual(['@types/node']);
+  });
+
+  it('extracts packages with version specifiers', () => {
+    expect(parseNpmInstallArgs('npm install lodash@4.17.21')).toEqual(['lodash@4.17.21']);
+  });
+
+  it('preserves allowed flags', () => {
+    const result = parseNpmInstallArgs('npm install --save-dev lodash');
+    expect(result).toContain('--save-dev');
+    expect(result).toContain('lodash');
+  });
+
+  it('strips shell metacharacters from command', () => {
+    // Stops processing at first token containing shell metacharacter
+    expect(parseNpmInstallArgs('npm install lodash; rm -rf /')).toEqual([]);
+  });
+
+  it('strips command substitution attempts', () => {
+    expect(parseNpmInstallArgs('npm install $(whoami)')).toEqual([]);
+  });
+
+  it('strips pipe injection', () => {
+    expect(parseNpmInstallArgs('npm install lodash | cat /etc/passwd')).toEqual(['lodash']);
+  });
+
+  it('strips backtick injection', () => {
+    expect(parseNpmInstallArgs('npm install `malicious`')).toEqual([]);
+  });
+
+  it('strips unknown flags', () => {
+    expect(parseNpmInstallArgs('npm install --unsafe-perm lodash')).toEqual(['lodash']);
+  });
+
+  it('handles npm i shorthand', () => {
+    expect(parseNpmInstallArgs('npm i lodash')).toEqual(['lodash']);
+  });
+
+  it('handles bare npm install with no packages', () => {
+    expect(parseNpmInstallArgs('npm install')).toEqual([]);
   });
 });
