@@ -16,6 +16,34 @@ agent proposes action  →  policy evaluated  →  invariants checked  →  allo
 
 ## Quick Start
 
+**30 seconds to see it work:**
+
+```bash
+git clone https://github.com/jpleva91/agent-guard.git
+cd agent-guard
+npm install && npm run build:ts
+npm run demo:guard
+```
+
+Expected output:
+
+```
+  AgentGuard Runtime Active
+  policy: Demo Safety Policy | invariants: 6 active
+
+  ✓ file.read src/auth/service.ts (dry-run)
+  ✓ file.write src/auth/service.ts (dry-run)
+  ✓ shell.exec npm test (dry-run)
+  ✗ git.push main → DENIED (demo-policy)
+    Protected branch — use a PR
+  ✗ file.write .env → DENIED (demo-policy)
+    Secrets files must not be modified
+
+  3 allowed, 2 denied, 15 events emitted
+```
+
+**Try it on your own repo:**
+
 ```bash
 # Pipe an action into the kernel
 echo '{"tool":"Bash","command":"git push origin main"}' | npx agentguard guard --dry-run
