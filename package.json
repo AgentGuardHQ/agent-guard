@@ -44,6 +44,7 @@
     "build:debug": "node scripts/build.js --sourcemap",
     "budget": "node scripts/build.js --no-sprites",
     "serve": "node scripts/dev-server.js",
+    "demo:guard": "npm run build:ts && node scripts/demo.js",
     "dev": "node dist/cli/bin.js",
     "agentguard": "node dist/cli/bin.js",
     "dev:legacy": "node dist/cli/bin.js",

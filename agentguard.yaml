@@ -1,0 +1,35 @@
+# Default AgentGuard policy — baseline guardrails for AI coding agents.
+# Drop this file in your repo root. The CLI picks it up automatically.
+
+id: default-policy
+name: Default Safety Policy
+description: Baseline guardrails for AI coding agents
+severity: 4
+
+rules:
+  - action: git.push
+    effect: deny
+    branches: [main, master]
+    reason: Direct push to protected branch
+
+  - action: git.force-push
+    effect: deny
+    reason: Force push rewrites shared history
+
+  - action: file.write
+    effect: deny
+    target: .env
+    reason: Secrets files must not be modified
+
+  - action: shell.exec
+    effect: deny
+    target: rm -rf
+    reason: Destructive shell commands blocked
+
+  - action: file.read
+    effect: allow
+    reason: Reading is always safe
+
+  - action: file.write
+    effect: allow
+    reason: File writes allowed by default

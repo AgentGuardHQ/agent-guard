@@ -1,0 +1,48 @@
+# Example AgentGuard policy — annotated to show all rule features.
+#
+# Place as `agentguard.yaml` in your repo root for automatic discovery,
+# or pass explicitly: `agentguard guard --policy examples/basic-policy.yaml`
+
+# Policy metadata
+id: example-policy
+name: Example Safety Policy
+description: Annotated policy showing all rule features
+severity: 4
+
+rules:
+  # --- Deny rules (evaluated first, block matching actions) ---
+
+  # Block pushes to protected branches
+  - action: git.push
+    effect: deny
+    branches: [main, master, release]
+    reason: Protected branches require PR review
+
+  # Block force-push everywhere
+  - action: git.force-push
+    effect: deny
+    reason: Force push rewrites shared history
+
+  # Protect secrets files from writes
+  - action: file.write
+    effect: deny
+    target: .env
+    reason: Secrets must not be modified by agents
+
+  # Block destructive shell commands
+  - action: shell.exec
+    effect: deny
+    target: rm -rf
+    reason: Destructive commands blocked
+
+  # --- Allow rules (permit matching actions) ---
+
+  # Reading is always safe
+  - action: file.read
+    effect: allow
+    reason: Reading is always safe
+
+  # File writes allowed by default (deny rules above take precedence)
+  - action: file.write
+    effect: allow
+    reason: File writes allowed by default
