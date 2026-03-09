@@ -8,6 +8,7 @@ import type { KernelConfig } from '../../kernel/kernel.js';
 import { createLiveRegistry } from '../../adapters/registry.js';
 import { createJsonlSink } from '../../events/jsonl.js';
 import { createDecisionJsonlSink } from '../../events/decision-jsonl.js';
+import { createTelemetryDecisionSink } from '../../telemetry/runtimeLogger.js';
 import { loadYamlPolicy } from '../../policy/yaml-loader.js';
 import {
   renderBanner,
@@ -85,6 +86,7 @@ export async function guard(_args: string[], options: GuardOptions = {}): Promis
   // Create sinks
   const jsonlSink = createJsonlSink({ runId });
   const decisionSink = createDecisionJsonlSink({ runId });
+  const telemetrySink = createTelemetryDecisionSink();
 
   // Build kernel config
   const kernelConfig: KernelConfig = {
@@ -93,7 +95,7 @@ export async function guard(_args: string[], options: GuardOptions = {}): Promis
     dryRun: options.dryRun ?? false,
     adapters: options.dryRun ? undefined : createLiveRegistry(),
     sinks: [jsonlSink],
-    decisionSinks: [decisionSink],
+    decisionSinks: [decisionSink, telemetrySink],
     simulators: simulators.all().length > 0 ? simulators : undefined,
   };
 
