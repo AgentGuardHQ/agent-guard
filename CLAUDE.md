@@ -2,30 +2,37 @@
 
 ## Project Overview
 
-**AgentGuard** is a deterministic runtime guardrails platform for AI-assisted software systems. It uses a dual-layer naming strategy:
+**AgentGuard** is a **governed action runtime for AI coding agents**. It intercepts agent tool calls, enforces policies and invariants, executes authorized actions via adapters, and emits lifecycle events. The Action is the primary unit of computation.
 
-- **AgentGuard** (platform layer) — The serious infrastructure. Deterministic governance runtime for AI coding agents. Evaluates agent actions against declared policies and invariants. Produces canonical events when violations occur.
-- **BugMon** (UX layer) — The gamified interface. Consumes canonical events (developer errors, CI failures, governance violations) and renders them as interactive roguelike encounters. Coding sessions are dungeon runs. Bugs are enemies. CI failures are bosses. BugMon is a *mode* within AgentGuard, not the platform itself.
+- **AgentGuard** (active focus) — The governed action kernel. Intercepts agent tool calls (Claude Code hooks), evaluates against policies and invariants, executes via adapters, emits canonical events. CLI commands: `guard`, `inspect`, `events`.
+- **BugMon** (deprioritized) — A gamified visualization mode that can consume governance events as roguelike encounters. Functional but not under active development.
 
-The system has one architectural spine: the **canonical event model**. All system activity becomes events. AgentGuard produces governance events. BugMon mode consumes all events as gameplay.
+The system has one architectural spine: the **canonical event model**. All system activity becomes events. The kernel produces governance events. Subscribers (TUI renderer, JSONL sink, CLI inspect) consume them.
 
 **Key characteristics:**
-- Hybrid idle/active roguelike — minor enemies auto-resolve, bosses demand engagement
-- Bug Grimoire instead of collection — compendium of defeated enemy types
-- 100% client-side browser game with zero runtime dependencies
-- TypeScript source (`src/`), compiled to `dist/` via tsc + esbuild. HTML5 Canvas 2D, Web Audio API
-- CLI has runtime dependencies (`chokidar`, `commander`, `pino`); browser game remains zero-dep
+- Governed action kernel: propose → normalize → evaluate → execute → emit
+- 6 built-in invariants (secret exposure, protected branches, blast radius, test-before-push, no force push, lockfile integrity)
+- YAML/JSON policy format with pattern matching, scopes, and branch conditions
+- Escalation tracking: NORMAL → ELEVATED → HIGH → LOCKDOWN
+- JSONL event persistence for audit trail and replay
+- Claude Code adapter for PreToolUse/PostToolUse hooks
+- TypeScript source (`src/`), compiled to `dist/` via tsc + esbuild
+- CLI has runtime dependencies (`chokidar`, `commander`, `pino`)
 - Build tooling: tsc + esbuild + terser + vitest (dev dependencies only)
-- Deployed to GitHub Pages
-- Community enemy submissions via GitHub Issues + automated validation
-- Layered architecture: `src/core/` (shared logic), `src/cli/` (CLI), `src/game/` (browser), `src/domain/` (pure logic), `src/agentguard/` (governance), `ecosystem/data/` (game content)
+- Layered architecture: `src/agentguard/` (kernel + governance), `src/domain/` (pure logic), `src/core/` (shared), `src/cli/` (CLI), `src/game/` (browser, deprioritized), `ecosystem/data/` (game content, deprioritized)
 
 ## Quick Start
 
-Build first, then start the dev server:
-
 ```bash
 npm run build:ts     # Compile TypeScript → dist/
+
+# Governance runtime
+echo '{"tool":"Bash","command":"git push origin main"}' | npx agentguard guard --dry-run
+npx agentguard guard --policy agentguard.yaml   # Start runtime with policy
+npx agentguard inspect --last                   # Inspect most recent run
+npx agentguard events --last                    # Show raw event stream
+
+# BugMon mode (deprioritized)
 npm run serve        # Runs scripts/dev-server.js (zero deps, live reload)
 # Then open http://localhost:8000
 ```
@@ -55,15 +62,9 @@ BugMon/
 │   │   └── sources/        # Event source adapters
 │   ├── game/               # Browser roguelike (client-side)
 │   │   ├── game.ts         # Game entry point (auto-init, data loading)
-│   │   ├── theme.ts        # Design system (OLED palette, gold accents, glassmorphism)
-│   │   ├── engine/         # Core framework (state, input, renderer, events, effects)
-│   │   ├── dungeon/        # Idle dungeon runner (primary game mode)
-│   │   │   ├── runner.ts   # Auto-run logic, encounter resolution
-│   │   │   ├── dungeon.ts  # Procedural floor generation
-│   │   │   ├── loot.ts     # Gold, boosts, localStorage persistence
-│   │   │   └── dungeon-renderer.ts  # Premium renderer (parallax, glassmorphic HUD)
-│   │   ├── world/          # Exploration mode (map, player, encounters)
-│   │   ├── battle/         # Combat (battle-engine)
+│   │   ├── engine/         # Core framework (state, input, renderer, events)
+│   │   ├── world/          # Dungeon (map, player, encounters)
+│   │   ├── battle/         # Combat (battle-engine, damage, battle-core)
 │   │   ├── evolution/      # Progression (tracker, animation)
 │   │   ├── audio/          # Sound synthesis (Web Audio API)
 │   │   ├── sync/           # Save/sync (localStorage, WebSocket)
@@ -77,12 +78,18 @@ BugMon/
 │   │   ├── contracts.ts    # Module contract registry
 │   │   ├── shapes.ts       # Runtime shape definitions
 │   │   ├── ingestion/      # Error ingestion pipeline
-│   │   └── execution/      # Execution adapters + event log
-│   ├── agentguard/         # Governance runtime (RTA)
-│   ├── meta/               # Metadata systems (bugdex, bosses)
-│   ├── orchestration/      # Multi-agent pipeline orchestration
-│   ├── protocol/           # Sync protocol definitions
-│   ├── content/            # Game content validation
+│   │   └── pipeline/       # Multi-agent pipeline orchestration
+│   ├── agentguard/         # Governance runtime (ACTIVE FOCUS)
+│   │   ├── kernel.ts       # Governed action kernel (orchestrator)
+│   │   ├── monitor.ts      # Runtime monitor (escalation tracking)
+│   │   ├── core/           # AAB + RTA engine
+│   │   ├── policies/       # Policy evaluator + JSON/YAML loaders
+│   │   ├── invariants/     # Invariant checker + 6 defaults
+│   │   ├── evidence/       # Evidence pack generation
+│   │   ├── adapters/       # Execution adapters (file, shell, git, claude-code)
+│   │   ├── renderers/      # TUI renderer (terminal action stream)
+│   │   └── sinks/          # JSONL event persistence
+│   ├── ecosystem/          # Game content modules (deprioritized)
 │   ├── watchers/           # Environment watchers (console, test, build)
 │   └── ai/                 # AI integration interface
 │
@@ -131,108 +138,83 @@ BugMon/
 ## Development Commands
 
 ```bash
-# Serve locally
-npm run serve
+# TypeScript build (required before running tests or CLI)
+npm run build:ts           # Build TypeScript (tsc + esbuild → dist/)
+npm run ts:check           # Type-check TypeScript (tsc --noEmit)
 
 # Run tests
-npm test
-
-# Run battle simulation (random matchup, verbose)
-npm run simulate
-
-# Specific matchup
-npm run simulate -- NullPointer Deadlock
-
-# Statistical analysis
-npm run simulate -- NullPointer Deadlock --runs 1000
-
-# Full roster round-robin
-npm run simulate -- --all
-
-# Quick statistical analysis (1,000 battles)
-npm run simulate:quick
-
-# Full roster balance check (50,000 battles)
-npm run simulate:full
-
-# Compare before/after balance changes
-npm run simulate:compare
-
-# Build single-file distribution
-npm run build            # Full build with inline sprites
-npm run build:tiny       # Build without sprites (smallest)
-npm run build:debug      # Build with sourcemaps
-npm run budget           # Check size budget compliance
-
-# Sync JSON data → JS modules
-npm run sync-data
+npm test                   # Run JS tests (1085 tests)
+npm run ts:test            # Run TypeScript tests (345 tests, vitest)
+npm run ts:test:watch      # Run TypeScript tests in watch mode
+npm run test:coverage      # Run with coverage (c8, 50% line threshold)
 
 # Code quality
-npm run contracts:check  # Verify module contracts
 npm run lint             # Run ESLint
 npm run lint:fix         # Run ESLint with auto-fix
 npm run format           # Check formatting (Prettier)
 npm run format:fix       # Fix formatting (Prettier)
-npm run test:coverage    # Run tests with coverage (c8, 50% line threshold)
+npm run contracts:check  # Verify module contracts
 
 # Run AgentGuard CLI
 npm run dev
 
-# TypeScript build (required before running JS tests or serving)
-npm run build:ts           # Build TypeScript (tsc + esbuild → dist/)
-npm run ts:check           # Type-check TypeScript (tsc --noEmit)
-npm run ts:test            # Run TypeScript tests (vitest)
-npm run ts:test:watch      # Run TypeScript tests in watch mode
+# BugMon game (deprioritized)
+npm run serve            # Dev server for browser game
+npm run simulate         # Battle simulation
+npm run build            # Full build with inline sprites
+npm run sync-data        # Sync JSON data → JS modules
+npm run budget           # Check size budget compliance
 ```
 
 ## Architecture & Key Patterns
 
-### Dual-Layer Naming
-The platform uses a dual-layer naming strategy:
-- **AgentGuard** (platform) — serious infrastructure name for governance, policies, events
-- **BugMon** (mode) — fun viral UX layer for the gamified debugging interface
-- CLI binary is `agentguard` (with `bugmon` as backward-compatible alias)
-- `agentguard watch`, `agentguard scan`, `agentguard guard` = infrastructure commands
-- `agentguard play`, `agentguard demo` = BugMon mode commands
-- See `docs/unified-architecture.md` for the full integration model
+### Governed Action Kernel (Primary)
+The kernel loop is the core of AgentGuard. Every agent action passes through it:
+1. Agent proposes action (Claude Code tool call → `RawAgentAction`)
+2. AAB normalizes intent (tool → action type, detect git/destructive commands)
+3. Policy evaluator matches rules (deny/allow with scopes, branches, limits)
+4. Invariant checker verifies system state (6 defaults)
+5. If allowed: execute via adapter (file/shell/git handlers)
+6. Emit lifecycle events: `ACTION_REQUESTED` → `ACTION_ALLOWED/DENIED` → `ACTION_EXECUTED/FAILED`
+7. Sink all events to JSONL for audit trail
+
+Key files: `agentguard/kernel.ts`, `agentguard/core/aab.ts`, `agentguard/core/engine.ts`, `agentguard/monitor.ts`
+See `docs/unified-architecture.md` for the full model.
 
 ### Layered Architecture
 All source lives in `src/`, compiled to `dist/`. The codebase is organized into layers:
-- **src/core/** — Shared logic (EventBus, error parsing, bug events). Used by CLI and game.
-- **src/cli/** — Commander-based CLI companion tool (20 subcommands). Runs in Node.js only.
-- **src/game/** — Browser roguelike with idle dungeon runner (primary mode), exploration, battle, progression, audio, sprites. Runs in the browser only. Zero runtime deps.
-- **src/game/dungeon/** — Idle auto-dungeon runner. Dev character runs through procedural floors, auto-resolves minor enemies, pauses for boss fights.
-- **src/game/theme.ts** — Design system tokens (OLED palette, gold accents, glassmorphism, typography).
-- **ecosystem/data/** — Game content (JSON source of truth + inlined JS modules). Consumed by both CLI and game.
-- **src/domain/** — Pure domain logic with no DOM or Node.js-specific APIs. Battle engine, encounter logic, progression engine, event definitions, ingestion pipeline, governance primitives. All functions are pure and deterministic (when RNG is injected).
-- **src/agentguard/** — Governance runtime implementing the Runtime Assurance Architecture. Evaluates agent actions against policies and invariants.
-- **src/meta/** — Metadata systems (bugdex compendium, boss definitions).
-- **src/orchestration/** — Multi-agent pipeline orchestration (orchestrator, stages, roles).
-- **src/protocol/** — Sync protocol definitions (storage, sync protocol constants).
-- **src/content/** — Game content validation (bugdex-spec).
-- **src/watchers/** — Environment watchers (console, test, build).
+- **src/agentguard/** — Governed action kernel, policies, invariants, adapters, renderers, sinks. **Active focus.**
+- **src/domain/** — Pure domain logic with no DOM or Node.js-specific APIs. Actions, events, reference monitor, adapter registry, governance primitives. All functions are pure and deterministic.
+- **src/core/** — Shared logic (EventBus, types, error parsing). Used by all layers.
+- **src/cli/** — CLI entry point and commands. Runs in Node.js only.
+- **src/game/** — Browser roguelike. **Deprioritized.** Runs in the browser only.
+- **ecosystem/data/** — Game content. **Deprioritized.** JSON source of truth + inlined JS modules.
 
-### Roguelike Model
-- Coding sessions are dungeon **runs**
-- Primary mode: **idle dungeon runner** — dev character auto-runs through procedural floors
-- Minor enemies (severity 1-2) **auto-resolve** inline with floating combat text
-- Bosses (severity 3+) **pause the runner** for active engagement
-- Gold and loot persist across runs via localStorage
-- **Bug Grimoire** records defeated enemy types (not a collection game)
+### CLI Commands
+- `agentguard guard` — Start the governed action runtime (policy + invariant enforcement)
+- `agentguard guard --policy <file>` — Use a specific policy file (YAML or JSON)
+- `agentguard guard --dry-run` — Evaluate without executing actions
+- `agentguard inspect [runId]` — Show action graph for a run
+- `agentguard events [runId]` — Show raw event stream for a run
+- `agentguard watch -- <cmd>` — Monitor a command for errors
+- `agentguard play` / `agentguard demo` — BugMon mode (deprioritized)
 
-### Domain Layer & Ingestion Pipeline
+### Domain Layer
 The `src/domain/` layer provides environment-agnostic logic:
-- **`src/domain/events.ts`** — Canonical event kinds (e.g., `ERROR_OBSERVED`, `MOVE_USED`, `EVOLUTION_TRIGGERED`)
-- **`src/core/event-bus.ts`** — Generic typed EventBus that works in both Node.js and browser
+- **`src/domain/actions.ts`** — 23 canonical action types across 8 classes
+- **`src/domain/events.ts`** — 50+ canonical event kinds, factory, validation
+- **`src/domain/reference-monitor.ts`** — Action authorization with decision trail
+- **`src/domain/execution/adapters.ts`** — Adapter registry (action class → handler mapping)
+- **`src/core/event-bus.ts`** — Generic typed EventBus
 - **`src/domain/event-store.ts`** — Event persistence interface
-- **`src/domain/battle.ts`** — Pure battle engine with passive abilities, healing, and damage calculation
-- **`src/domain/encounters.ts`** — Encounter trigger checks with rarity-weighted enemy selection
-- **`src/domain/evolution.ts`** — Progression condition checking (takes event counts as input, no storage dependency)
-- **`src/domain/source-registry.ts`** — Event source plugin registry
-- **`src/domain/ingestion/`** — Multi-stage pipeline: raw stderr → parsed errors → fingerprinted → classified → mapped to BugMon species
-- **`src/domain/execution/`** — Execution event log with causal chains
-- **`src/orchestration/`** — Multi-agent pipeline orchestration (orchestrator, stages, roles)
-- **`src/domain/invariants.ts`**, **`src/domain/policy.ts`**, **`src/domain/reference-monitor.ts`** — Governance primitives consumed by agentguard/
+- **`src/domain/ingestion/`** — Error ingestion pipeline
+- **`src/domain/pipeline/`** — Multi-agent pipeline orchestration
+
+### BugMon Game Layer (Deprioritized)
+The game layer remains functional but is not under active development:
+- Battle engine, encounters, progression (`domain/battle.ts`, `domain/encounters.ts`)
+- Browser game: Canvas 2D, synthesized audio, sprites (`game/`)
+- Game content: 31 BugMon, 72 moves, 7 evolution chains (`ecosystem/data/`)
 
 ### Build & Module System
 TypeScript source compiles via `tsc` (individual modules for tests/imports) + `esbuild` (bundles for CLI and browser game). Browser loads `dist/game/game.js` as a module via `<script type="module">`.
@@ -240,7 +222,7 @@ TypeScript source compiles via `tsc` (individual modules for tests/imports) + `e
 ### Data as Inlined JS Modules
 Game data lives in `ecosystem/data/` as both JSON (source of truth) and JS modules (imported by the game). To regenerate JS modules from JSON: `npm run sync-data`
 
-### Battle System
+### Battle System (Deprioritized)
 Turn order: faster combatant goes first (ties: player wins). Damage formula:
 ```
 damage = (power + attack - floor(defense / 2) + random(1-3)) * typeMultiplier
@@ -329,7 +311,7 @@ Key files:
 - Domain layer modules must remain pure — no DOM, no Node.js APIs
 - Specs are living documents — update them when implementations evolve
 
-## Data Formats
+## Data Formats (BugMon — Deprioritized)
 
 ### monsters.json
 ```json
@@ -358,7 +340,7 @@ Key files:
     "description": "Make 10 commits" }] }
 ```
 
-## Size Budget
+## Size Budget (BugMon — Deprioritized)
 
 - **Main bundle**: 10 KB target / 17 KB cap (gzipped, built with `--no-sprites`)
 - **Subsystem caps** (raw bytes): engine (7.5 KB), rendering (15.5 KB), battle (14.5 KB), data (13.2 KB), game-logic (19.5 KB), infrastructure (7 KB)
@@ -366,10 +348,9 @@ Key files:
 ## Testing
 
 ```bash
-npm test                               # Run JS tests (77 test files, import from dist/)
-npm run ts:test                        # Run TypeScript tests (16 test files, vitest)
+npm test                               # Run JS tests (1085 tests, import from dist/)
+npm run ts:test                        # Run TypeScript tests (345 tests, vitest)
 npm run test:coverage                  # Run with coverage (c8, 50% line threshold)
-npm run simulate -- --all --runs 100   # Round-robin roster balance analysis
 ```
 
 ## CI/CD & Automation
@@ -397,7 +378,7 @@ Community members can submit new BugMon enemies and moves via GitHub Issues usin
 
 Submissions are validated automatically by `.github/scripts/validate-submission.cjs`, previewed with `.github/scripts/battle-preview.cjs`, and generated into data entries by `.github/scripts/generate-bugmon.cjs`.
 
-## When Adding New Content
+## When Adding New Content (BugMon — Deprioritized)
 
 ### New BugMon Enemy
 1. Add entry to `ecosystem/data/monsters.json` following existing schema

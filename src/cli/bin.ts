@@ -24,12 +24,52 @@ const wantsHelp = args.includes('--help') || args.includes('-h');
 // Detect whether invoked as `bugmon` or `agentguard`
 const binName = process.argv[1]?.endsWith('bugmon') ? 'bugmon' : 'agentguard';
 
-// TODO(roadmap): Phase 2 — Add 'agentguard guard' and 'agentguard audit' CLI governance commands
-// TODO(roadmap): Phase 4 — Add 'agentguard replay <run-id>' CLI replay command
 // TODO(roadmap): Phase 8 — Editor integrations (VS Code extension, JetBrains plugin, Claude Code deep integration)
 // TODO(roadmap): TS Migration — Integrate TS CLI as primary CLI entry point
 
 const COMMANDS: Record<string, CommandHelp> = {
+  // === AgentGuard Governance Commands ===
+  guard: {
+    name: `${binName} guard`,
+    description: 'Start the governed action runtime — enforce policies and invariants',
+    usage: `${binName} guard [flags]`,
+    flags: [
+      { flag: '--policy, -p <file>', description: 'Policy file (YAML or JSON)' },
+      { flag: '--dry-run', description: 'Evaluate without executing actions' },
+      { flag: '--verbose, -v', description: 'Show detailed output' },
+    ],
+    examples: [
+      `${binName} guard`,
+      `${binName} guard --policy agentguard.yaml`,
+      `${binName} guard --dry-run`,
+      `echo '{"tool":"Bash","command":"rm -rf /"}' | ${binName} guard`,
+    ],
+  },
+  inspect: {
+    name: `${binName} inspect`,
+    description: 'Inspect the action graph and events for a run',
+    usage: `${binName} inspect [runId]`,
+    flags: [
+      { flag: '--list', description: 'List all recorded runs' },
+      { flag: '--last', description: 'Inspect the most recent run' },
+    ],
+    examples: [
+      `${binName} inspect --list`,
+      `${binName} inspect --last`,
+      `${binName} inspect run_1234567890_abc`,
+    ],
+  },
+  events: {
+    name: `${binName} events`,
+    description: 'Show the raw event stream for a run',
+    usage: `${binName} events <runId>`,
+    flags: [],
+    examples: [
+      `${binName} events --last`,
+      `${binName} events run_1234567890_abc`,
+    ],
+  },
+
   // === AgentGuard Core Commands ===
   watch: {
     name: `${binName} watch`,
@@ -104,6 +144,43 @@ const COMMANDS: Record<string, CommandHelp> = {
 
 async function main() {
   switch (command) {
+    case 'guard': {
+      if (wantsHelp) {
+        console.log(formatHelp(COMMANDS.guard));
+        break;
+      }
+      const flags = args.slice(1);
+      const policyIdx = flags.findIndex((f) => f === '--policy' || f === '-p');
+      const policyFile = policyIdx !== -1 ? flags[policyIdx + 1] : undefined;
+      const dryRun = flags.includes('--dry-run');
+      const verbose = flags.includes('--verbose') || flags.includes('-v');
+
+      const { guard } = await import('./commands/guard.js');
+      const code = await guard(args.slice(1), { policy: policyFile, dryRun, verbose, stdin: true });
+      process.exit(code);
+      break;
+    }
+
+    case 'inspect': {
+      if (wantsHelp) {
+        console.log(formatHelp(COMMANDS.inspect));
+        break;
+      }
+      const { inspect } = await import('./commands/inspect.js');
+      await inspect(args.slice(1));
+      break;
+    }
+
+    case 'events': {
+      if (wantsHelp) {
+        console.log(formatHelp(COMMANDS.events));
+        break;
+      }
+      const { events } = await import('./commands/inspect.js');
+      await events(args.slice(1));
+      break;
+    }
+
     case 'watch': {
       if (wantsHelp) {
         console.log(formatHelp(COMMANDS.watch));
@@ -321,7 +398,13 @@ function printHelp(): void {
   console.log(`
   \x1b[1mAgentGuard\x1b[0m — Deterministic runtime guardrails for AI-assisted software systems
 
-  \x1b[1mGuard:\x1b[0m
+  \x1b[1mGovernance:\x1b[0m
+    ${binName} guard                          Start governed action runtime
+    ${binName} guard --policy <file>          Use a specific policy file (YAML/JSON)
+    ${binName} inspect [runId]                Inspect action graph for a run
+    ${binName} events [runId]                 Show raw event stream for a run
+
+  \x1b[1mMonitor:\x1b[0m
     ${binName} watch -- <command>             Monitor a command for errors and violations
     ${binName} watch --cache -- <command>     Interactive: battle & cache BugMon!
     ${binName} scan [path]                    Scan files for bugs (eslint/tsc)

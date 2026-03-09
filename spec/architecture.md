@@ -1,108 +1,121 @@
 # Architecture Specification
 
-## Layered Model
+## Governed Action Kernel Model
 
 ```
 ┌─────────────────────────────────────────┐
-│ src/cli/    (Node.js only)             │
-│   CLI companion, commands, renderer    │
+│ agentguard/  (Governance Runtime)      │
+│   Kernel loop, policies, invariants,   │
+│   adapters, renderers, sinks           │
 └────────────────┬────────────────────────┘
                  │ imports ↓
 ┌────────────────┴────────────────────────┐
-│ src/agentguard/  (Governance runtime)  │
-│   AAB, policies, invariants, evidence  │
+│ domain/  (Environment-agnostic)        │
+│   Actions, events, reference monitor,  │
+│   adapter registry, battle, encounters │
 └────────────────┬────────────────────────┘
                  │ imports ↓
 ┌────────────────┴────────────────────────┐
-│ src/domain/  (Environment-agnostic)    │
-│   Pure logic: events, battle, encounters│
-│   ingestion pipeline, evolution engine │
+│ core/  (Shared infrastructure)         │
+│   EventBus, types, error parsing       │
 └────────────────┬────────────────────────┘
                  │ imports ↓
 ┌────────────────┴────────────────────────┐
-│ src/core/  (Shared logic)              │
-│   EventBus, error parsing, matching    │
-└────────────────┬────────────────────────┘
-                 │ imports ↓
-┌────────────────┴────────────────────────┐
-│ src/game/    (Browser only)            │
-│   Dungeon runner, battle, exploration  │
-│   Canvas rendering, audio, sprites     │
+│ cli/  (Node.js CLI)                    │
+│   guard, inspect, events, watch, scan  │
 └─────────────────────────────────────────┘
-```
 
-### Additional Layers
-
-```
-src/meta/           Metadata systems (bugdex, bosses)
-src/orchestration/  Multi-agent pipeline orchestration
-src/protocol/       Sync protocol definitions
-src/content/        Game content validation
-src/watchers/       Environment watchers (console, test, build)
-src/ai/             AI integration interface
+Deprioritized:
+┌─────────────────────────────────────────┐
+│ game/  (Browser only — not active)     │
+│   Canvas rendering, audio, UI, sprites │
+├─────────────────────────────────────────┤
+│ ecosystem/  (Game content — not active)│
+│   JSON data, Grimoire, bosses, storage │
+└─────────────────────────────────────────┘
 ```
 
 ## Dependency Rules
 
-- **src/domain/** has zero external dependencies. No DOM APIs, no Node.js-specific APIs.
-- **src/core/** depends on domain/. Never imports from game/ or cli/.
-- **src/cli/** depends on domain/, core/, and meta/. Never imports from game/.
-- **src/game/** depends on domain/, core/, and meta/. Never imports from cli/.
-- **src/agentguard/** depends on domain/ only. Never imports from cli/ or game/.
-- **src/meta/** depends on domain/ and ecosystem/data/. Never imports from cli/ or game/.
-- **ecosystem/data/** has zero dependencies. Pure data.
+- **domain/** has zero external dependencies. No DOM APIs, no Node.js-specific APIs.
+- **agentguard/** depends on domain/ and core/. Node.js APIs allowed (fs, child_process).
+- **cli/** depends on agentguard/, domain/, and core/.
+- **core/** depends on domain/ only.
+- **game/** and **ecosystem/** are deprioritized. They depend on domain/ and core/ but nothing depends on them in the governance flow.
 
 ## Key Subsystems
 
-### Ingestion Pipeline (`src/domain/ingestion/`)
+### Governed Action Kernel (`agentguard/kernel.ts`)
 
-Multi-stage pipeline converting raw errors into game entities:
+The orchestrator that connects all governance infrastructure:
 
-1. **Parse** — Regex matching against 40+ error patterns across 6+ languages
-2. **Fingerprint** — Stable hash for deduplication (same error = same fingerprint)
-3. **Classify** — Map error type to severity (1-5 scale) and BugEvent
-4. **Create Event** — Wrap in canonical event envelope with ID + fingerprint
-5. **Map to Species** — BugEvent → BugMon monster species
-6. **Map Invariants** — Invariant violations → governance events
+```
+propose(rawAction) →
+  1. ACTION_REQUESTED event
+  2. Monitor evaluates (AAB → policy → invariants → evidence)
+  3. If denied: ACTION_DENIED + evidence pack + intervention
+  4. If allowed: ACTION_ALLOWED → execute via adapter → ACTION_EXECUTED/FAILED
+  5. Sink all events to JSONL
+  → KernelResult { allowed, executed, decision, execution, events, runId }
+```
 
-### Battle Engine (`src/domain/battle.ts`)
+### Action Authorization Boundary (`agentguard/core/aab.ts`)
 
-Pure, deterministic combat with injected RNG. Supports passive abilities, healing, combo system, and type effectiveness.
+Normalizes raw tool calls into structured intents:
+- Maps tool names to action types (Write → file.write, Bash → shell.exec)
+- Detects git commands in shell (git push → git.push)
+- Flags destructive commands (rm -rf, chmod 777, dd if=, DROP DATABASE)
+- Computes blast radius from policy limits
 
-### Event System (`src/domain/events.ts`, `src/core/event-bus.ts`)
+### Policy Engine (`agentguard/policies/`)
 
-Canonical event kinds: `ERROR_OBSERVED`, `MOVE_USED`, `EVOLUTION_TRIGGERED`, governance events, developer signal events, session events. EventBus provides typed pub/sub that works in both Node.js and browser.
+Declarative policy evaluation:
+- JSON and YAML policy formats
+- Pattern matching: exact, wildcard (`*`), prefix (`git.*`)
+- Scope matching: exact, prefix, suffix (`*.env`)
+- Branch conditions, file limits, test requirements
+- Two-pass evaluation: deny rules first (highest severity), then allow rules, default allow
 
-### Governance Runtime (`src/agentguard/`)
+### Invariant Checker (`agentguard/invariants/`)
 
-Action Authorization Boundary (AAB) evaluates agent actions against declared policies. Invariant checker monitors system constraints. Evidence packs provide full audit trails.
+6 default system invariants:
+1. **no-secret-exposure** (sev 5) — blocks .env, credentials, .pem, .key, secret, token files
+2. **protected-branch** (sev 4) — prevents direct push to main/master
+3. **blast-radius-limit** (sev 3) — enforces file modification limit (default 20)
+4. **test-before-push** (sev 3) — requires tests pass before push
+5. **no-force-push** (sev 4) — forbids force push
+6. **lockfile-integrity** (sev 2) — ensures package.json changes sync with lockfiles
 
-### Idle Dungeon Runner (`src/game/dungeon/`)
+### Execution Adapters (`agentguard/adapters/`)
 
-Auto-run through procedural floors. Dev character moves automatically, defeating minor enemies inline and pausing for boss fights. Gold and loot persist across runs.
+Action handlers registered by class:
+- **file** — fs.readFile, fs.writeFile, fs.unlink, fs.rename
+- **shell** — child_process.exec with timeout (30s default, 1MB buffer)
+- **git** — git commit, push, branch, checkout, merge (validated shell wrappers)
+- **claude-code** — normalizes PreToolUse/PostToolUse hook payloads
 
-### Design System (`src/game/theme.ts`)
+### Escalation System (`agentguard/monitor.ts`)
 
-Premium dark aesthetic with OLED palette, gold accents, glassmorphic panels, and DM Sans typography. Provides all color tokens, spacing constants, and animation timing.
+Tracks cumulative denials and violations:
+- NORMAL (0) — default state
+- ELEVATED (1) — denials >= ceil(threshold/2)
+- HIGH (2) — denials >= threshold OR violations >= threshold
+- LOCKDOWN (3) — denials >= 2×threshold OR violations >= 2×threshold → all actions denied
 
-### Game State Machine (`src/game/engine/state.ts`)
+### Event System (`domain/events.ts`, `core/event-bus.ts`)
 
-States: `TITLE → EXPLORE → BATTLE_TRANSITION → BATTLE → EVOLVING → MENU → DUNGEON_RUNNER`
+50+ canonical event kinds. EventBus provides typed pub/sub. Event factory with auto-generated IDs and fingerprints.
 
 ## Data Flow
 
 ```
-External Source → Ingestion Pipeline → Canonical Event → EventBus
-                                                           ├→ Game (spawn enemy / dungeon encounter)
-                                                           ├→ AgentGuard (check policy)
-                                                           └→ Event Store (persist)
+Claude Code Tool Call → Claude Code Adapter → Kernel → AAB → Policy → Invariants
+                                                │                        │
+                                                ├── Evidence Pack ◄──────┘
+                                                │
+                                                ├── Adapter (execute) → Result
+                                                │
+                                                ├── TUI Renderer → Terminal
+                                                │
+                                                └── JSONL Sink → .agentguard/events/
 ```
-
-## Build System
-
-TypeScript source compiles via `tsc` (individual modules for tests/imports) + `esbuild` (bundles for CLI and browser game). Browser loads `dist/game/game.js` as a module.
-
-## Size Budget
-
-- Main bundle: 10 KB target / 17 KB cap (gzipped, no sprites)
-- Subsystem caps enforced per module group

@@ -2,70 +2,77 @@
 
 ## What This Is
 
-**BugMon** is a developer experience platform that turns debugging into gameplay. It consumes developer signals — errors, CI failures, lint warnings, governance violations — and transforms them into interactive encounters. Coding sessions become dungeon runs. Bugs become enemies. CI failures become bosses.
+**AgentGuard** is a governed action runtime for AI coding agents. It intercepts agent tool calls, enforces policies and invariants, executes authorized actions, and emits lifecycle events. Every agent action passes through a deterministic kernel that decides allow/deny before execution.
 
-BugMon integrates with **AgentGuard**, a deterministic governance runtime for AI coding agents. AgentGuard evaluates agent actions against policies and invariants, producing canonical events when violations occur. These events feed into BugMon as elite boss encounters.
+AgentGuard answers one question: **"Should this AI agent be allowed to do this?"**
 
-Together, they form a system where all development activity flows through a single event model and surfaces as engaging, trackable gameplay.
+The first integration target is **Claude Code** via its hook system (PreToolUse/PostToolUse). The architecture supports any agent framework that can normalize tool calls into the canonical action format.
+
+### Optional: BugMon Mode (Deprioritized)
+
+BugMon is a gamified visualization mode that consumes AgentGuard events and renders them as roguelike encounters. It is functional but not under active development. The governance kernel is the primary focus.
 
 ## What This Is Not
 
-### Not just a game
+### Not monitoring or observability
 
-BugMon encounters are generated from real system failures. The error pipeline detects 40+ error patterns across 6+ languages. The encounter difficulty scales with actual error severity. The battle system maps to real debugging activity. There is no scripted content — every encounter comes from a real event.
+AgentGuard is not Sentry, Datadog, or a logging tool. It is an **active runtime** that intercepts and gates actions before they happen. It blocks destructive commands. It denies pushes to protected branches. It enforces blast radius limits. Monitoring happens as a side effect of enforcement, not as the goal.
 
-### Not an observability platform
+### Not AI-based safety
 
-The system does not replace Sentry, Datadog, or PagerDuty. It operates at the developer workstation level — intercepting local errors, CI output, and agent actions during coding sessions. It is a development-time tool, not a production monitoring system.
+AgentGuard does not use AI to evaluate agent actions. Policy evaluation is deterministic: pattern matching, scope checking, invariant verification. Same action + same policy = same decision. No heuristics, no inference, no probabilistic decisions.
 
-### Not a testing framework
+### Not a sandbox or VM
 
-BugMon does not run tests or lint code. It observes the output of tools that do and translates failures into gameplay events. It works alongside existing tooling, not instead of it.
+AgentGuard operates at the application layer, not the OS layer. It doesn't intercept syscalls or run agents in containers. It works by integrating with agent tool-use interfaces (Claude Code hooks, future framework adapters) to evaluate actions before they execute.
 
 ## Why This Architecture
 
-The **SourceRegistry** plugin system and canonical event model solve a real problem: developer telemetry is fragmented across dozens of tools (linters, test runners, CI systems, error trackers). By normalizing all signals through a single pipeline:
+The **governed action kernel** pattern solves a real problem: AI coding agents can execute arbitrary tool calls — file writes, shell commands, git operations — with no systematic policy enforcement. AgentGuard provides:
 
-1. **Any error source** can feed into BugMon — just register a source that calls `onRawSignal(rawText)`
-2. **Every encounter** is generated from real errors through the same parse-fingerprint-classify pipeline
-3. **Developers** get a single, engaging view of their session's health through the roguelike metaphor
-4. **Plugin authors** get clean extension points (new event sources, new renderers, new content packs)
+1. **Policy enforcement** — declare what agents can and cannot do in YAML/JSON. The kernel enforces it deterministically.
+2. **Invariant safety** — 6 built-in invariants (no secret exposure, protected branches, blast radius limits, test-before-push, no force push, lockfile integrity) catch safety violations.
+3. **Escalation** — repeated denials or violations escalate from NORMAL → ELEVATED → HIGH → LOCKDOWN (all actions blocked until human intervention).
+4. **Audit trail** — every action proposal, decision, and execution is recorded as JSONL events. Fully inspectable and replayable.
+5. **Extensibility** — custom policies, custom invariants, custom adapters for new agent frameworks.
 
 ## Who This Is For
 
-### Primary: Developers who want engaging feedback on their errors
+### Primary: Developers using AI coding agents
 
-Any developer who runs tests, builds, or lints. BugMon adds a layer of engagement to debugging — every error becomes a challenge to defeat, and every fix earns progress.
+Developers who use Claude Code, Copilot, Cursor, or similar AI assistants and want guardrails on what the agent can do. "Let the agent write code, but don't let it push to main or delete production files."
 
-### Secondary: Developers using AI coding agents
+### Secondary: Teams with AI agent governance requirements
 
-Developers who use AI assistants (Claude Code, Copilot, Cursor, etc.) get automatic encounter generation from agent errors. Combined with AgentGuard governance, the system provides both visibility and guardrails.
+Organizations that need audit trails and policy enforcement for AI-assisted development. Compliance, security, and risk management.
 
-### Tertiary: Teams that enjoy gamified tooling
+### Tertiary: Agent framework builders
 
-Developers who appreciate terminal toys and gamification of development activity. BugMon turns the tedium of debugging into a persistent, trackable game.
+Developers building agent systems who want a reusable governance layer. AgentGuard's canonical action model and policy engine can be integrated into any agent framework.
 
 ## How Developers Discover This
 
-1. **CLI** — `npx bugmon demo` or `npx bugmon watch -- npm run dev`. Zero install, immediate encounter.
-2. **Claude Code** — `npx bugmon claude-init` hooks into Claude Code sessions. Errors trigger encounters automatically.
-3. **Browser** — Play on GitHub Pages for the full RPG experience. Syncs with CLI via WebSocket.
-4. **Community** — Add a BugMon creature in 2 minutes with a JSON edit. No code changes needed.
+1. **Claude Code integration** — `agentguard guard --policy agentguard.yaml` starts the runtime. Agent actions are evaluated in real-time.
+2. **CLI** — pipe actions into `agentguard guard` to see allow/deny decisions.
+3. **npm** — `npm install -g agentguard` for the CLI.
+4. **Policy files** — drop an `agentguard.yaml` in your repo to define agent boundaries.
 
 ## Competitive Position
 
-| Category | Existing Tools | BugMon |
-|----------|---------------|--------|
-| Error detection | Sentry, Datadog | Development-time, not production. Local errors, not deployed services. |
-| Developer gamification | GitHub achievements, WakaTime | Roguelike model with real error-driven encounters, not time tracking. |
-| AI agent governance | No standard tool | AgentGuard integration: deterministic runtime with policy evaluation. |
-| Terminal toys | sl, cmatrix, pokemon-cli | Functional system integrated into dev workflow, not novelty-only. |
+| Category | Existing Tools | AgentGuard |
+|----------|---------------|------------|
+| AI agent governance | No standard tool | Deterministic runtime with policy evaluation, invariant checking, escalation |
+| Policy enforcement | Ad-hoc rules in prompts | Declarative YAML/JSON policies with pattern matching and scope rules |
+| Agent audit trails | Manual logging | Automatic JSONL event streams with full action lifecycle |
+| Agent safety | Prompt engineering | Runtime enforcement: block destructive commands, protect branches, enforce blast radius |
 
 ## Technical Differentiators
 
-- **Zero runtime dependencies** — vanilla JavaScript, no framework, no build required for development
-- **12 KB gzipped** — entire browser game fits in a single file smaller than jQuery
-- **Plugin architecture** — SourceRegistry lets anyone add new bug sources with 3 functions
-- **Terminal-first** — primary interface is the terminal, not a web dashboard
-- **Community-driven content** — new BugMon creatures submitted via GitHub Issues with automated validation
-- **Canonical event model** — every signal becomes a structured event that can be replayed, analyzed, or rendered
+- **Deterministic kernel** — no AI, no heuristics, no probabilistic decisions
+- **6 built-in invariants** — secret exposure, protected branches, blast radius, test-before-push, no force push, lockfile integrity
+- **Escalation system** — NORMAL → ELEVATED → HIGH → LOCKDOWN with automatic de-escalation
+- **Evidence packs** — structured audit records for every governance decision
+- **YAML policies** — simple, declarative, version-controllable
+- **Claude Code integration** — first-class support via hooks
+- **JSONL event sink** — every action, decision, and execution recorded for replay
+- **TypeScript** — type-safe governance infrastructure with 345+ tests

@@ -1,84 +1,80 @@
 # System Specification
 
-BugMon is a roguelike developer telemetry game. It monitors software bugs and converts them into interactive encounters. AgentGuard provides deterministic governance for AI coding agents. Together they form a unified platform where all system activity flows through the canonical event model.
+AgentGuard is a **governed action runtime for AI coding agents**. It intercepts agent tool calls, enforces policies and invariants, executes authorized actions via adapters, and emits lifecycle events. The Action is the primary unit of computation.
 
-## Core Event Flow
+BugMon is a deprioritized game layer that can consume governance events as roguelike encounters. It remains functional but is not under active development.
+
+## Core Flow: Governed Action Kernel
 
 ```
-watcher detects failure (stderr, CI output, agent action)
+Agent proposes tool call (e.g., Claude Code Bash, Write, Edit)
 ↓
-ingestion pipeline: parse → fingerprint → classify → map
+Claude Code adapter normalizes → RawAgentAction
 ↓
-canonical event emitted (e.g., ERROR_OBSERVED)
+Kernel loop:
+  1. Emit ACTION_REQUESTED
+  2. AAB normalizes intent (tool → action type, detect git/destructive)
+  3. Policy evaluator matches rules (allow/deny with scope, branches, limits)
+  4. Invariant checker verifies system state (6 defaults)
+  5. Evidence pack generated if violation
+  6. Monitor tracks escalation (NORMAL → ELEVATED → HIGH → LOCKDOWN)
 ↓
-game engine spawns BugMon enemy
+If DENIED → emit ACTION_DENIED, return with reason + intervention
+If ALLOWED → execute via adapter → emit ACTION_EXECUTED or ACTION_FAILED
 ↓
-developer fixes the bug
-↓
-BugMon enemy defeated → recorded in Bug Grimoire
+All events sunk to JSONL (.agentguard/events/<runId>.jsonl)
 ```
-
-## Gameplay Model
-
-- Coding sessions are dungeon **runs**
-- Bugs are **enemies** with stats derived from error severity
-- CI failures are **bosses** requiring active engagement
-- Minor errors (severity 1-2) **auto-resolve** in idle mode
-- Severe errors (severity 3+) require **player interaction**
-- The Bug Grimoire records defeated enemy types (compendium, not collection)
 
 ## Two-Layer System
 
-| Layer | Role | Produces |
-|-------|------|----------|
-| **AgentGuard** | Governance runtime — evaluates agent actions against policies | Policy violation events |
-| **BugMon** | Roguelike game — renders events as interactive encounters | Gameplay state |
+| Layer | Role | Status |
+|-------|------|--------|
+| **AgentGuard** | Governed action runtime — kernel loop, policies, invariants, adapters | Active focus |
+| **BugMon** | Roguelike game — renders events as encounters | Deprioritized |
 
 Both layers share the **canonical event model** as their architectural spine.
 
 ## System Boundaries
 
-### AgentGuard (Governance Runtime)
-- **Input**: Agent actions (file edits, shell commands, API calls)
-- **Output**: Canonical governance events (`PolicyDenied`, `InvariantViolation`, `BlastRadiusExceeded`)
-- **Constraint**: Deterministic evaluation — same action + same policy = same result
+### AgentGuard (Governance Runtime — Active)
+- **Input**: Agent tool calls (file edits, shell commands, git operations)
+- **Processing**: Kernel loop — normalize → evaluate → execute → emit
+- **Output**: Allow/deny decisions, execution results, canonical events, JSONL audit trail
+- **Constraint**: Deterministic evaluation — same action + same policy + same state = same result
 
-### BugMon (Roguelike Game)
-- **Input**: Canonical events (developer signals, governance violations, CI results)
+### Domain Layer (Pure Logic)
+- **Input**: Events, actions, policies, system state
+- **Output**: Decisions, event objects, validation results
+- **Constraint**: No DOM, no Node.js-specific APIs, deterministic when RNG is injected
+
+### BugMon (Game Layer — Deprioritized)
+- **Input**: Canonical events (developer signals, governance violations)
 - **Output**: Interactive encounters, Bug Grimoire entries, session scores
 - **Constraint**: Hybrid idle/active — minor enemies auto-resolve, bosses demand engagement
 
-### Domain Layer (Pure Logic)
-- **Input**: Events, game data, injected RNG
-- **Output**: Battle results, encounter triggers, progression checks
-- **Constraint**: No DOM, no Node.js-specific APIs, deterministic when RNG is injected
-
 ## Invariants
 
-1. All system activity flows through the canonical event model
-2. Domain logic has zero environment dependencies
-3. Zero browser runtime dependencies — CLI has minimal runtime deps (`chokidar`, `commander`, `pino`)
-4. Browser game is 100% client-side
-5. All audio is synthesized at runtime (no audio files)
-6. Size budget: 10 KB target / 17 KB cap (gzipped main bundle)
+1. All agent actions pass through the kernel loop (no bypass)
+2. Policy evaluation is deterministic (no inference, no heuristics)
+3. Domain logic has zero environment dependencies
+4. Every governance decision produces events sunk to JSONL
+5. Escalation tracks cumulative denials/violations and locks down at threshold
+6. Evidence packs provide structured audit trail for every violation
 
 ## Event Taxonomy
 
 | Category | Examples | Producer | Consumer |
 |----------|----------|----------|----------|
-| Ingestion | `ErrorObserved`, `BugClassified` | Error watchers | Battle engine |
-| Battle | `ENCOUNTER_STARTED`, `MOVE_USED`, `DAMAGE_DEALT` | Battle engine | UI renderers |
-| Progression | `ActivityRecorded`, `EvolutionTriggered` | Dev activity tracker | Progression engine |
-| Session | `RunStarted`, `RunEnded`, `CheckpointReached` | Run engine | Scoring, save system |
-| Governance | `PolicyDenied`, `UnauthorizedAction`, `InvariantViolation` | AgentGuard | Boss encounters |
-| Reference Monitor | `ActionRequested`, `ActionAllowed`, `ActionDenied`, `ActionExecuted` | Agent Action Boundary | Audit trail, governance |
-| Developer Signals | `FileSaved`, `TestCompleted`, `CommitCreated` | Git hooks, watchers | Encounter triggers |
+| Action Lifecycle | `ActionRequested`, `ActionAllowed`, `ActionDenied`, `ActionExecuted`, `ActionFailed` | Kernel | TUI, JSONL sink, inspect CLI |
+| Governance | `PolicyDenied`, `UnauthorizedAction`, `InvariantViolation`, `BlastRadiusExceeded` | Engine/AAB | Kernel, monitor, evidence |
+| Evidence | `EvidencePackGenerated` | Evidence pack | JSONL sink |
+| Ingestion | `ErrorObserved`, `BugClassified` | Error watchers | (BugMon) |
+| Developer Signals | `FileSaved`, `TestCompleted`, `CommitCreated` | Git hooks, watchers | Kernel context |
 
 ## Technical Constraints
 
-- 100% client-side browser game, zero browser runtime dependencies
-- Vanilla JavaScript (ES6 modules), HTML5 Canvas 2D, Web Audio API; TypeScript refactoring in progress (`src/`)
-- All audio synthesized at runtime (no audio files)
-- Build: esbuild + terser (dev dependencies only)
-- Deployed to GitHub Pages
+- TypeScript source (`src/`), compiled to `dist/` via tsc + esbuild
+- CLI runtime dependencies: `chokidar`, `commander`, `pino`
 - ESLint + Prettier enforced
+- Node.js >= 18 required
+- 345+ TypeScript tests (vitest) + 1085 JavaScript tests

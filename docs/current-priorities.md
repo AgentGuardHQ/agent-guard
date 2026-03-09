@@ -1,129 +1,94 @@
 # Current Priorities
 
-## Active Phase: Phase 6 — Plugin Ecosystem
+## Active Phase: Governed Action Kernel
 
-The system has completed its core architecture (Phases 0-3) and is now focused on extensibility. The governance runtime, canonical event model, and browser dungeon runner are all operational.
+AgentGuard is a **governed action runtime for AI agents**. The kernel loop intercepts agent tool calls, enforces policies and invariants, executes via adapters, and emits lifecycle events. This is the core value proposition.
+
+The BugMon game layer (roguelike encounters, browser game, battle engine) is **deprioritized**. It remains functional but is not the focus of active development. Future work may revisit it as an optional visualization mode.
 
 ## What Is Implemented
 
-The following systems are built and operational:
+### Governed Action Kernel (NEW — Active Focus)
+- **Kernel loop** — orchestrates AAB → policy → invariants → execute → events (`agentguard/kernel.ts`)
+- **Execution adapters** — file, shell, git handlers (`agentguard/adapters/`)
+- **Claude Code adapter** — normalizes PreToolUse/PostToolUse into kernel actions (`agentguard/adapters/claude-code.ts`)
+- **YAML policy loader** — simple YAML policy format, zero external deps (`agentguard/policies/yaml-loader.ts`)
+- **JSONL event sink** — persists events to `.agentguard/events/<runId>.jsonl` (`agentguard/sinks/jsonl.ts`)
+- **Terminal renderer** — real-time action stream, action graph, event display (`agentguard/renderers/tui.ts`)
+- **CLI commands** — `agentguard guard`, `agentguard inspect`, `agentguard events` (`cli/commands/guard.ts`, `cli/commands/inspect.ts`)
+
+### Governance Infrastructure
+- **Action Authorization Boundary (AAB)** — normalizes tool calls, detects git/destructive actions (`agentguard/core/aab.ts`)
+- **RTA decision engine** — combines AAB + policy evaluation + invariant checking + evidence packs (`agentguard/core/engine.ts`)
+- **Policy evaluator** — pattern matching, scope rules, wildcard support (`agentguard/policies/evaluator.ts`)
+- **Policy loader** — JSON policy validation and loading (`agentguard/policies/loader.ts`)
+- **Invariant checker** — 6 default invariants (secret exposure, protected branch, blast radius, etc.) (`agentguard/invariants/`)
+- **Evidence pack generation** — structured audit records for every governance decision (`agentguard/evidence/pack.ts`)
+- **Runtime monitor** — escalation tracking (NORMAL → ELEVATED → HIGH → LOCKDOWN) (`agentguard/monitor.ts`)
+- **Canonical Action schema** — 23 action types across 8 classes (`domain/actions.ts`)
+- **Reference monitor** — action authorization with decision trail (`domain/reference-monitor.ts`)
+- **Adapter registry** — action class → handler mapping with authorization guard (`domain/execution/adapters.ts`)
+
+### Canonical Event Model
+- 50+ event kinds covering governance, battle, progression, pipeline, developer signals (`domain/events.ts`, `core/types.ts`)
+- EventBus — generic typed pub/sub (`core/event-bus.ts`)
+- Event store — in-memory persistence with query/replay (`domain/event-store.ts`)
+- Event factory with fingerprinting (`domain/events.ts`)
 
 ### Event Pipeline
-- Error parser with 40+ patterns across JS, TS, Python, Go, Rust, Java (`src/core/error-parser.ts`)
-- Stack trace parser for 6+ frame formats (`src/core/stacktrace-parser.ts`)
-- Stable fingerprinting for event deduplication (`src/domain/ingestion/fingerprint.ts`)
-- Event classification with severity mapping (`src/core/bug-event.ts`)
-- Pipeline orchestration (`src/domain/ingestion/pipeline.ts`)
-- Universal EventBus (`src/domain/event-bus.ts`, `src/core/event-bus.ts`)
-- Canonical event definitions (`src/domain/events.ts`)
-- Developer signal event types (`src/domain/dev-event.ts`)
-- Event store interface (`src/domain/event-store.ts`)
-- Execution event log with causal chains (`src/domain/execution/`)
-
-### Battle Engine
-- Pure deterministic battle engine with injected RNG (`src/domain/battle.ts`)
-- Damage formula with type effectiveness and critical hits
-- Passive abilities (RandomFailure, NonDeterministic)
-- Healing moves
-- Combat system with turn-based battles
-- Battle simulation framework with seeded RNG (`simulation/`)
-- Combo system (`src/domain/combo.ts`)
-- Action definitions (`src/domain/actions.ts`)
-- Battle strategies (`src/domain/strategies.ts`)
-
-### BugMon Roster
-- 34 BugMon across 7 types (frontend, backend, devops, testing, architecture, security, ai)
-- 76 moves
-- 7x7 type effectiveness chart
-- 7 evolution chains with 10 evolved forms
-- Rarity system (common, uncommon, legendary, evolved)
-- Error pattern matching for species selection
-
-### Governance Runtime (AgentGuard)
-- Action Authorization Boundary (`src/agentguard/core/aab.ts`)
-- Runtime Assurance Engine (`src/agentguard/core/engine.ts`)
-- Policy evaluator (`src/agentguard/policies/evaluator.ts`)
-- Policy loader (`src/agentguard/policies/loader.ts`)
-- Invariant checker (`src/agentguard/invariants/checker.ts`)
-- Invariant definitions (`src/agentguard/invariants/definitions.ts`)
-- Evidence pack generation (`src/agentguard/evidence/pack.ts`)
-- Closed-loop governance monitor (`src/agentguard/monitor.ts`)
-- Policy configuration (`policy/action_rules.json`, `policy/capabilities.json`)
-
-### CLI (Commander-based)
-- 20 subcommands: watch, scan, demo, simulate, resolve, replay, trace, status, score, run-summary, auto-walk, boss-battle, catch, encounter, init, claude-hook, claude-init, contribute, adapter, demo-runner
-- Terminal renderer with ANSI colors (`src/cli/renderer.ts`)
-- WebSocket sync server (`src/cli/sync-server.ts`)
-- Session persistence (`src/cli/session-store.ts`)
-- Event source adapters: watch, scan, claude-hook (`src/core/sources/`)
-
-### Browser Game (Idle Dungeon Runner)
-- Idle auto-dungeon runner as primary game mode (`src/game/dungeon/runner.ts`)
-- Procedural floor generation with rooms, corridors, and loot (`src/game/dungeon/dungeon.ts`)
-- Premium dark design system with OLED palette and gold accents (`src/game/theme.ts`)
-- Glassmorphic HUD with floor progress, HP, gold counter, event log
-- Dev character with hoodie + laptop sprite and running animation
-- Parallax scrolling dungeon renderer (`src/game/dungeon/dungeon-renderer.ts`)
-- Gold and loot persistence via localStorage (`src/game/dungeon/loot.ts`)
-- Auto-resolve minor enemies inline, manual boss fights
-- Classic exploration mode (tile-based dungeon, random encounters)
-- Canvas 2D rendering with procedural tile textures
-- Battle visual effects (`src/game/engine/effects.ts`)
-- Synthesized audio (Web Audio API, no audio files)
-- Mobile touch controls
-- Save/load with auto-save
-- CLI-to-browser sync via WebSocket
-
-### Progression
-- Bug Grimoire collection tracking (`src/meta/bugdex.ts`)
-- Dev-activity evolution system with git hook tracking (`src/game/evolution/`)
-- XP and leveling
-- Boss encounter system with threshold triggers (`src/meta/bosses.ts`)
-- Gold economy (dungeon loot, boosts)
-
-### Multi-Agent Pipeline
-- Pipeline orchestrator (`src/orchestration/orchestrator.ts`)
-- Stage definitions (`src/orchestration/stages.ts`)
-- Agent role definitions (`src/orchestration/roles.ts`)
+- Error parser with 40+ patterns across JS, TS, Python, Go, Rust, Java (`core/error-parser.ts`)
+- Stack trace parser for 6+ frame formats (`core/stacktrace-parser.ts`)
+- Stable fingerprinting for deduplication (`domain/ingestion/`)
+- Pipeline orchestration (`domain/ingestion/pipeline.ts`)
 
 ### Infrastructure
-- 134 TypeScript source files (single source of truth)
-- 93 test files (77 JS + 16 TS) covering all modules
-- Size budget enforcement (10 KB target, 17 KB cap gzipped)
+- 345+ TypeScript tests (vitest) + 1085 JavaScript tests
+- TypeScript build: tsc + esbuild → dist/
 - CI workflows (deploy, validate, size check, CodeQL, publish, release)
-- Community submission workflow with automated validation
-- Zero browser runtime dependencies; CLI uses `chokidar`, `commander`, `pino`
-- Module contract registry (`src/domain/contracts.ts`)
-- Runtime shape validation (`src/domain/shapes.ts`)
+- ESLint + Prettier enforced
+- Size budget enforcement
+
+### BugMon Game Layer (DEPRIORITIZED)
+- Battle engine with type effectiveness, passives, healing (`domain/battle.ts`)
+- 31 BugMon across 7 types, 72 moves, 7 evolution chains (`ecosystem/data/`)
+- Browser game: Canvas 2D, synthesized audio, mobile touch controls (`game/`)
+- Terminal renderer for encounters (`cli/renderer.ts`)
+- Bug Grimoire, progression, XP system (`ecosystem/`)
+- Battle simulation framework (`simulation/`)
 
 ## What Is Next
 
-### Phase 6 — Plugin Ecosystem (Current)
-- Content pack loading system (community enemies, moves, bosses)
-- Renderer plugin interface
-- Policy pack loading system
-- Replay processor interface
-- Plugin validation and sandboxing
+### Phase 1 — Kernel Hardening (Current)
+- Integration testing: end-to-end Claude Code hook → kernel → decisions
+- Demo script that simulates the "killer demo" scenario
+- Error handling improvements for edge cases in adapters
+- Documentation: README update with governance-first quickstart
 
-### Phase 7 — Terminal Roguelike MVP
-- Bring the dungeon runner experience to the terminal
-- Idle mode with ANSI output
-- Active mode for bosses and elites
+### Phase 2 — Policy Ecosystem
+- Policy templates for common scenarios (strict, permissive, CI-only)
+- Policy composition (multiple policy files merged)
+- Policy validation CLI (`agentguard policy validate <file>`)
+- Community policy repository
 
-### Phase 8 — Editor Integrations
-- VS Code extension (sidebar webview)
-- JetBrains plugin
-- Claude Code deep integration
+### Phase 3 — Agent Integration
+- Deep Claude Code integration via hooks (auto-install, configuration)
+- Session-aware context (track what files were modified, test results)
+- Multi-agent support (different policies per agent identity)
 
-## Resolved Questions
+### Phase 4 — Observability
+- Run comparison and diff (`agentguard diff <run1> <run2>`)
+- Aggregate statistics across runs
+- Risk scoring per agent run
+- Failure clustering
 
-1. **Event persistence format** — NDJSON files in `runtime/events/`
-2. **Policy definition language** — JSON (`policy/*.json`)
-3. **TypeScript migration** — Complete. `src/` is the single source of truth, compiled to `dist/`
-4. **Game mode** — Idle dungeon runner as primary mode, with exploration as secondary
+### Future — BugMon Revival (Not Scheduled)
+- Governance events → boss encounters
+- Browser game integration with kernel events
+- Run engine connecting game sessions to governance runs
 
 ## Open Questions
 
-1. **Content pack format** — how to package and distribute community content packs
-2. **Plugin sandboxing** — how to safely load third-party plugins
-3. **Terminal dungeon renderer** — how to replicate the visual dungeon experience in ANSI
+1. **Policy distribution** — how do users share and discover policies? npm packages? GitHub repos?
+2. **Multi-agent identity** — how does the kernel distinguish between different agents in a session?
+3. **Session context** — how much system state should the kernel track automatically (test results, modified files)?
+4. **Remote mode** — should the kernel support a server mode for CI/CD integration?

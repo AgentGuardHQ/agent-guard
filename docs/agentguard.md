@@ -192,36 +192,80 @@ Event Store + EventBus
 
 6. **Separation from AI.** AgentGuard does not use AI for evaluation. It is a deterministic runtime. AI agents are the subjects being governed, not the governance mechanism.
 
-## Current Implementation Status
+## Implementation Status
 
-AgentGuard is in the specification phase. The following existing components provide the foundation:
+AgentGuard is **implemented and operational**. The governed action kernel connects all governance infrastructure into a working runtime.
 
-| Concept | Existing Foundation | Path |
-|---------|-------------------|------|
-| Event emission | EventBus | `domain/event-bus.js` |
-| Event types | Events constant (to be extended with governance types) | `domain/events.js` |
-| Action interception | Claude Code PostToolUse hook | `core/cli/claude-hook.js` |
-| Error classification | BugEvent severity mapping | `core/bug-event.js` |
-| Boss triggers | Threshold-based escalation | `ecosystem/bosses.js` |
+### Kernel Loop (Core)
+| Component | File | Status |
+|-----------|------|--------|
+| Governed action kernel | `agentguard/kernel.ts` | Complete |
+| AAB (normalization) | `agentguard/core/aab.ts` | Complete |
+| RTA decision engine | `agentguard/core/engine.ts` | Complete |
+| Runtime monitor (escalation) | `agentguard/monitor.ts` | Complete |
 
-## Target Directory Structure
+### Policy Engine
+| Component | File | Status |
+|-----------|------|--------|
+| Policy evaluator | `agentguard/policies/evaluator.ts` | Complete |
+| JSON policy loader | `agentguard/policies/loader.ts` | Complete |
+| YAML policy loader | `agentguard/policies/yaml-loader.ts` | Complete |
+
+### Safety Infrastructure
+| Component | File | Status |
+|-----------|------|--------|
+| Invariant checker | `agentguard/invariants/checker.ts` | Complete |
+| 6 default invariants | `agentguard/invariants/definitions.ts` | Complete |
+| Evidence pack generation | `agentguard/evidence/pack.ts` | Complete |
+
+### Execution Adapters
+| Component | File | Status |
+|-----------|------|--------|
+| File adapter (read/write/delete) | `agentguard/adapters/file.ts` | Complete |
+| Shell adapter (exec with timeout) | `agentguard/adapters/shell.ts` | Complete |
+| Git adapter (commit/push/branch) | `agentguard/adapters/git.ts` | Complete |
+| Adapter registry | `agentguard/adapters/registry.ts` | Complete |
+| Claude Code adapter | `agentguard/adapters/claude-code.ts` | Complete |
+
+### Observability
+| Component | File | Status |
+|-----------|------|--------|
+| JSONL event sink | `agentguard/sinks/jsonl.ts` | Complete |
+| TUI renderer | `agentguard/renderers/tui.ts` | Complete |
+
+### CLI Commands
+| Component | File | Status |
+|-----------|------|--------|
+| `agentguard guard` | `cli/commands/guard.ts` | Complete |
+| `agentguard inspect` | `cli/commands/inspect.ts` | Complete |
+| `agentguard events` | `cli/commands/inspect.ts` | Complete |
+
+### Directory Structure
 
 ```
 agentguard/
-├── core/          # Runtime engine
-│   ├── aab.js     # Action Authorization Boundary
-│   └── runtime.js # Main governance loop
-├── policies/      # Policy definitions and evaluation
-│   ├── loader.js  # Policy file parser
-│   ├── eval.js    # Deterministic policy evaluator
-│   └── default.yaml  # Default policy set
-├── invariants/    # Invariant definitions and monitoring
-│   ├── checker.js # Invariant evaluation engine
-│   └── system.js  # Built-in system invariants
-├── evidence/      # Evidence pack generation
-│   ├── pack.js    # Evidence pack builder
-│   └── store.js   # Evidence persistence
-└── cli/           # CLI integration
-    ├── guard.js   # CLI command for governance mode
-    └── report.js  # Governance audit report
+├── kernel.ts              # Governed action kernel (orchestrator)
+├── monitor.ts             # Runtime monitor (escalation tracking)
+├── core/
+│   ├── aab.ts             # Action Authorization Boundary
+│   └── engine.ts          # RTA decision engine
+├── policies/
+│   ├── evaluator.ts       # Policy rule matching
+│   ├── loader.ts          # JSON policy loader
+│   └── yaml-loader.ts     # YAML policy loader
+├── invariants/
+│   ├── checker.ts         # Invariant evaluation engine
+│   └── definitions.ts     # 6 default invariants
+├── evidence/
+│   └── pack.ts            # Evidence pack builder
+├── adapters/
+│   ├── file.ts            # File operations (fs)
+│   ├── shell.ts           # Shell execution (child_process)
+│   ├── git.ts             # Git operations
+│   ├── registry.ts        # Adapter wiring
+│   └── claude-code.ts     # Claude Code hook adapter
+├── renderers/
+│   └── tui.ts             # Terminal action stream
+└── sinks/
+    └── jsonl.ts           # JSONL event persistence
 ```

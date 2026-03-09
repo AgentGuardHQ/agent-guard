@@ -1,16 +1,12 @@
-# Unified Architecture — AgentGuard + BugMon
+# Unified Architecture — AgentGuard
 
-This document describes how AgentGuard and BugMon connect through the canonical event model to form a single coherent system.
+This document describes the architecture of AgentGuard as a governed action runtime for AI agents, with the BugMon game layer as a deprioritized optional mode.
 
 ## Architectural Thesis
 
-The system has one architectural spine: the **canonical event model**.
+AgentGuard is a **governed action runtime**. The Action is the primary unit of computation. Every agent tool call passes through the kernel loop, which enforces policies and invariants before execution.
 
-All system activity becomes events. Events feed two systems:
-- **AgentGuard** enforces deterministic execution constraints on AI coding agents.
-- **BugMon** visualizes events through a roguelike gameplay loop.
-
-Neither system exists in isolation. AgentGuard produces governance events. BugMon consumes all events — developer signals and governance violations alike — and turns them into interactive encounters.
+The system has one architectural spine: the **canonical event model**. All system activity becomes events. The kernel produces governance events. Subscribers (TUI renderer, JSONL sink, and optionally BugMon) consume them.
 
 ## System Model
 
@@ -18,217 +14,156 @@ Neither system exists in isolation. AgentGuard produces governance events. BugMo
 ┌──────────────────────────────────────────────────────────────────┐
 │                        Event Sources                             │
 │                                                                  │
-│  Developer Signals          Agent Actions        CI Systems      │
-│  ├── stderr                 ├── file_write       ├── pipeline    │
-│  ├── test output            ├── git_commit       ├── build       │
-│  ├── linter output          ├── git_push         └── deploy      │
-│  └── runtime crashes        └── config_change                    │
+│  Claude Code Hooks        Agent Tool Calls      CI Systems       │
+│  ├── PreToolUse           ├── file.write        ├── pipeline     │
+│  ├── PostToolUse          ├── git.commit         ├── build       │
+│  └── (future hooks)       ├── git.push          └── deploy      │
+│                           └── shell.exec                         │
 └──────────────────┬───────────────────┬───────────────┬───────────┘
                    │                   │               │
                    ▼                   ▼               ▼
          ┌─────────────────────────────────────────────────────┐
-         │              Event Normalization Pipeline            │
+         │              Claude Code Adapter                     │
          │                                                     │
-         │  source → parse → normalize → classify → dedupe     │
-         │                                                     │
-         │  Implementation: src/domain/ingestion/               │
+         │  Normalize tool calls → RawAgentAction              │
+         │  Implementation: agentguard/adapters/claude-code.ts │
          └──────────────────────┬──────────────────────────────┘
                                 │
                                 ▼
-                   ┌────────────────────────┐
-                   │  Canonical Event Model  │
-                   │                        │
-                   │  { id, fingerprint,    │
-                   │    type, severity,     │
-                   │    source, file,       │
-                   │    metadata,           │
-                   │    timestamp,          │
-                   │    resolved }          │
-                   └───────────┬────────────┘
-                               │
-              ┌────────────────┼────────────────┐
-              │                │                │
-              ▼                ▼                ▼
-    ┌─────────────┐  ┌─────────────┐  ┌─────────────┐
-    │ AgentGuard   │  │ Event Store  │  │  EventBus   │
-    │              │  │              │  │             │
-    │ Policy eval  │  │ Persistence  │  │ Pub/sub     │
-    │ Invariants   │  │ Replay       │  │ Broadcast   │
-    │ AAB          │  │ History      │  │             │
-    └──────┬───────┘  └──────────────┘  └──────┬──────┘
-           │                                    │
-           │ governance events                  │ all events
-           │                                    │
-           ▼                                    ▼
-    ┌──────────────────────────────────────────────────────┐
-    │                    Subscribers                        │
-    │                                                      │
-    │  BugMon Terminal    BugMon Browser    Bug Grimoire          │
-    │  Renderer           Renderer          Collector       │
-    │                                                      │
-    │  Stats Engine       Replay Engine     Editor          │
-    │                                       Integration     │
-    └──────────────────────────────────────────────────────┘
+         ┌─────────────────────────────────────────────────────┐
+         │              Governed Action Kernel                  │
+         │                                                     │
+         │  1. ACTION_REQUESTED event                          │
+         │  2. AAB normalizes intent                           │
+         │  3. Policy evaluation (match → allow/deny)          │
+         │  4. Invariant checking (6 default invariants)       │
+         │  5. Evidence pack generation                        │
+         │  6. If allowed: execute via adapter                 │
+         │  7. ACTION_ALLOWED/DENIED + ACTION_EXECUTED/FAILED  │
+         │  8. Escalation tracking (monitor)                   │
+         │                                                     │
+         │  Implementation: agentguard/kernel.ts               │
+         └──────────────────────┬──────────────────────────────┘
+                                │
+               ┌────────────────┼────────────────┐
+               │                │                │
+               ▼                ▼                ▼
+     ┌─────────────┐  ┌─────────────┐  ┌─────────────┐
+     │ TUI Renderer │  │ JSONL Sink   │  │  EventBus   │
+     │              │  │              │  │             │
+     │ Terminal     │  │ .agentguard/ │  │ Pub/sub     │
+     │ action       │  │ events/      │  │ broadcast   │
+     │ stream       │  │ <runId>.jsonl│  │             │
+     └──────────────┘  └──────────────┘  └──────┬──────┘
+                                                │
+                                                ▼
+                                    ┌───────────────────┐
+                                    │   Subscribers      │
+                                    │                   │
+                                    │  CLI inspect      │
+                                    │  CLI events       │
+                                    │  (future: BugMon) │
+                                    └───────────────────┘
 ```
 
-## Data Flow
-
-### Flow 1: Developer Error → BugMon Encounter
+## Kernel Loop Detail
 
 ```
-Developer writes code with a bug
-    → Test runner outputs TypeError to stderr
-    → CLI watch adapter captures stderr
-    → Pipeline: parse → normalize → classify → dedupe
-    → Canonical event created (type: TypeError, severity: 2)
-    → Event persisted to store
-    → EventBus emits ERROR_OBSERVED
-    → BugMon encounter generator creates NullPointer enemy
-    → Terminal renderer shows encounter
-    → Developer fixes bug
-    → Event marked resolved
-    → BugMon records victory in Grimoire, awards XP
-```
-
-### Flow 2: Agent Violation → Governance Boss
-
-```
-AI agent attempts to modify production config
-    → AgentGuard AAB intercepts action
-    → Scope resolver: file outside authorized scope
-    → Policy evaluator: DENY
-    → Invariant checker: production-scope-guard violated
-    → Evidence pack generated
-    → Canonical event created (type: InvariantViolation, severity: 5)
-    → Event persisted to store
-    → EventBus emits INVARIANT_VIOLATION
-    → BugMon encounter generator creates elite governance boss
-    → Terminal renderer shows boss encounter
-    → Agent adjusts behavior
-    → Event remains in audit trail
-```
-
-### Flow 3: CI Failure → Boss Escalation
-
-```
-CI pipeline fails on push
-    → CI webhook delivers failure event
-    → Pipeline: parse CI output → classify → dedupe
-    → Canonical event created (type: CIFailure, severity: 4)
-    → Boss trigger system checks threshold (ecosystem/bosses.js)
-    → CI Dragon boss spawned
-    → Event persisted to store
-    → EventBus emits BOSS_TRIGGERED
-    → BugMon shows boss encounter with elevated difficulty
-    → Developer fixes pipeline
-    → Event marked resolved
-    → Boss defeated, large XP reward
+Agent proposes action (RawAgentAction)
+    │
+    ▼ emit ACTION_REQUESTED
+    │
+    ▼ AAB.normalizeIntent() → NormalizedIntent
+    │   ├── Map tool name to action type (Write → file.write, Bash → shell.exec)
+    │   ├── Detect git commands in shell (git push → git.push)
+    │   └── Flag destructive commands (rm -rf, chmod 777, etc.)
+    │
+    ▼ Engine.evaluate() → EngineDecision
+    │   ├── Policy evaluator: match rules, check deny/allow
+    │   ├── Invariant checker: 6 defaults + custom invariants
+    │   └── Evidence pack: structured audit record
+    │
+    ▼ Monitor.process() → MonitorDecision
+    │   ├── Track escalation level (NORMAL → ELEVATED → HIGH → LOCKDOWN)
+    │   └── LOCKDOWN = all actions denied until human intervention
+    │
+    ├── If DENIED:
+    │   ├── emit ACTION_DENIED
+    │   ├── sink events to JSONL
+    │   └── return { allowed: false, intervention }
+    │
+    └── If ALLOWED:
+        ├── emit ACTION_ALLOWED
+        ├── Execute via adapter registry (file/shell/git handlers)
+        ├── emit ACTION_EXECUTED or ACTION_FAILED
+        ├── sink events to JSONL
+        └── return { allowed: true, executed: true/false, execution result }
 ```
 
 ## Layer Responsibilities
 
-### AgentGuard Layer
+### Kernel Layer (Active Focus)
 
-AgentGuard is the **governance producer**. It does not render UI, track progression, or manage game state.
+The kernel is the **governance producer and action executor**. It is the core of the system.
+
+| Component | File | Responsibility |
+|-----------|------|----------------|
+| Kernel loop | `agentguard/kernel.ts` | Orchestrate propose → evaluate → execute → emit |
+| AAB | `agentguard/core/aab.ts` | Normalize tool calls, detect destructive commands |
+| Engine | `agentguard/core/engine.ts` | Policy + invariant evaluation, intervention selection |
+| Monitor | `agentguard/monitor.ts` | Escalation tracking, lockdown enforcement |
+| Policy evaluator | `agentguard/policies/evaluator.ts` | Rule matching with wildcards and scopes |
+| Policy loader | `agentguard/policies/loader.ts` | JSON policy validation |
+| YAML loader | `agentguard/policies/yaml-loader.ts` | YAML policy parsing |
+| Invariant checker | `agentguard/invariants/checker.ts` | System state invariant verification |
+| Evidence packs | `agentguard/evidence/pack.ts` | Audit trail generation |
+| File adapter | `agentguard/adapters/file.ts` | Read/write/delete/move files |
+| Shell adapter | `agentguard/adapters/shell.ts` | Execute shell commands with timeout |
+| Git adapter | `agentguard/adapters/git.ts` | Git operations with validation |
+| Claude Code adapter | `agentguard/adapters/claude-code.ts` | Hook payload normalization |
+| TUI renderer | `agentguard/renderers/tui.ts` | Terminal action stream display |
+| JSONL sink | `agentguard/sinks/jsonl.ts` | Event persistence |
+
+### Domain Layer (Shared)
+
+Pure domain logic with no environment dependencies.
+
+| Component | File | Responsibility |
+|-----------|------|----------------|
+| Canonical actions | `domain/actions.ts` | 23 action types, 8 classes |
+| Canonical events | `domain/events.ts` | 50+ event kinds, factory, validation |
+| Reference monitor | `domain/reference-monitor.ts` | Action authorization with decision trail |
+| Adapter registry | `domain/execution/adapters.ts` | Action class → handler mapping |
+| Event store | `domain/event-store.ts` | In-memory event persistence |
+
+### CLI Layer
+
+| Component | File | Responsibility |
+|-----------|------|----------------|
+| `agentguard guard` | `cli/commands/guard.ts` | Start governed action runtime |
+| `agentguard inspect` | `cli/commands/inspect.ts` | Show action graph for a run |
+| `agentguard events` | `cli/commands/inspect.ts` | Show raw event stream for a run |
+
+### BugMon Layer (Deprioritized)
+
+BugMon is the **event consumer and game layer**. It remains functional but is not under active development.
 
 | Responsibility | Description |
-|---------------|-------------|
-| Action interception | Intercept agent actions before execution |
-| Policy evaluation | Evaluate actions against declared policies |
-| Invariant monitoring | Verify system invariants hold |
-| Blast radius computation | Assess scope of impact |
-| Evidence generation | Record evaluation details for audit |
-| Event emission | Produce governance events into the canonical model |
-
-See [AgentGuard specification](agentguard.md).
-
-### BugMon Layer
-
-BugMon is the **event consumer and interaction layer**. It does not evaluate policies, authorize actions, or enforce constraints.
-
-| Responsibility | Description |
-|---------------|-------------|
-| Event consumption | Subscribe to all canonical events |
+|----------------|-------------|
+| Event consumption | Subscribe to canonical events |
 | Encounter generation | Map events to BugMon creatures |
 | Battle engine | Turn-based combat system |
-| Run management | Session-scoped roguelike run lifecycle |
-| Progression tracking | XP, levels, Bug Grimoire, achievements |
-| Rendering | Terminal, browser, and mobile UIs |
-| Replay | Reconstruct past sessions from event streams |
-
-See [Roguelike Design](roguelike-design.md).
-
-### Shared Layer
-
-The shared layer provides the canonical event model and infrastructure used by both systems.
-
-| Component | Description | Path |
-|-----------|-------------|------|
-| Event schema | Canonical event structure | `src/domain/events.ts` |
-| EventBus | Universal pub/sub | `src/core/event-bus.ts`, `src/domain/event-bus.ts` |
-| Fingerprinting | Stable event deduplication | `src/domain/ingestion/fingerprint.ts` |
-| Pipeline | Event normalization | `src/domain/ingestion/pipeline.ts` |
-| Event store | Event persistence | `src/domain/event-store.ts` |
-| Execution log | Causal chain tracking | `src/domain/execution/` |
-
-## Current Implementation Mapping
-
-The codebase maps to the unified architecture as follows:
-
-| Unified Layer | Current Directory | Description |
-|--------------|-------------------|-------------|
-| Shared / Events | `src/domain/` | Pure domain logic, event bus, ingestion pipeline |
-| Shared / Core | `src/core/` | EventBus, error parsing, matching |
-| BugMon / Battle Engine | `src/game/battle/` + `src/domain/battle.ts` | Battle system |
-| BugMon / Dungeon Runner | `src/game/dungeon/` | Idle auto-dungeon (primary game mode) |
-| BugMon / Design System | `src/game/theme.ts` | Premium dark aesthetic, tokens |
-| BugMon / Terminal Renderer | `src/cli/renderer.ts` | ANSI terminal UI |
-| BugMon / Browser Renderer | `src/game/` (engine, world, sprites, audio) | Canvas 2D browser game |
-| BugMon / Grimoire | `src/meta/bugdex.ts` | Enemy compendium tracking |
-| BugMon / Stats | `src/game/evolution/tracker.ts` | Dev activity tracking |
-| Shared / Data | `ecosystem/data/` | Game content (JSON + JS modules) |
-| AgentGuard / Governance | `src/agentguard/` | AAB, policies, invariants, evidence |
-| AgentGuard / Action Interception | `src/core/sources/claude-hook-source.ts` | Claude Code hook |
-| BugMon / Boss System | `src/meta/bosses.ts` | Boss trigger definitions |
-| Orchestration | `src/orchestration/` | Multi-agent pipeline |
-
-## Target Directory Structure
-
-```
-agentguard/                    ← Governance runtime
-├── core/                      Runtime engine (AAB, evaluation loop)
-├── policies/                  Policy definitions and evaluation
-├── invariants/                Invariant definitions and monitoring
-├── evidence/                  Evidence pack generation and storage
-└── cli/                       CLI governance commands
-
-bugmon/                        ← Roguelike game layer
-├── core/                      Run engine, encounter generation
-├── battle-engine/             Turn-based combat (from domain/battle.js)
-├── grimoire/                  Enemy compendium and progression
-├── stats/                     Statistics and meta-progression
-└── renderers/
-    ├── terminal/              ANSI terminal renderer (from core/cli/)
-    ├── browser/               Canvas 2D game (from game/)
-    └── mobile/                Mobile-optimized renderer
-
-shared/                        ← Canonical event model
-├── events/                    Event schema and definitions
-├── schemas/                   Data format schemas
-├── fingerprints/              Deduplication logic
-└── replay/                    Event stream replay engine
-```
-
-This restructuring is a future target. The current layered architecture (`core/`, `game/`, `ecosystem/`, `domain/`) continues to function and is not moved in this phase.
+| Progression tracking | XP, levels, Bug Grimoire |
+| Rendering | Terminal + browser game UIs |
 
 ## Integration Guarantees
 
-1. **Single event schema.** AgentGuard and BugMon both produce and consume events conforming to the same canonical schema. No translation layer needed.
+1. **Single event schema.** The kernel and all consumers use the same canonical event format.
 
-2. **Unidirectional governance flow.** AgentGuard produces governance events. BugMon consumes them. BugMon never influences governance decisions.
+2. **Kernel as single mediation point.** All agent actions pass through the kernel. No bypass.
 
-3. **Independent operation.** BugMon works without AgentGuard (developer signal events only). AgentGuard works without BugMon (governance enforcement only, no game layer). Together, they form the complete system.
+3. **Independent operation.** The kernel works without BugMon. BugMon works without the kernel (consuming developer signal events only). They connect through the canonical event model.
 
-4. **Shared event store.** Both systems write to and read from the same event store. This enables cross-cutting queries (e.g., "show all events from this session, both developer errors and governance violations").
+4. **Deterministic evaluation.** Same action + same policy + same state = same decision. No inference, no heuristics.
 
-5. **Zero coupling between renderers.** Terminal, browser, and mobile renderers are independent subscribers. Adding a new renderer requires no changes to AgentGuard, the event model, or other renderers.
+5. **Observable.** Every decision produces events. Every event is sunk to JSONL. Every run is inspectable.
