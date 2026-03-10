@@ -93,7 +93,7 @@ src/
 │   ├── replay.ts           # Session replay logic
 │   ├── session-store.ts    # Session management
 │   ├── file-event-store.ts # File-based event persistence
-│   └── commands/           # analytics, guard, inspect, replay, export, import, plugin, claude-hook, claude-init
+│   └── commands/           # analytics, guard, inspect, replay, export, import, simulate, plugin, claude-hook, claude-init
 ├── plugins/                # Plugin ecosystem
 │   ├── discovery.ts        # Plugin discovery mechanism
 │   ├── registry.ts         # Plugin registry
