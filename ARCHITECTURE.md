@@ -49,6 +49,7 @@ src/
 ├── invariants/    Invariant system (6 built-in definitions, checker)
 ├── adapters/      Execution adapters (file, shell, git, claude-code)
 ├── cli/           CLI entry point and commands
+├── telemetry/     Runtime telemetry and logging
 └── core/          Shared utilities (types, actions, hash, execution-log)
 ```
 
@@ -60,6 +61,7 @@ src/
 - **invariants/** may import from core/, events/ only
 - **adapters/** may import from core/, kernel/ only
 - **cli/** may import from kernel/, events/, policy/, core/
+- **telemetry/** may import from core/ only
 - **core/** has no project imports (leaf layer)
 
 ## Key Design Decisions

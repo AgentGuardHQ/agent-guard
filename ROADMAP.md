@@ -52,7 +52,7 @@ Extend the event system into the formal canonical event model.
 - [x] Event store interface (persist, query, replay)
 - [x] Tests for all event types and lifecycle
 
-## Phase 2 — AgentGuard Governance Runtime `MOSTLY COMPLETE`
+## Phase 2 — AgentGuard Governance Runtime `COMPLETE`
 
 > **Theme:** Deterministic agent governance
 
@@ -64,11 +64,11 @@ Build the governance runtime that evaluates agent actions against policies and i
 - [x] Deterministic policy evaluator (`src/policy/evaluator.ts`)
 - [x] Invariant monitoring engine (`src/invariants/checker.ts`)
 - [x] Built-in invariants (`src/invariants/definitions.ts`)
-- [ ] Blast radius computation
+- [x] Blast radius computation (`src/kernel/blast-radius.ts`)
 - [x] Evidence pack generation and persistence (`src/kernel/evidence.ts`)
 - [x] CLI governance commands (`agentguard guard`, `agentguard inspect`)
 - [x] Governance event emission into canonical event model
-- [ ] Integration with Claude Code hook (governance events from agent actions)
+- [x] Integration with Claude Code hook (`src/adapters/claude-code.ts`, `src/cli/commands/claude-hook.ts`)
 
 ## Phase 3 — Event Persistence + Replay `PARTIALLY COMPLETE`
 
@@ -76,7 +76,7 @@ Build the governance runtime that evaluates agent actions against policies and i
 
 Implement durable event storage and deterministic replay.
 
-- [x] File-based event store (`src/events/store.ts`)
+- [x] File-based event store (`src/cli/file-event-store.ts`)
 - [x] Event stream serialization (NDJSON/JSONL)
 - [x] Session metadata (run ID, timestamps)
 - [x] Execution event log (`src/core/execution-log/`)

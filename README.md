@@ -235,8 +235,9 @@ src/
 │   └── registry.ts         # Adapter registry
 ├── cli/                    # CLI entry point + commands
 │   ├── bin.ts              # Main entry
-│   └── commands/           # guard, inspect, replay, claude-hook
-└── core/                   # Shared utilities (types, actions, hash)
+│   └── commands/           # guard, inspect, replay, claude-hook, claude-init
+├── telemetry/              # Runtime telemetry and logging
+└── core/                   # Shared utilities (types, actions, hash, execution-log)
 ```
 
 ## Run Locally

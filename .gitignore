@@ -5,5 +5,10 @@ runtime/events/*
 runtime/replay/*
 !runtime/events/.gitkeep
 !runtime/replay/.gitkeep
-.agentguard/
-logs/
+# Governance runtime — ignore per-run artifacts, track audit trail
+.agentguard/*
+!.agentguard/events/
+!.agentguard/events/.gitkeep
+logs/*
+!logs/.gitkeep
+!logs/runtime-events.jsonl
