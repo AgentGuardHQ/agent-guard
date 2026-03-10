@@ -89,11 +89,12 @@ src/
 │   ├── colors.ts           # Terminal color helpers
 │   ├── tui.ts              # TUI renderer (terminal action stream)
 │   ├── policy-resolver.ts  # Policy file discovery and resolution
+│   ├── evidence-summary.ts # Evidence summary generation
 │   ├── recorder.ts         # Event recording
 │   ├── replay.ts           # Session replay logic
 │   ├── session-store.ts    # Session management
 │   ├── file-event-store.ts # File-based event persistence
-│   └── commands/           # analytics, guard, inspect, replay, export, import, simulate, plugin, claude-hook, claude-init
+│   └── commands/           # analytics, guard, inspect, replay, export, import, simulate, plugin, claude-hook, claude-init, evidence-pr
 ├── plugins/                # Plugin ecosystem
 │   ├── discovery.ts        # Plugin discovery mechanism
 │   ├── registry.ts         # Plugin registry
@@ -133,7 +134,7 @@ vscode-extension/              # VS Code extension
 
 tests/
 ├── *.test.js               # 14 JS test files (custom zero-dependency harness)
-└── ts/*.test.ts            # 51 TS test files (vitest)
+└── ts/*.test.ts            # 56 TS test files (vitest)
 policy/                     # Policy configuration (JSON: action_rules, capabilities)
 docs/                       # System documentation (architecture, event model, specs)
 hooks/                      # Git hooks (post-commit, post-merge)
@@ -207,6 +208,7 @@ Each top-level directory maps to a single architectural concept:
 - `agentguard plugin list|install|remove|search` — Manage plugins
 - `agentguard claude-hook` — Handle Claude Code PreToolUse/PostToolUse hook events
 - `agentguard claude-init` — Set up Claude Code hook integration
+- `agentguard evidence-pr` — Generate PR governance reports from evidence packs
 
 ### Event Model
 The canonical event model is the architectural spine. Event kinds defined in `src/events/schema.ts`:
@@ -215,6 +217,7 @@ The canonical event model is the architectural spine. Event kinds defined in `sr
 - **Safety**: `BlastRadiusExceeded`, `MergeGuardFailure`, `EvidencePackGenerated`
 - **Reference Monitor**: `ActionRequested`, `ActionAllowed`, `ActionDenied`, `ActionEscalated`, `ActionExecuted`, `ActionFailed`
 - **Decision & Simulation**: `DecisionRecorded`, `SimulationCompleted`
+- **Policy Traces**: `PolicyTraceRecorded`
 - **Pipeline**: `PipelineStarted`, `StageCompleted`, `StageFailed`, `PipelineCompleted`, `PipelineFailed`, `FileScopeViolation`
 - **Dev activity**: `FileSaved`, `TestCompleted`, `BuildCompleted`, `CommitCreated`, `CodeReviewed`, `DeployCompleted`, `LintCompleted`
 - **Battle lifecycle**: `ENCOUNTER_STARTED`, `MOVE_USED`, `DAMAGE_DEALT`, `HEALING_APPLIED`, `PASSIVE_ACTIVATED`, `BUGMON_FAINTED`, `CACHE_ATTEMPTED`, `CACHE_SUCCESS`, `BATTLE_ENDED`
@@ -271,7 +274,7 @@ npm run test:coverage      # Run with coverage (c8, 50% line threshold)
 
 **Test structure:**
 - **JS tests** (`tests/*.test.js`): 14 files using a custom zero-dependency harness (`tests/run.js` with `node:assert`)
-- **TypeScript tests** (`tests/ts/*.test.ts`): 53 files using vitest
+- **TypeScript tests** (`tests/ts/*.test.ts`): 56 files using vitest
 - **Coverage areas**: adapters, analytics, kernel (AAB, engine, monitor, blast radius, integration, e2e pipeline), CLI commands, decision records, domain models, events, evidence packs, execution log, impact forecast, invariants, JSONL persistence, notification formatter, plugins (discovery, registry, validation), policy evaluation (including pack loader), renderers, replay (engine, comparator, processor), simulation, telemetry, TUI renderer, VS Code event reader, YAML loading
 
 ## CI/CD & Automation
