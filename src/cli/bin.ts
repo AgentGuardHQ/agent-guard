@@ -17,6 +17,24 @@ const command = args[0];
 const wantsHelp = args.includes('--help') || args.includes('-h');
 
 const COMMANDS: Record<string, CommandHelp> = {
+  analytics: {
+    name: 'agentguard analytics',
+    description: 'Analyze violation patterns across governance sessions',
+    usage: 'agentguard analytics [flags]',
+    flags: [
+      { flag: '--format, -f <format>', description: 'Output format: terminal, json, markdown' },
+      { flag: '--json', description: 'Output as JSON' },
+      { flag: '--markdown, --md', description: 'Output as Markdown' },
+      { flag: '--dir, -d <path>', description: 'Base directory for event data' },
+      { flag: '--min-cluster <n>', description: 'Minimum cluster size (default: 2)' },
+    ],
+    examples: [
+      'agentguard analytics',
+      'agentguard analytics --json',
+      'agentguard analytics --markdown',
+      'agentguard analytics --min-cluster 3',
+    ],
+  },
   guard: {
     name: 'agentguard guard',
     description: 'Start the governed action runtime — enforce policies and invariants',
@@ -94,6 +112,17 @@ const COMMANDS: Record<string, CommandHelp> = {
 
 async function main() {
   switch (command) {
+    case 'analytics': {
+      if (wantsHelp) {
+        console.log(formatHelp(COMMANDS.analytics));
+        break;
+      }
+      const { analytics: analyticsCmd } = await import('./commands/analytics.js');
+      const code = await analyticsCmd(args.slice(1));
+      process.exit(code);
+      break;
+    }
+
     case 'guard': {
       if (wantsHelp) {
         console.log(formatHelp(COMMANDS.guard));
@@ -226,6 +255,7 @@ function printHelp(): void {
     agentguard guard --dry-run                Evaluate without executing actions
     agentguard inspect [runId]                Inspect action graph and decisions
     agentguard events [runId]                 Show raw event stream for a run
+    agentguard analytics                      Analyze violation patterns across sessions
 
   \x1b[1mPortability:\x1b[0m
     agentguard export <runId>                 Export a governance session to JSONL
