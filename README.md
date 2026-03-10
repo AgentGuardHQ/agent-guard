@@ -268,6 +268,13 @@ src/
 │   └── commands/           # guard, inspect, replay, export, import, plugin, claude-hook, claude-init
 ├── telemetry/              # Runtime telemetry and logging
 └── core/                   # Shared utilities (types, actions, hash, rng, execution-log)
+
+vscode-extension/              # VS Code extension
+├── src/
+│   ├── extension.ts           # Sidebar panels, file watcher, notifications
+│   ├── providers/             # Tree data providers (run status, run history)
+│   └── services/              # Event reader, notification formatter + service
+└── package.json               # Extension manifest
 ```
 
 ## Run Locally
