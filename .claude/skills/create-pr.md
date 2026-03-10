@@ -8,7 +8,18 @@ All tests must pass — run `run-tests` first.
 
 ## Steps
 
-### 1. Push Branch to Remote
+### 1. Stage Governance Telemetry
+
+Stage governance event files so they are committed with the PR branch:
+
+```bash
+git add .agentguard/events/*.jsonl 2>/dev/null || true
+git add logs/runtime-events.jsonl 2>/dev/null || true
+```
+
+If no governance files exist yet, this is a no-op — proceed normally.
+
+### 2. Push Branch to Remote
 
 ```bash
 git push -u origin $(git branch --show-current)
@@ -16,7 +27,7 @@ git push -u origin $(git branch --show-current)
 
 If push fails due to remote rejection, diagnose and report. Do NOT force push.
 
-### 2. Collect Governance Telemetry
+### 3. Collect Governance Telemetry
 
 Read governance event data from this session:
 
@@ -42,7 +53,7 @@ cat logs/runtime-events.jsonl 2>/dev/null | wc -l
 
 If no telemetry files exist, note "No governance telemetry recorded" — still proceed with PR creation.
 
-### 3. Generate PR Body
+### 4. Generate PR Body
 
 Use this structure:
 
@@ -81,7 +92,7 @@ Source: `.agentguard/events/` and `logs/runtime-events.jsonl`
 </details>
 ```
 
-### 4. Create the PR
+### 5. Create the PR
 
 ```bash
 gh pr create --title "<type>(issue-<N>): <concise title>" --body "<generated body>"
@@ -101,13 +112,13 @@ Update the existing PR instead:
 gh pr edit <PR_NUMBER> --body "<updated body>"
 ```
 
-### 5. Update Issue Label
+### 6. Update Issue Label
 
 ```bash
 gh issue edit <ISSUE_NUMBER> --remove-label "status:in-progress" --add-label "status:review"
 ```
 
-### 6. Comment on Issue
+### 7. Comment on Issue
 
 ```bash
 gh issue comment <ISSUE_NUMBER> --body "**AgentGuard Agent** — pull request created.
