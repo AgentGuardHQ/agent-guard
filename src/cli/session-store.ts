@@ -23,6 +23,8 @@ function generateSessionId(): string {
 interface SessionMeta {
   command?: string;
   repo?: string;
+  /** Seed used by the kernel RNG — stored for deterministic replay */
+  seed?: number;
 }
 
 interface SessionEvent {
@@ -36,6 +38,8 @@ interface SessionData {
   startedAt: string;
   command: string | null;
   repo: string | null;
+  /** Seed used by the kernel RNG — enables deterministic replay */
+  seed: number | null;
   events: SessionEvent[];
   summary: Record<string, unknown> | null;
   endedAt: string | null;
@@ -58,6 +62,7 @@ export function createSession(meta: SessionMeta = {}): SessionWriter {
     startedAt: new Date().toISOString(),
     command: meta.command || null,
     repo: meta.repo || null,
+    seed: meta.seed ?? null,
     events: [],
     summary: null,
     endedAt: null,

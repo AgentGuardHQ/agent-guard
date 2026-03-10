@@ -1,7 +1,6 @@
 // Replay CLI — flight recorder playback for debugging sessions.
 //
 // DONE(roadmap): Phase 4 — Full replay engine: see src/kernel/replay-engine.ts
-// TODO(roadmap): Phase 4 — Deterministic replay with seeded RNG
 // TODO(roadmap): Phase 4 — Replay comparator (verify original vs replayed outcomes)
 // TODO(roadmap): Phase 6 — Replay processor plugin interface
 
@@ -64,6 +63,7 @@ interface SessionData {
   startedAt: string;
   endedAt?: string | null;
   command?: string | null;
+  seed?: number | null;
   events: ReplayEvent[];
   summary?: Record<string, unknown> | null;
 }
@@ -182,6 +182,8 @@ function replayTimeline(session: SessionData, filterKind: string | null): void {
   lines.push(dim(`  Session: ${session.id}`));
   if (session.command) lines.push(dim(`  Command: ${session.command}`));
   lines.push(dim(`  Started: ${session.startedAt}`));
+  if (session.seed !== undefined && session.seed !== null)
+    lines.push(dim(`  Seed: ${session.seed}`));
   lines.push('');
   lines.push(dim('  TIME     EVENT'));
   lines.push(dim('  ──────── ─────────────────────────────────────────'));
@@ -281,6 +283,8 @@ function renderSessionStats(session: SessionData): void {
   lines.push('');
   lines.push(`  Duration:    ${bold(formatElapsed(duration))}`);
   lines.push(`  Events:      ${bold(String(events.length))}`);
+  if (session.seed !== undefined && session.seed !== null)
+    lines.push(`  Seed:        ${bold(String(session.seed))}`);
   lines.push(`  Errors:      ${bold(color(String(errors), errors > 0 ? 'red' : 'green'))}`);
   lines.push(`  Encounters:  ${bold(String(encounters))}`);
   lines.push(`  Battles:     ${bold(String(battles))} (${victories} won)`);

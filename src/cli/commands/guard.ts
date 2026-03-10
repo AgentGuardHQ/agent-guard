@@ -19,6 +19,8 @@ import { createGitSimulator } from '../../kernel/simulation/git-simulator.js';
 import { createFilesystemSimulator } from '../../kernel/simulation/filesystem-simulator.js';
 import { createPackageSimulator } from '../../kernel/simulation/package-simulator.js';
 import type { RawAgentAction } from '../../kernel/aab.js';
+import { generateSeed, createSeededRng } from '../../core/rng.js';
+import { simpleHash } from '../../core/hash.js';
 
 export interface GuardOptions {
   policy?: string;
@@ -41,8 +43,12 @@ export async function guard(_args: string[], options: GuardOptions = {}): Promis
     simulators.register(createPackageSimulator());
   }
 
-  // Generate run ID early so both sinks share it
-  const runId = `run_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  // Create seeded RNG — seed is stored in session metadata for deterministic replay
+  const seed = generateSeed();
+  const rng = createSeededRng(seed);
+
+  // Generate run ID using seeded RNG so both sinks share it
+  const runId = `run_${Date.now()}_${simpleHash(rng.random().toString())}`;
 
   // Create sinks
   const jsonlSink = createJsonlSink({ runId });
@@ -52,6 +58,7 @@ export async function guard(_args: string[], options: GuardOptions = {}): Promis
   // Build kernel config
   const kernelConfig: KernelConfig = {
     runId,
+    rng,
     policyDefs,
     dryRun: options.dryRun ?? false,
     adapters: options.dryRun ? undefined : createLiveRegistry(),

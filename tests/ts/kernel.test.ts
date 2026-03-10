@@ -6,6 +6,7 @@ import { createDryRunRegistry } from '../../src/core/adapters.js';
 import { resetActionCounter } from '../../src/core/actions.js';
 import { resetEventCounter } from '../../src/events/schema.js';
 import type { DomainEvent } from '../../src/core/types.js';
+import { createSeededRng } from '../../src/core/rng.js';
 
 beforeEach(() => {
   resetActionCounter();
@@ -57,9 +58,7 @@ describe('Kernel', () => {
         {
           id: 'protect-main',
           name: 'Protect Main Branch',
-          rules: [
-            { action: 'git.push', effect: 'deny', reason: 'Protected branch' },
-          ],
+          rules: [{ action: 'git.push', effect: 'deny', reason: 'Protected branch' }],
           severity: 4,
         },
       ],
@@ -171,6 +170,38 @@ describe('Kernel', () => {
 
     await kernel.propose({ tool: 'Read', file: 'test.ts', agent: 'test' });
     expect(kernel.getEventCount()).toBeGreaterThan(0);
+  });
+});
+
+describe('Kernel with seeded RNG', () => {
+  it('exposes the seed via getSeed()', () => {
+    const rng = createSeededRng(42);
+    const kernel = createKernel({ dryRun: true, rng });
+    expect(kernel.getSeed()).toBe(42);
+  });
+
+  it('produces deterministic run IDs from the same seed', () => {
+    // Two kernels with the same seed (and no explicit runId) should get the same run ID
+    // since generateRunId uses the seeded RNG
+    const rng1 = createSeededRng(12345);
+    const rng2 = createSeededRng(12345);
+    const kernel1 = createKernel({ dryRun: true, rng: rng1 });
+    const kernel2 = createKernel({ dryRun: true, rng: rng2 });
+
+    // Run IDs include Date.now() so they may differ by timestamp,
+    // but the hash suffix should be identical
+    const suffix1 = kernel1.getRunId().split('_').slice(2).join('_');
+    const suffix2 = kernel2.getRunId().split('_').slice(2).join('_');
+    expect(suffix1).toBe(suffix2);
+  });
+
+  it('generates different run IDs for different seeds', () => {
+    const kernel1 = createKernel({ dryRun: true, rng: createSeededRng(1) });
+    const kernel2 = createKernel({ dryRun: true, rng: createSeededRng(2) });
+
+    const suffix1 = kernel1.getRunId().split('_').slice(2).join('_');
+    const suffix2 = kernel2.getRunId().split('_').slice(2).join('_');
+    expect(suffix1).not.toBe(suffix2);
   });
 });
 

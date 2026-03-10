@@ -22,6 +22,7 @@ export function registerReplayCommand(program: Command): void {
     .option('-f, --from <eventId>', 'Start replay from this event ID')
     .option('--kind <kind>', 'Filter by event kind')
     .option('--actor <actor>', 'Filter by actor (human, agent, system)')
+    .option('--seed <seed>', 'Seed for deterministic replay (overrides session seed)')
     .option('--limit <n>', 'Maximum events to display', '50')
     .option('-r, --run <runId>', 'Replay a governance run by ID')
     .option('-l, --last', 'Replay the most recent governance run')
@@ -36,6 +37,7 @@ export function registerReplayCommand(program: Command): void {
           from?: string;
           kind?: string;
           actor?: string;
+          seed?: string;
           limit: string;
           run?: string;
           last?: boolean;
@@ -102,6 +104,9 @@ export function registerReplayCommand(program: Command): void {
         const limit = parseInt(options.limit, 10);
         const displayed = events.slice(0, limit);
 
+        if (options.seed) {
+          console.log(`\nSeed: ${options.seed} (override)`);
+        }
         console.log(`\nReplaying ${displayed.length} of ${events.length} events:\n`);
 
         for (const event of displayed) {

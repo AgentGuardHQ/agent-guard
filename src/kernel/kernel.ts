@@ -24,6 +24,8 @@ import { simpleHash } from '../core/hash.js';
 import type { GovernanceDecisionRecord, DecisionSink } from './decisions/types.js';
 import { buildDecisionRecord } from './decisions/factory.js';
 import type { SimulatorRegistry } from './simulation/types.js';
+import type { SeededRng } from '../core/rng.js';
+import { generateSeed, createSeededRng } from '../core/rng.js';
 
 export interface KernelResult {
   allowed: boolean;
@@ -53,6 +55,8 @@ export interface KernelConfig extends MonitorConfig {
   simulators?: SimulatorRegistry;
   /** Blast radius threshold — simulation above this triggers invariant re-check */
   simulationBlastRadiusThreshold?: number;
+  /** Optional seeded RNG for deterministic replay. If omitted, a random seed is generated. */
+  rng?: SeededRng;
 }
 
 export interface Kernel {
@@ -61,17 +65,20 @@ export interface Kernel {
     systemContext?: Record<string, unknown>
   ): Promise<KernelResult>;
   getRunId(): string;
+  /** Returns the seed used by this kernel's RNG (for session recording / replay) */
+  getSeed(): number;
   getActionLog(): KernelResult[];
   getEventCount(): number;
   shutdown(): void;
 }
 
-function generateRunId(): string {
-  return `run_${Date.now()}_${simpleHash(Math.random().toString())}`;
+function generateRunId(rng: SeededRng): string {
+  return `run_${Date.now()}_${simpleHash(rng.random().toString())}`;
 }
 
 export function createKernel(config: KernelConfig = {}): Kernel {
-  const runId = config.runId || generateRunId();
+  const rng = config.rng || createSeededRng(generateSeed());
+  const runId = config.runId || generateRunId(rng);
   const sinks: EventSink[] = config.sinks || [];
   const decisionSinks: DecisionSink[] = config.decisionSinks || [];
   const adapters = config.adapters || createAdapterRegistry();
@@ -447,6 +454,10 @@ export function createKernel(config: KernelConfig = {}): Kernel {
 
     getRunId() {
       return runId;
+    },
+
+    getSeed() {
+      return rng.seed;
     },
 
     getActionLog() {
