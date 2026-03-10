@@ -2,7 +2,7 @@
 //
 // DONE(roadmap): Phase 4 — Full replay engine: see src/kernel/replay-engine.ts
 // DONE(roadmap): Phase 4 — Replay comparator: see src/kernel/replay-comparator.ts
-// TODO(roadmap): Phase 6 — Replay processor plugin interface
+// DONE(roadmap): Phase 4 — Replay processor plugin interface: see src/kernel/replay-processor.ts
 
 import { loadSession, listSessions } from './session-store.js';
 import { color, bold, dim } from './colors.js';
