@@ -163,7 +163,7 @@ Create well-defined extension surfaces so the community can contribute invariant
 Surface governance activity through dashboards, traces, and metrics.
 
 - [ ] Timeline viewer for governance sessions (`agentguard replay --ui`)
-- [ ] Policy evaluation traces (which rule matched, why)
+- [x] Policy evaluation traces (which rule matched, why)
 - [x] Invariant violation analytics (frequency, clustering)
 - [ ] Metrics export (Prometheus / OpenTelemetry)
 - [ ] Session comparison (diff two governance runs side-by-side)
