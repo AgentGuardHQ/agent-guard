@@ -161,17 +161,19 @@ describe('computeRunRiskScore', () => {
     const low = computeRunRiskScore('low', []);
     expect(low.riskLevel).toBe('low');
 
-    // Medium: a few violations
+    // Medium: moderate violations with elevated escalation and some blast radius
     const medEvents = [
       makeEvent('PolicyDenied', { policy: 'p', action: 'shell.exec', reason: 'denied' }),
       makeEvent('PolicyDenied', { policy: 'p', action: 'shell.exec', reason: 'denied' }),
+      makeEvent('PolicyDenied', { policy: 'p', action: 'git.push', reason: 'denied' }),
       makeEvent('InvariantViolation', { invariant: 'iv', expected: 'a', actual: 'b' }),
+      makeEvent('BlastRadiusExceeded', { filesAffected: 15, limit: 10 }),
       makeEvent('ActionExecuted', { actionType: 'git.push', target: 'main', result: 'ok' }),
-      makeEvent('ActionExecuted', { actionType: 'git.push', target: 'main', result: 'ok' }),
-      makeEvent('ActionExecuted', { actionType: 'git.push', target: 'main', result: 'ok' }),
-      makeEvent('ActionExecuted', { actionType: 'file.delete', target: 'tmp.ts', result: 'ok' }),
+      makeEvent('ActionExecuted', { actionType: 'file.write', target: 'src/app.ts', result: 'ok' }),
     ];
     const med = computeRunRiskScore('med', medEvents);
+    expect(med.score).toBeGreaterThanOrEqual(26);
+    expect(med.score).toBeLessThanOrEqual(50);
     expect(med.riskLevel).toBe('medium');
 
     // Critical: massive violations + lockdown
