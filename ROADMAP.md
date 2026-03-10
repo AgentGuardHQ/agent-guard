@@ -117,7 +117,26 @@ Bring AgentGuard governance into editor environments.
 - [ ] JetBrains plugin (IntelliJ/WebStorm)
 - [ ] Claude Code deep integration (full governance kernel in hook pipeline)
 
-## Phase 6 — AI-Assisted Governance `PLANNED`
+## Phase 6 — Structured Storage Backend `PLANNED`
+
+> **Theme:** Replace flat-file JSONL with an embedded database for fast queries and audit at scale
+
+The JSONL persistence layer (Phase 3) was the right starting point — append-only, human-readable, zero dependencies. But it doesn't scale: every query requires filesystem enumeration + full file parsing into memory, and hundreds of `.jsonl` files accumulate in `.agentguard/`, polluting the working tree and slowing file watchers.
+
+Migrate to an **embedded SQLite database** (via `better-sqlite3`) as the primary storage backend for events, decisions, and session metadata. SQLite provides indexed queries, JSON column support (`json_extract()`), and consolidates hundreds of files into a single `~/.agentguard/agentguard.db`.
+
+- [ ] SQLite storage adapter implementing existing `EventStore` interface
+- [ ] Schema design: `events`, `decisions`, `sessions` tables with JSON payload columns
+- [ ] Indexed columns: `kind`, `timestamp`, `runId`, `actionType`, `fingerprint`
+- [ ] Migration utility: bulk-import existing `.jsonl` files into SQLite (`agentguard migrate`)
+- [ ] Query API: filter by time range, event kind, action type, run ID without loading all events
+- [ ] Aggregation queries for analytics (replace in-memory `loadAllEvents()` pattern)
+- [ ] JSONL export compatibility — `agentguard export` still produces portable JSONL
+- [ ] Storage location: `~/.agentguard/agentguard.db` (home directory, out of repo tree)
+- [ ] Retain JSONL as optional fallback/streaming sink for real-time tailing
+- [ ] Session metadata consolidation (replace per-session JSON files)
+
+## Phase 7 — AI-Assisted Governance `PLANNED`
 
 > **Theme:** AI-augmented governance. Requires Phase 2 + 3.
 
@@ -128,7 +147,7 @@ AI features are intentionally placed last. The system must be useful without AI 
 - [ ] AI pattern detection (recurring violation clusters across sessions)
 - [ ] Team observability (aggregate governance reports across a dev team)
 
-## Phase 7 — Predictive Governance `PLANNED`
+## Phase 8 — Predictive Governance `PLANNED`
 
 > **Theme:** Govern outcomes before execution
 
@@ -142,7 +161,7 @@ Extend the simulation engine from risk assessment to predictive governance — e
 - [ ] Simulation replay and comparison across runs
 - [ ] Dependency graph simulation (transitive impact of package changes)
 
-## Phase 8 — Governance Extensions `PLANNED`
+## Phase 9 — Governance Extensions `PLANNED`
 
 > **Theme:** Easy contributor entry points for the governance ecosystem
 
@@ -156,7 +175,7 @@ Create well-defined extension surfaces so the community can contribute invariant
 - [ ] Extension authoring guide and template scaffolding
 - [ ] `agentguard init --extension <type>` scaffolding command
 
-## Phase 9 — Governance Observability `PLANNED`
+## Phase 10 — Governance Observability `PLANNED`
 
 > **Theme:** See what governance is doing
 
@@ -168,7 +187,7 @@ Surface governance activity through dashboards, traces, and metrics.
 - [ ] Metrics export (Prometheus / OpenTelemetry)
 - [ ] Session comparison (diff two governance runs side-by-side)
 
-## Phase 10 — CI/CD Enforcement `PLANNED`
+## Phase 11 — CI/CD Enforcement `PLANNED`
 
 > **Theme:** Governance gates in the delivery pipeline
 
@@ -180,7 +199,7 @@ Integrate governance checks into CI/CD workflows as enforceable gates.
 - [ ] Evidence packs attached to pull requests
 - [ ] Policy violation gating (fail CI on unresolved violations)
 
-## Phase 11 — Multi-Agent Governance `PLANNED`
+## Phase 12 — Multi-Agent Governance `PLANNED`
 
 > **Theme:** Govern agent fleets, not just single agents
 
@@ -192,7 +211,7 @@ Extend the governance model to coordinate policies across multiple agents.
 - [ ] Agent-to-agent action verification
 - [ ] Multi-agent escalation coordination
 
-## Phase 12 — Remote Governance Runtime `PLANNED`
+## Phase 13 — Remote Governance Runtime `PLANNED`
 
 > **Theme:** Governance as a service
 
@@ -204,7 +223,7 @@ Run the governance kernel as a remote service for centralized policy management.
 - [ ] Multi-repo governance (single policy across repositories)
 - [ ] Team policy management dashboard
 
-## Phase 13 — Ecosystem Integrations `PLANNED`
+## Phase 14 — Ecosystem Integrations `PLANNED`
 
 > **Theme:** Govern any agent framework
 
