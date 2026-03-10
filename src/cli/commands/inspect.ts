@@ -100,7 +100,7 @@ export async function inspect(args: string[]): Promise<void> {
   }
 
   const events = loadEvents(targetRunId);
-  if (events.length === 0 && !showDecisions) return;
+  if (events.length === 0 && !showDecisions && !showTraces) return;
 
   process.stderr.write(`\n  \x1b[1mRun:\x1b[0m ${targetRunId}\n`);
 
