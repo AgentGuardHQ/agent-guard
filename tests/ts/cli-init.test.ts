@@ -99,6 +99,7 @@ describe('init command', () => {
             expect(pkg.agentguard).toBeDefined();
             expect(pkg.agentguard.id).toBe(`agentguard-test-${type}`);
             expect(pkg.agentguard.apiVersion).toBe('^1.0.0');
+            expect(pkg.agentguard.type).toBe(type);
           }
         });
 
