@@ -148,6 +148,11 @@ agentguard inspect [runId]                # Show action graph and decisions for 
 agentguard inspect --last                 # Inspect most recent run
 agentguard events [runId]                 # Show raw event stream for a run
 
+# === Simulation ===
+agentguard simulate <action-json>         # Simulate action and show predicted impact
+agentguard simulate --action <type>       # Simulate by action type and flags
+agentguard simulate ... --json            # Output raw JSON result
+
 # === Portability ===
 agentguard export <runId>                 # Export a governance session to JSONL
 agentguard export --last                  # Export the most recent run
@@ -265,7 +270,7 @@ src/
 │   └── index.ts            # Module re-exports
 ├── cli/                    # CLI entry point + commands
 │   ├── bin.ts              # Main entry
-│   └── commands/           # guard, inspect, replay, export, import, plugin, claude-hook, claude-init
+│   └── commands/           # guard, inspect, replay, export, import, simulate, plugin, claude-hook, claude-init
 ├── telemetry/              # Runtime telemetry and logging
 └── core/                   # Shared utilities (types, actions, hash, rng, execution-log)
 
