@@ -1,7 +1,7 @@
 // Policy loader — parses and validates policy definitions.
 // Pure domain logic. No DOM, no Node.js-specific APIs.
 //
-// TODO(roadmap): Phase 6 — Policy pack loading system (third-party policy packs)
+// Policy pack loading: see pack-loader.ts for extends/merge support.
 
 import type { LoadedPolicy } from './evaluator.js';
 

@@ -1,8 +1,9 @@
 // Shared policy discovery and loading — used by guard and claude-hook commands.
 
 import { readFileSync, existsSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { loadYamlPolicy } from '../policy/yaml-loader.js';
+import { resolve, dirname } from 'node:path';
+import { loadYamlPolicy, parseYamlPolicy } from '../policy/yaml-loader.js';
+import { resolveExtends, mergePolicies } from '../policy/pack-loader.js';
 
 const DEFAULT_POLICY_CANDIDATES = [
   'agentguard.yaml',
@@ -29,8 +30,30 @@ export function loadPolicyFile(policyPath: string): unknown[] {
   const content = readFileSync(absPath, 'utf8');
 
   if (absPath.endsWith('.yaml') || absPath.endsWith('.yml')) {
-    const policy = loadYamlPolicy(content, policyPath);
-    return [{ id: policy.id, name: policy.name, rules: policy.rules, severity: policy.severity }];
+    const localPolicy = loadYamlPolicy(content, policyPath);
+
+    // Check for extends (policy packs)
+    const def = parseYamlPolicy(content);
+    if (def.extends && def.extends.length > 0) {
+      const baseDir = dirname(absPath);
+      const { policies: packPolicies, errors } = resolveExtends(def.extends, baseDir);
+
+      for (const err of errors) {
+        process.stderr.write(`  \x1b[33mWarning:\x1b[0m ${err}\n`);
+      }
+
+      const merged = mergePolicies(localPolicy, packPolicies);
+      return merged.map((p) => ({ id: p.id, name: p.name, rules: p.rules, severity: p.severity }));
+    }
+
+    return [
+      {
+        id: localPolicy.id,
+        name: localPolicy.name,
+        rules: localPolicy.rules,
+        severity: localPolicy.severity,
+      },
+    ];
   }
 
   try {

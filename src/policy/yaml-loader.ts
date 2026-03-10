@@ -4,11 +4,12 @@
 
 import type { PolicyRule, LoadedPolicy } from './evaluator.js';
 
-interface YamlPolicyDef {
+export interface YamlPolicyDef {
   id?: string;
   name?: string;
   description?: string;
   severity?: number;
+  extends?: string[];
   rules?: YamlRule[];
 }
 
@@ -61,6 +62,7 @@ export function parseYamlPolicy(yaml: string): YamlPolicyDef {
   let currentRule: YamlRule | null = null;
   let inRules = false;
   let inBranches = false;
+  let inExtends = false;
 
   for (const rawLine of lines) {
     const line = rawLine.replace(/\r$/, '');
@@ -75,6 +77,7 @@ export function parseYamlPolicy(yaml: string): YamlPolicyDef {
     if (indent === 0) {
       inRules = false;
       inBranches = false;
+      inExtends = false;
       if (currentRule) {
         rules.push(currentRule);
         currentRule = null;
@@ -99,10 +102,30 @@ export function parseYamlPolicy(yaml: string): YamlPolicyDef {
         case 'severity':
           result.severity = parseInt(val, 10);
           break;
+        case 'extends':
+          if (val) {
+            // Inline array: extends: ["@agentguard/security-pack", "./custom"]
+            const arr = parseInlineArray(val);
+            if (arr.length > 0) {
+              result.extends = arr;
+            }
+          } else {
+            // Multi-line array follows
+            inExtends = true;
+            result.extends = [];
+          }
+          break;
         case 'rules':
           inRules = true;
           break;
       }
+      continue;
+    }
+
+    // Inside extends array (multi-line)
+    if (inExtends && trimmed.startsWith('- ')) {
+      result.extends = result.extends || [];
+      result.extends.push(trimQuotes(trimmed.slice(2).trim()));
       continue;
     }
 
