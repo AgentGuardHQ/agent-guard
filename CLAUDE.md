@@ -40,6 +40,7 @@ src/
 ├── kernel/                 # Governed action kernel
 │   ├── kernel.ts           # Orchestrator (propose → evaluate → execute → emit)
 │   ├── aab.ts              # Action Authorization Boundary (normalization)
+│   ├── blast-radius.ts     # Weighted blast radius computation engine
 │   ├── decision.ts         # Runtime assurance engine
 │   ├── monitor.ts          # Escalation state machine
 │   ├── evidence.ts         # Evidence pack generation
@@ -74,6 +75,7 @@ src/
 │   ├── args.ts             # Argument parsing utilities
 │   ├── colors.ts           # Terminal color helpers
 │   ├── tui.ts              # TUI renderer (terminal action stream)
+│   ├── policy-resolver.ts  # Policy file discovery and resolution
 │   ├── recorder.ts         # Event recording
 │   ├── replay.ts           # Session replay logic
 │   ├── session-store.ts    # Session management
@@ -90,10 +92,14 @@ src/
         ├── event-projections.ts # Event projections
         ├── event-schema.ts # Event schema definitions
         └── index.ts        # Module re-exports
+├── telemetry/              # Runtime telemetry
+│   ├── index.ts            # Module re-exports
+│   ├── runtimeLogger.ts    # Runtime logging implementation
+│   └── types.ts            # Telemetry type definitions
 
 tests/
 ├── *.test.js               # 14 JS test files (custom zero-dependency harness)
-└── ts/*.test.ts            # 35 TS test files (vitest)
+└── ts/*.test.ts            # 38 TS test files (vitest)
 policy/                     # Policy configuration (JSON: action_rules, capabilities)
 docs/                       # System documentation (architecture, event model, specs)
 hooks/                      # Git hooks (post-commit, post-merge)
@@ -149,6 +155,7 @@ Each top-level directory maps to a single architectural concept:
 - **src/adapters/** — Execution adapters (file, shell, git, claude-code)
 - **src/cli/** — CLI entry point and commands
 - **src/core/** — Shared utilities (types, actions, hash, execution-log)
+- **src/telemetry/** — Runtime telemetry and logging
 
 ### CLI Commands
 - `agentguard guard` — Start the governed action runtime (policy + invariant enforcement)
@@ -169,6 +176,7 @@ The canonical event model is the architectural spine. Event kinds defined in `sr
 - **Decision & Simulation**: `DecisionRecorded`, `SimulationCompleted`
 - **Pipeline**: `PipelineStarted`, `StageCompleted`, `StageFailed`, `PipelineCompleted`, `PipelineFailed`, `FileScopeViolation`
 - **Dev activity**: `FileSaved`, `TestCompleted`, `BuildCompleted`, `CommitCreated`, `CodeReviewed`, `DeployCompleted`, `LintCompleted`
+- **Battle lifecycle**: `ENCOUNTER_STARTED`, `MOVE_USED`, `DAMAGE_DEALT`, `HEALING_APPLIED`, `PASSIVE_ACTIVATED`, `BUGMON_FAINTED`, `CACHE_ATTEMPTED`, `CACHE_SUCCESS`, `BATTLE_ENDED`
 - **Ingestion**: `ErrorObserved`, `BugClassified`, `ActivityRecorded`, `EvolutionTriggered`
 
 ### Action Classes & Types
@@ -222,8 +230,8 @@ npm run test:coverage      # Run with coverage (c8, 50% line threshold)
 
 **Test structure:**
 - **JS tests** (`tests/*.test.js`): 14 files using a custom zero-dependency harness (`tests/run.js` with `node:assert`)
-- **TypeScript tests** (`tests/ts/*.test.ts`): 35 files using vitest
-- **Coverage areas**: adapters, kernel (AAB, engine, monitor), CLI commands, decision records, domain models, events, evidence packs, execution log, invariants, JSONL persistence, policy evaluation, simulation, YAML loading
+- **TypeScript tests** (`tests/ts/*.test.ts`): 38 files using vitest
+- **Coverage areas**: adapters, kernel (AAB, engine, monitor, blast radius), CLI commands, decision records, domain models, events, evidence packs, execution log, invariants, JSONL persistence, policy evaluation, simulation, telemetry, TUI renderer, YAML loading
 
 ## CI/CD & Automation
 
