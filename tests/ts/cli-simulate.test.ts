@@ -1,5 +1,8 @@
 // Tests for CLI simulate command — standalone impact analysis
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
+import { writeFileSync, mkdirSync, rmSync } from 'node:fs';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
 
 // Mock process.exit, stderr, stdout to capture output
 const _mockExit = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
@@ -126,5 +129,214 @@ describe('simulate command', () => {
     const output = stdoutChunks.join('');
     const result = JSON.parse(output.trim());
     expect(result.simulatorId).toBe('filesystem-simulator');
+  });
+});
+
+describe('simulate with --policy flag', () => {
+  const testDir = join(tmpdir(), 'agentguard-simulate-test-' + Date.now());
+
+  beforeEach(() => {
+    mkdirSync(testDir, { recursive: true });
+  });
+
+  afterAll(() => {
+    try {
+      rmSync(testDir, { recursive: true, force: true });
+    } catch {
+      // ignore cleanup errors
+    }
+  });
+
+  it('returns exit code 2 when policy denies the action', async () => {
+    const policyFile = join(testDir, 'deny-env.yaml');
+    writeFileSync(
+      policyFile,
+      `id: test-deny
+name: Test Deny Policy
+severity: 4
+rules:
+  - action: file.write
+    effect: deny
+    target: .env
+    reason: Secrets files must not be modified
+`
+    );
+
+    const { simulate } = await import('../../src/cli/commands/simulate.js');
+    const code = await simulate(
+      ['--action', 'file.write', '--target', '.env', '--policy', policyFile],
+      {}
+    );
+    expect(code).toBe(2);
+    const output = stderrChunks.join('');
+    expect(output).toContain('DENY');
+    expect(output).toContain('Secrets files');
+    expect(output).toContain('DENIED');
+  });
+
+  it('returns exit code 0 when policy allows the action', async () => {
+    const policyFile = join(testDir, 'allow-all.yaml');
+    writeFileSync(
+      policyFile,
+      `id: test-allow
+name: Test Allow Policy
+severity: 1
+rules:
+  - action: file.write
+    effect: allow
+    reason: All writes allowed
+`
+    );
+
+    const { simulate } = await import('../../src/cli/commands/simulate.js');
+    const code = await simulate(
+      ['--action', 'file.write', '--target', 'src/index.ts', '--policy', policyFile],
+      {}
+    );
+    expect(code).toBe(0);
+    const output = stderrChunks.join('');
+    expect(output).toContain('ALLOW');
+    expect(output).toContain('ALLOWED');
+  });
+
+  it('returns exit code 3 when invariants are violated', async () => {
+    const policyFile = join(testDir, 'allow-push.yaml');
+    writeFileSync(
+      policyFile,
+      `id: test-allow-push
+name: Test Allow Push Policy
+severity: 1
+rules:
+  - action: git.push
+    effect: allow
+    reason: Push allowed for testing
+`
+    );
+
+    const { simulate } = await import('../../src/cli/commands/simulate.js');
+    // git.push to main triggers the protected-branch invariant (directPush to protected branch)
+    const code = await simulate(
+      ['--action', 'git.push', '--branch', 'main', '--policy', policyFile],
+      {}
+    );
+    expect(code).toBe(3);
+    const output = stderrChunks.join('');
+    expect(output).toContain('FAIL');
+    expect(output).toContain('Protected Branch');
+  });
+
+  it('includes governance data in JSON output with --policy', async () => {
+    const policyFile = join(testDir, 'deny-json.yaml');
+    writeFileSync(
+      policyFile,
+      `id: test-deny-json
+name: Test Deny JSON Policy
+severity: 3
+rules:
+  - action: file.write
+    effect: deny
+    target: .env
+    reason: Env files blocked
+`
+    );
+
+    const { simulate } = await import('../../src/cli/commands/simulate.js');
+    const code = await simulate(
+      ['--action', 'file.write', '--target', '.env', '--json', '--policy', policyFile],
+      {}
+    );
+    expect(code).toBe(2);
+    const output = stdoutChunks.join('');
+    const result = JSON.parse(output.trim());
+    expect(result.governance).toBeDefined();
+    expect(result.governance.allowed).toBe(false);
+    expect(result.governance.policy.decision).toBe('deny');
+    expect(result.governance.policy.reason).toContain('Env files blocked');
+  });
+
+  it('shows governance allowed in JSON output when policy allows', async () => {
+    const policyFile = join(testDir, 'allow-json.yaml');
+    writeFileSync(
+      policyFile,
+      `id: test-allow-json
+name: Test Allow JSON Policy
+severity: 1
+rules:
+  - action: file.write
+    effect: allow
+    reason: Writes allowed
+`
+    );
+
+    const { simulate } = await import('../../src/cli/commands/simulate.js');
+    const code = await simulate(
+      ['--action', 'file.write', '--target', 'src/foo.ts', '--json', '--policy', policyFile],
+      {}
+    );
+    expect(code).toBe(0);
+    const output = stdoutChunks.join('');
+    const result = JSON.parse(output.trim());
+    expect(result.governance).toBeDefined();
+    expect(result.governance.allowed).toBe(true);
+    expect(result.governance.invariantViolations).toEqual([]);
+  });
+
+  it('passes policy option from SimulateOptions', async () => {
+    const policyFile = join(testDir, 'opts-policy.yaml');
+    writeFileSync(
+      policyFile,
+      `id: opts-test
+name: Options Test Policy
+severity: 3
+rules:
+  - action: file.write
+    effect: deny
+    target: .env
+    reason: Blocked via options
+`
+    );
+
+    const { simulate } = await import('../../src/cli/commands/simulate.js');
+    const code = await simulate(['--action', 'file.write', '--target', '.env', '--json'], {
+      policy: policyFile,
+    });
+    expect(code).toBe(2);
+    const output = stdoutChunks.join('');
+    const result = JSON.parse(output.trim());
+    expect(result.governance.policy.reason).toContain('Blocked via options');
+  });
+
+  it('policy denial takes priority over invariant violation in exit code', async () => {
+    const policyFile = join(testDir, 'deny-priority.yaml');
+    writeFileSync(
+      policyFile,
+      `id: test-deny-priority
+name: Test Deny Priority Policy
+severity: 4
+rules:
+  - action: git.push
+    effect: deny
+    branches: [main]
+    reason: Push to main denied by policy
+`
+    );
+
+    const { simulate } = await import('../../src/cli/commands/simulate.js');
+    // Both policy deny (push to main) AND invariant violation (direct push to protected branch)
+    const code = await simulate(
+      ['--action', 'git.push', '--branch', 'main', '--policy', policyFile],
+      {}
+    );
+    // Policy denial (exit 2) takes priority over invariant violation (exit 3)
+    expect(code).toBe(2);
+  });
+
+  it('does not include governance output when --policy is not provided', async () => {
+    const { simulate } = await import('../../src/cli/commands/simulate.js');
+    const code = await simulate(['--action', 'file.write', '--target', '.env', '--json']);
+    expect(code).toBe(0);
+    const output = stdoutChunks.join('');
+    const result = JSON.parse(output.trim());
+    expect(result.governance).toBeUndefined();
   });
 });

@@ -134,12 +134,14 @@ const COMMANDS: Record<string, CommandHelp> = {
       { flag: '--target <path>', description: 'Target file or resource path' },
       { flag: '--command <cmd>', description: 'Shell command (for shell.exec actions)' },
       { flag: '--branch <name>', description: 'Git branch name' },
-      { flag: '--json', description: 'Output raw SimulationResult as JSON' },
+      { flag: '--policy <file>', description: 'Policy file (YAML/JSON) to evaluate against' },
+      { flag: '--json', description: 'Output raw result as JSON' },
     ],
     examples: [
       'agentguard simulate \'{"tool":"Bash","command":"git push origin main"}\'',
       'agentguard simulate --action file.write --target .env',
       'agentguard simulate --action git.push --branch main --json',
+      'agentguard simulate --action file.write --target .env --policy agentguard.yaml',
     ],
   },
 };
@@ -248,7 +250,9 @@ async function main() {
       const { simulate: simulateCmd } = await import('./commands/simulate.js');
       const flags = args.slice(1);
       const jsonOut = flags.includes('--json');
-      const code = await simulateCmd(flags, { json: jsonOut });
+      const policyIdx = flags.findIndex((f) => f === '--policy' || f === '-p');
+      const simulatePolicy = policyIdx !== -1 ? flags[policyIdx + 1] : undefined;
+      const code = await simulateCmd(flags, { json: jsonOut, policy: simulatePolicy });
       process.exit(code);
       break;
     }
@@ -318,6 +322,7 @@ function printHelp(): void {
   \x1b[1mSimulation:\x1b[0m
     agentguard simulate <action-json>          Simulate action and show predicted impact
     agentguard simulate --action <type>        Simulate by action type and flags
+    agentguard simulate ... --policy <file>    Evaluate against policy (non-zero on deny)
     agentguard simulate ... --json             Output raw JSON result
 
   \x1b[1mPortability:\x1b[0m
