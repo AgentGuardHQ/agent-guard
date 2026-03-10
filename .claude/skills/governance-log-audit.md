@@ -1,6 +1,6 @@
 # Skill: Governance Log Audit
 
-Analyze governance event logs for anomalies, violation trends, escalation patterns, and policy effectiveness. Creates an issue if actionable findings exist. Designed for periodic scheduled execution.
+Analyze governance event logs for cross-session trends, escalation trajectory, and per-agent governance compliance. Focuses on historical pattern analysis and compliance reporting — leave real-time anomaly detection to the Observability Agent, and policy quality analysis to `policy-effectiveness-review`. Creates an issue if actionable findings exist. Designed for periodic scheduled execution.
 
 ## Prerequisites
 
@@ -57,33 +57,59 @@ Flag these thresholds:
 - Any ActionEscalated → **WARNING**
 - Any BlastRadiusExceeded → **WARNING**
 
-### 5. Identify Patterns
+### 5. Analyze Per-Agent Compliance
 
-Read the actual log content to identify patterns:
+Group events by agent identity (extract from event metadata):
 
 ```bash
-cat .agentguard/events/*.jsonl 2>/dev/null | grep "ActionDenied" | head -20
-cat .agentguard/events/*.jsonl 2>/dev/null | grep "PolicyDenied" | head -20
-cat .agentguard/events/*.jsonl 2>/dev/null | grep "InvariantViolation" | head -20
+cat .agentguard/events/*.jsonl 2>/dev/null | grep "ActionDenied\|PolicyDenied" | head -100
 ```
+
+For each agent:
+- **Total actions requested**
+- **Denial count and rate**
+- **Types of denials** (policy vs. invariant)
+- **Compliance score**: `(allowed / total) * 100`
+
+Identify:
+- **Compliant agents**: denial rate <5%
+- **Boundary-testing agents**: denial rate 5-20%
+- **Non-compliant agents**: denial rate >20% (persistent bad behavior)
+
+### 6. Analyze Cross-Session Trends
+
+If multiple log files exist (each representing a session), compare across sessions:
+
+```bash
+ls -lt .agentguard/events/*.jsonl 2>/dev/null | head -10
+```
+
+For the last 5 sessions, compute:
+- Denial rate per session (is it trending up or down?)
+- Escalation levels reached per session
+- Most common denial reason per session
+- Session duration and event volume
 
 Look for:
-- **Repeated denials**: same action type denied 3+ times (suggests policy misconfiguration or persistent bad behavior)
-- **Escalation sequences**: events showing progression from NORMAL → ELEVATED → HIGH
-- **Invariant clusters**: same invariant violated repeatedly (may need stronger enforcement)
-- **Time patterns**: bursts of violations in short windows
+- **Improving trend**: denial rate decreasing across sessions (agents learning)
+- **Degrading trend**: denial rate increasing (new bad patterns emerging)
+- **Escalation trajectory**: are sessions reaching higher escalation levels over time?
 
-### 6. Check Escalation State
+### 7. Check Escalation History
 
-Read the most recent escalation-related events:
+Read all escalation-related events across sessions:
 
 ```bash
-cat .agentguard/events/*.jsonl 2>/dev/null | grep -i "escalat\|lockdown" | tail -10
+cat .agentguard/events/*.jsonl 2>/dev/null | grep -i "escalat\|lockdown" | tail -20
 ```
 
-If any LOCKDOWN events exist, this is a **CRITICAL** finding.
+Build an escalation timeline:
+- When did each escalation occur?
+- What action triggered it?
+- Did the system recover (de-escalate) or remain elevated?
+- Any LOCKDOWN events → **CRITICAL**
 
-### 7. Generate Report
+### 8. Generate Report
 
 Compile the audit findings into a structured report:
 
@@ -93,6 +119,7 @@ Compile the audit findings into a structured report:
 **Date**: <timestamp>
 **Log files analyzed**: <count>
 **Total events**: <N>
+**Sessions covered**: <N>
 
 ### Event Summary
 
@@ -114,13 +141,27 @@ Compile the audit findings into a structured report:
 | Invariant violation rate | X% | OK/WARNING |
 | Escalation events | N | OK/WARNING |
 
-### Patterns Detected
+### Per-Agent Compliance
 
-<List of identified patterns, repeated denials, escalation sequences>
+| Agent | Actions | Denials | Compliance | Status |
+|-------|---------|---------|------------|--------|
+| <agent> | N | N | X% | COMPLIANT/BOUNDARY/NON-COMPLIANT |
+
+### Cross-Session Trends
+
+| Session | Date | Events | Denial Rate | Max Escalation |
+|---------|------|--------|-------------|----------------|
+| <id> | <date> | N | X% | NORMAL/ELEVATED/HIGH/LOCKDOWN |
+
+**Trend**: Improving / Stable / Degrading
+
+### Escalation Timeline
+
+<Chronological list of escalation events with triggers and recovery>
 
 ### Recommendations
 
-<Actionable recommendations based on findings>
+<Actionable recommendations focused on agent compliance and trend direction>
 ```
 
 ### 8. Create or Update Issue (if actionable)

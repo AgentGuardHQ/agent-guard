@@ -52,9 +52,24 @@ gh pr view <PR_NUMBER> --json body --jq '.body'
 gh pr view <PR_NUMBER> --json files --jq '.files[].path'
 ```
 
-#### 3d. Evaluate Quality
+#### 3d. Read Linked Issue
+
+If the PR body or title references an issue (patterns: `fixes #N`, `closes #N`, `resolves #N`, `issue-N`, `#N`):
+
+```bash
+gh issue view <N> --json title,body
+```
+
+Extract the issue's acceptance criteria (look for checklist items: `- [ ]` or `- [x]`).
+
+#### 3e. Evaluate Quality
 
 Check the diff against these criteria:
+
+**Semantic Review (if linked issue found):**
+- Does the implementation address the issue's acceptance criteria?
+- Are all acceptance criteria covered by the diff?
+- Does the PR introduce scope creep (changes not related to the issue)?
 
 **Coding Conventions:**
 - Uses `camelCase` for functions/variables, `UPPER_SNAKE_CASE` for constants
@@ -63,9 +78,11 @@ Check the diff against these criteria:
 - Uses `import type` for type-only imports
 - Single quotes, trailing commas (es5), semicolons
 
-**Protected Path Violations:**
+**Architecture Boundaries:**
 - Files in `src/kernel/**`, `src/policy/**`, `src/invariants/**` should only be modified if the linked issue explicitly authorizes it
 - `agentguard.yaml` and `.claude/settings.json` should not be modified
+- Cross-layer imports follow dependency rules (adapters should not import from cli, kernel should not import from adapters)
+- Module boundaries respected: kernel/, events/, policy/, invariants/, adapters/, cli/, core/ are distinct layers
 
 **Test Coverage:**
 - New source files in `src/` should have corresponding test files
@@ -74,6 +91,20 @@ Check the diff against these criteria:
 **Governance Compliance:**
 - PR body should contain a `## Governance Report` section (for agent-created PRs)
 - PR body should contain a `## Test Plan` section
+
+**Size & Complexity:**
+- PRs with >500 lines changed should be flagged for potential splitting
+- PRs touching >10 files should be flagged for scope assessment
+- Single-purpose PRs preferred over multi-concern bundles
+
+**Merge Readiness:**
+- CI status: check if latest commit has passing checks
+- Review comments: check if any unresolved review threads exist
+
+```bash
+gh pr checks <PR_NUMBER> --json name,state --jq '[.[] | select(.state != "SUCCESS")] | length'
+gh pr view <PR_NUMBER> --json reviewDecision,reviews
+```
 
 **General Quality:**
 - No debug logging left in (`console.log`, `debugger`)
@@ -96,10 +127,13 @@ gh pr comment <PR_NUMBER> --body "**AgentGuard Review Bot** — automated code r
 
 | Category | Status | Details |
 |----------|--------|---------|
+| Semantic alignment | <PASS/WARN/FAIL/N/A> | <acceptance criteria coverage> |
 | Coding conventions | <PASS/WARN/FAIL> | <brief details> |
-| Protected paths | <PASS/WARN/FAIL> | <brief details> |
+| Architecture boundaries | <PASS/WARN/FAIL> | <brief details> |
 | Test coverage | <PASS/WARN/FAIL> | <brief details> |
 | Governance compliance | <PASS/WARN/FAIL> | <brief details> |
+| Size & complexity | <PASS/WARN/FAIL> | <lines changed, files touched> |
+| Merge readiness | <PASS/WARN/FAIL> | <CI status, unresolved comments> |
 | General quality | <PASS/WARN/FAIL> | <brief details> |
 
 ## Specific Items

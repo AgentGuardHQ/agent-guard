@@ -1,33 +1,92 @@
 # Skill: Full Test
 
-Run the complete test, validation, and balance verification suite. This is the comprehensive "is everything OK?" check.
+Run the complete build, type-check, test, lint, format, and coverage verification suite. This is the comprehensive "is everything OK?" check for the AgentGuard codebase.
 
 ## Steps
 
 Run these in sequence. If any step fails, stop and analyze before proceeding.
 
-### 1. Unit Tests
+### 1. Build TypeScript
+
+```bash
+npm run build:ts
+```
+
+Compiles TypeScript via tsc + esbuild to `dist/`. Report build success or failure with error details.
+
+### 2. Type-Check
+
+```bash
+npm run ts:check
+```
+
+Runs `tsc --noEmit` for strict type verification. Report any type errors with file:line references.
+
+### 3. Run TypeScript Tests (vitest)
+
+```bash
+npm run ts:test
+```
+
+Report pass/fail count. If tests fail, note the failing test names and error messages.
+
+### 4. Run JavaScript Tests
+
 ```bash
 npm test
 ```
-Report pass/fail count and any failures.
 
-### 2. Data Validation
+Report pass/fail count. These use the custom zero-dependency harness in `tests/run.js`.
+
+### 5. Run ESLint
+
 ```bash
-node .github/scripts/validate-data.mjs
+npm run lint
 ```
-Report validation result (monster/move/type counts on success, errors on failure).
 
-### 3. Balance Smoke Test
+Report any lint errors with file:line references.
+
+### 6. Run Prettier Format Check
+
 ```bash
-npm run simulate -- --all --runs 50
+npm run format
 ```
-Quick round-robin to catch any severely broken matchups. Flag any BugMon with win rate > 75% or < 25%.
 
-### 4. Summary
+Report any formatting issues.
 
-Provide a one-line pass/fail summary:
-- **All clear**: "All tests passed, data valid, balance OK (N monsters, M moves, T types)"
-- **Issues found**: "Tests: X pass / Y fail | Data: valid/invalid | Balance: N outliers"
+### 7. Run Coverage Check
 
-List any specific issues that need attention.
+```bash
+npm run test:coverage
+```
+
+Report line coverage percentage. The project threshold is 50% line coverage.
+
+### 8. Summary
+
+Provide a structured pass/fail summary:
+
+```
+## Full Test Report
+
+| Check | Status | Details |
+|-------|--------|---------|
+| Build | PASS/FAIL | <error count or clean> |
+| Type-check | PASS/FAIL | <error count or clean> |
+| TS tests (vitest) | PASS/FAIL | <X pass / Y fail> |
+| JS tests | PASS/FAIL | <X pass / Y fail> |
+| Lint | PASS/FAIL | <error count or clean> |
+| Format | PASS/FAIL | <issue count or clean> |
+| Coverage | PASS/FAIL | <X% lines (threshold: 50%)> |
+```
+
+One-line verdict:
+- **All clear**: "All 7 checks passed — codebase healthy"
+- **Issues found**: "N/7 checks failed — see details above"
+
+## Rules
+
+- **Read-only** — do not fix, modify, or commit anything. This skill only reports.
+- Run all steps even if earlier steps fail — report the full picture.
+- If a command times out (>2 minutes), note the timeout and continue.
+- If `node_modules` is missing, run `npm install` first, then proceed.
