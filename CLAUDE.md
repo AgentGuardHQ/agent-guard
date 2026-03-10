@@ -206,6 +206,7 @@ Each top-level directory maps to a single architectural concept:
 - `agentguard import <file>` — Import a governance session from a portable JSONL file
 - `agentguard replay` — Replay a governance session timeline
 - `agentguard plugin list|install|remove|search` — Manage plugins
+- `agentguard simulate <action-json>` — Simulate an action and display predicted impact without executing
 - `agentguard claude-hook` — Handle Claude Code PreToolUse/PostToolUse hook events
 - `agentguard claude-init` — Set up Claude Code hook integration
 
