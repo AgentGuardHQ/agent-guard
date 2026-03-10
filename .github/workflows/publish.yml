@@ -21,10 +21,11 @@ jobs:
 
       - run: npm ci
 
+      - run: npm run build:ts
+
       - run: npm test
 
-      - name: Validate game data
-        run: node .github/scripts/validate-data.mjs
+      - run: npm run ts:test
 
       - name: Verify package version matches tag
         run: |
