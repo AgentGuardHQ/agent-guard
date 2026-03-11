@@ -94,7 +94,7 @@ src/
 │   ├── replay.ts           # Session replay logic
 │   ├── session-store.ts    # Session management
 │   ├── file-event-store.ts # File-based event persistence
-│   └── commands/           # analytics, guard, inspect, replay, export, import, simulate, ci-check, plugin, claude-hook, claude-init
+│   └── commands/           # analytics, guard, inspect, replay, export, import, simulate, ci-check, plugin, policy, claude-hook, claude-init
 ├── plugins/                # Plugin ecosystem
 │   ├── discovery.ts        # Plugin discovery mechanism
 │   ├── registry.ts         # Plugin registry
@@ -110,6 +110,8 @@ src/
 ├── telemetry/              # Runtime telemetry
 │   ├── index.ts            # Module re-exports
 │   ├── runtimeLogger.ts    # Runtime logging implementation
+│   ├── tracepoint.ts       # Kernel-level tracepoint interface
+│   ├── tracer.ts           # Tracepoint execution engine
 │   └── types.ts            # Telemetry type definitions
 └── core/                   # Shared utilities
     ├── types.ts            # Shared TypeScript type definitions
@@ -134,7 +136,7 @@ vscode-extension/              # VS Code extension
 
 tests/
 ├── *.test.js               # 14 JS test files (custom zero-dependency harness)
-└── ts/*.test.ts            # 59 TS test files (vitest)
+└── ts/*.test.ts            # 61 TS test files (vitest)
 policy/                     # Policy configuration (JSON: action_rules, capabilities)
 policies/                   # Policy packs (YAML: ci-safe, enterprise, open-source, strict)
 docs/                       # System documentation (architecture, event model, specs)
@@ -276,8 +278,8 @@ npm run test:coverage      # Run with coverage (c8, 50% line threshold)
 
 **Test structure:**
 - **JS tests** (`tests/*.test.js`): 14 files using a custom zero-dependency harness (`tests/run.js` with `node:assert`)
-- **TypeScript tests** (`tests/ts/*.test.ts`): 59 files using vitest
-- **Coverage areas**: adapters, analytics (including risk scorer), kernel (AAB, engine, monitor, blast radius, integration, e2e pipeline), CLI commands (args, guard, inspect, simulate, ci-check, claude-hook, claude-init, export/import), decision records, domain models, events, evidence packs, execution log, impact forecast, invariants, JSONL persistence, notification formatter, plugins (discovery, registry, validation), policy evaluation (including pack loader, policy packs, evaluation trace), renderers, replay (engine, comparator, processor), simulation, telemetry, TUI renderer, violation mapper, VS Code event reader, YAML loading
+- **TypeScript tests** (`tests/ts/*.test.ts`): 61 files using vitest
+- **Coverage areas**: adapters, analytics (including risk scorer), kernel (AAB, engine, monitor, blast radius, integration, e2e pipeline), CLI commands (args, guard, inspect, simulate, ci-check, claude-hook, claude-init, export/import, policy-validate), decision records, domain models, events, evidence packs, execution log, impact forecast, invariants, JSONL persistence, notification formatter, plugins (discovery, registry, validation), policy evaluation (including pack loader, policy packs, evaluation trace), renderers, replay (engine, comparator, processor), simulation, telemetry (including tracepoint), TUI renderer, violation mapper, VS Code event reader, YAML loading
 
 ## CI/CD & Automation
 

@@ -307,7 +307,7 @@ The JSONL persistence layer was the right starting point — append-only, human-
 - [ ] Timeline viewer for governance sessions (`agentguard replay --ui`)
 - [ ] Policy evaluation traces visualization
 - [ ] Metrics export (Prometheus / OpenTelemetry)
-- [ ] Foundation for kernel-level tracing (define tracepoint interface)
+- [x] Foundation for kernel-level tracing (define tracepoint interface)
 - [ ] Application-level process and network monitoring (Node.js-based, pre-eBPF)
 
 ### Phase 12 — CI/CD Enforcement `PLANNED`
