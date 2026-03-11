@@ -3,6 +3,7 @@
 
 import type Database from 'better-sqlite3';
 import type { DomainEvent, EventFilter, EventStore } from '../core/types.js';
+import type { GovernanceDecisionRecord } from '../kernel/decisions/types.js';
 
 /**
  * Create an EventStore backed by SQLite.
@@ -131,6 +132,14 @@ export function loadRunEvents(db: Database.Database, rid: string): DomainEvent[]
     .prepare('SELECT data FROM events WHERE run_id = ? ORDER BY timestamp')
     .all(rid) as { data: string }[];
   return rows.map((r) => JSON.parse(r.data) as DomainEvent);
+}
+
+/** Load all decision records for a specific run ID */
+export function loadRunDecisions(db: Database.Database, rid: string): GovernanceDecisionRecord[] {
+  const rows = db
+    .prepare('SELECT data FROM decisions WHERE run_id = ? ORDER BY timestamp')
+    .all(rid) as { data: string }[];
+  return rows.map((r) => JSON.parse(r.data) as GovernanceDecisionRecord);
 }
 
 /** Extract run_id from event metadata if present */

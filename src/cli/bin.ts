@@ -65,10 +65,12 @@ const COMMANDS: Record<string, CommandHelp> = {
     flags: [
       { flag: '--list', description: 'List all recorded runs' },
       { flag: '--last', description: 'Inspect the most recent run' },
+      { flag: '--store <backend>', description: 'Storage backend: jsonl (default) or sqlite' },
     ],
     examples: [
       'agentguard inspect --list',
       'agentguard inspect --last',
+      'agentguard inspect --last --store sqlite',
       'agentguard inspect run_1234567890_abc',
     ],
   },
@@ -76,7 +78,9 @@ const COMMANDS: Record<string, CommandHelp> = {
     name: 'agentguard events',
     description: 'Show the raw event stream for a run',
     usage: 'agentguard events <runId>',
-    flags: [],
+    flags: [
+      { flag: '--store <backend>', description: 'Storage backend: jsonl (default) or sqlite' },
+    ],
     examples: ['agentguard events --last', 'agentguard events run_1234567890_abc'],
   },
   replay: {
@@ -88,6 +92,7 @@ const COMMANDS: Record<string, CommandHelp> = {
       { flag: '--step, -s', description: 'Step through events one at a time' },
       { flag: '--stats', description: 'Show session statistics only' },
       { flag: '--filter <kind>', description: 'Filter events by kind' },
+      { flag: '--store <backend>', description: 'Storage backend: jsonl (default) or sqlite' },
     ],
     examples: ['agentguard replay', 'agentguard replay --last', 'agentguard replay --last --step'],
   },
@@ -98,21 +103,27 @@ const COMMANDS: Record<string, CommandHelp> = {
     flags: [
       { flag: '--output, -o <file>', description: 'Output file path' },
       { flag: '--last', description: 'Export the most recent run' },
+      { flag: '--store <backend>', description: 'Storage backend: jsonl (default) or sqlite' },
     ],
     examples: [
       'agentguard export run_1234567890_abc',
       'agentguard export --last',
       'agentguard export --last -o session.jsonl',
+      'agentguard export --last --store sqlite',
     ],
   },
   import: {
     name: 'agentguard import',
     description: 'Import a governance session from a portable JSONL file',
     usage: 'agentguard import <file> [flags]',
-    flags: [{ flag: '--as <runId>', description: 'Import as a different run ID' }],
+    flags: [
+      { flag: '--as <runId>', description: 'Import as a different run ID' },
+      { flag: '--store <backend>', description: 'Storage backend: jsonl (default) or sqlite' },
+    ],
     examples: [
       'agentguard import session.jsonl',
       'agentguard import ./exports/run.agentguard.jsonl --as custom_run_id',
+      'agentguard import session.jsonl --store sqlite',
     ],
   },
   'ci-check': {
@@ -125,11 +136,12 @@ const COMMANDS: Record<string, CommandHelp> = {
       { flag: '--json', description: 'Output result as JSON' },
       { flag: '--last', description: 'Use the most recent local run' },
       { flag: '--base-dir, -d <dir>', description: 'Base directory for event storage' },
+      { flag: '--store <backend>', description: 'Storage backend: jsonl (default) or sqlite' },
     ],
     examples: [
       'agentguard ci-check session.agentguard.jsonl --fail-on-violation',
       'agentguard ci-check --last --fail-on-denial --json',
-      'agentguard ci-check session.jsonl --fail-on-violation --fail-on-denial',
+      'agentguard ci-check --last --store sqlite --fail-on-violation',
     ],
   },
   policy: {
@@ -234,7 +246,7 @@ async function main() {
         break;
       }
       const { inspect } = await import('./commands/inspect.js');
-      await inspect(args.slice(1));
+      await inspect(args.slice(1), resolveStorageConfig(args.slice(1)));
       break;
     }
 
@@ -244,7 +256,7 @@ async function main() {
         break;
       }
       const { events } = await import('./commands/inspect.js');
-      await events(args.slice(1));
+      await events(args.slice(1), resolveStorageConfig(args.slice(1)));
       break;
     }
 
@@ -264,7 +276,7 @@ async function main() {
         break;
       }
       const { exportSession } = await import('./commands/export.js');
-      await exportSession(args.slice(1));
+      await exportSession(args.slice(1), resolveStorageConfig(args.slice(1)));
       break;
     }
 
@@ -274,7 +286,7 @@ async function main() {
         break;
       }
       const { importSession } = await import('./commands/import.js');
-      await importSession(args.slice(1));
+      await importSession(args.slice(1), resolveStorageConfig(args.slice(1)));
       break;
     }
 
@@ -284,7 +296,7 @@ async function main() {
         break;
       }
       const { ciCheck } = await import('./commands/ci-check.js');
-      const code = await ciCheck(args.slice(1));
+      const code = await ciCheck(args.slice(1), resolveStorageConfig(args.slice(1)));
       process.exit(code);
       break;
     }
