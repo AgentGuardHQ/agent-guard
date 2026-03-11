@@ -9,6 +9,7 @@
   "files": [
     "dist/",
     "hooks/",
+    "templates/",
     "LICENSE",
     "README.md"
   ],
