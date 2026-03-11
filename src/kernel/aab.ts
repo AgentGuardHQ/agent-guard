@@ -268,6 +268,134 @@ const DESTRUCTIVE_PATTERNS: DestructivePattern[] = [
     riskLevel: 'critical',
     category: 'network',
   },
+  // Container orchestration — high/critical (expanded)
+  {
+    pattern: /\bdocker\s+stop\b/,
+    description: 'Stop Docker container',
+    riskLevel: 'high',
+    category: 'container',
+  },
+  {
+    pattern: /\bdocker\s+volume\s+rm\b/,
+    description: 'Remove Docker volume (data loss)',
+    riskLevel: 'critical',
+    category: 'container',
+  },
+  {
+    pattern: /\bdocker\s+volume\s+prune\b/,
+    description: 'Prune all unused Docker volumes',
+    riskLevel: 'critical',
+    category: 'container',
+  },
+  {
+    pattern: /\bdocker\s+network\s+rm\b/,
+    description: 'Remove Docker network',
+    riskLevel: 'high',
+    category: 'container',
+  },
+  {
+    pattern: /\bdocker[\s-]compose\s+down\b/,
+    description: 'Tear down Docker Compose services',
+    riskLevel: 'high',
+    category: 'container',
+  },
+  // Kubernetes — high
+  {
+    pattern: /\bkubectl\s+delete\b/,
+    description: 'Delete Kubernetes resources',
+    riskLevel: 'high',
+    category: 'container',
+  },
+  // Infrastructure — critical
+  {
+    pattern: /\bterraform\s+destroy\b/,
+    description: 'Destroy Terraform-managed infrastructure',
+    riskLevel: 'critical',
+    category: 'infra',
+  },
+  // Database — NoSQL/Redis (expanded)
+  {
+    pattern: /\bDROP\s+SCHEMA\b/i,
+    description: 'Drop database schema (SQL)',
+    riskLevel: 'critical',
+    category: 'database',
+  },
+  {
+    pattern: /\bDROP\s+VIEW\b/i,
+    description: 'Drop view (SQL)',
+    riskLevel: 'high',
+    category: 'database',
+  },
+  {
+    pattern: /\bDROP\s+INDEX\b/i,
+    description: 'Drop index (SQL)',
+    riskLevel: 'high',
+    category: 'database',
+  },
+  {
+    pattern: /\bFLUSHALL\b/,
+    description: 'Flush all Redis databases',
+    riskLevel: 'critical',
+    category: 'database',
+  },
+  {
+    pattern: /\bFLUSHDB\b/,
+    description: 'Flush current Redis database',
+    riskLevel: 'critical',
+    category: 'database',
+  },
+  // Package management — high (expanded)
+  {
+    pattern: /\bbrew\s+(?:uninstall|remove)\b/,
+    description: 'Remove macOS package (Homebrew)',
+    riskLevel: 'high',
+    category: 'package',
+  },
+  {
+    pattern: /\bgem\s+uninstall\b/,
+    description: 'Uninstall Ruby gem',
+    riskLevel: 'high',
+    category: 'package',
+  },
+  {
+    pattern: /\byarn\s+global\s+remove\b/,
+    description: 'Remove global Yarn package',
+    riskLevel: 'high',
+    category: 'package',
+  },
+  // Remote code execution — critical
+  {
+    pattern: /\bcurl\s+.*\|\s*(?:ba)?sh\b/,
+    description: 'Pipe remote content to shell (code execution)',
+    riskLevel: 'critical',
+    category: 'network',
+  },
+  {
+    pattern: /\bwget\s+.*\|\s*(?:ba)?sh\b/,
+    description: 'Pipe remote download to shell (code execution)',
+    riskLevel: 'critical',
+    category: 'network',
+  },
+  // Git destructive operations — high
+  {
+    pattern: /\bgit\s+reset\s+--hard\b/,
+    description: 'Discard all uncommitted changes',
+    riskLevel: 'high',
+    category: 'filesystem',
+  },
+  {
+    pattern: /\bgit\s+clean\s+-[fdxX]+\b/,
+    description: 'Remove untracked files from working tree',
+    riskLevel: 'high',
+    category: 'filesystem',
+  },
+  // System — high (expanded)
+  {
+    pattern: /\bcrontab\s+-r\b/,
+    description: 'Remove all cron jobs for current user',
+    riskLevel: 'high',
+    category: 'system',
+  },
 ];
 
 function isDestructiveCommand(command: string): boolean {
