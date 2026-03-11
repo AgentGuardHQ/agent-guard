@@ -259,6 +259,60 @@ describe('claudeInit', () => {
     expect(process.stderr.write).toHaveBeenCalledWith(expect.stringContaining('sqlite'));
   });
 
+  // --- --db-path flag ---
+
+  it('embeds --db-path in hook commands when --db-path flag is provided', async () => {
+    vi.mocked(existsSync).mockReturnValue(false);
+
+    await claudeInit(['--db-path', '/home/user/.agentguard/agentguard.db']);
+
+    expect(writeFileSync).toHaveBeenCalledTimes(1);
+    const written = JSON.parse(vi.mocked(writeFileSync).mock.calls[0][1] as string);
+
+    expect(written.hooks.PreToolUse[0].hooks[0].command).toContain(
+      'pre --db-path "/home/user/.agentguard/agentguard.db"'
+    );
+    expect(written.hooks.PostToolUse[0].hooks[0].command).toContain(
+      'post --db-path "/home/user/.agentguard/agentguard.db"'
+    );
+  });
+
+  it('does not include --db-path suffix when no --db-path flag is provided', async () => {
+    vi.mocked(existsSync).mockReturnValue(false);
+
+    await claudeInit([]);
+
+    const written = JSON.parse(vi.mocked(writeFileSync).mock.calls[0][1] as string);
+
+    expect(written.hooks.PreToolUse[0].hooks[0].command).not.toContain('--db-path');
+    expect(written.hooks.PostToolUse[0].hooks[0].command).not.toContain('--db-path');
+  });
+
+  it('quotes --db-path value to handle paths with spaces', async () => {
+    vi.mocked(existsSync).mockReturnValue(false);
+
+    await claudeInit(['--db-path', '/Users/John Doe/.agentguard/agentguard.db']);
+
+    const written = JSON.parse(vi.mocked(writeFileSync).mock.calls[0][1] as string);
+
+    expect(written.hooks.PreToolUse[0].hooks[0].command).toContain(
+      '--db-path "/Users/John Doe/.agentguard/agentguard.db"'
+    );
+  });
+
+  it('combines --db-path with --store flag', async () => {
+    vi.mocked(existsSync).mockReturnValue(false);
+
+    await claudeInit(['--store', 'sqlite', '--db-path', '/custom/path/db.sqlite']);
+
+    const written = JSON.parse(vi.mocked(writeFileSync).mock.calls[0][1] as string);
+
+    expect(written.hooks.PreToolUse[0].hooks[0].command).toContain('--store sqlite');
+    expect(written.hooks.PreToolUse[0].hooks[0].command).toContain(
+      '--db-path "/custom/path/db.sqlite"'
+    );
+  });
+
   it('preserves other hooks when removing', async () => {
     vi.mocked(existsSync).mockReturnValue(true);
     vi.mocked(readFileSync).mockReturnValue(
