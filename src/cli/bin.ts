@@ -182,11 +182,13 @@ const COMMANDS: Record<string, CommandHelp> = {
       { flag: '--json', description: 'Output as JSON' },
       { flag: '--last', description: 'Compare the two most recent runs' },
       { flag: '--dir, -d <path>', description: 'Base directory for event data' },
+      { flag: '--store <backend>', description: 'Storage backend: jsonl (default) or sqlite' },
     ],
     examples: [
       'agentguard diff run_abc123 run_def456',
       'agentguard diff --last',
       'agentguard diff --last --json',
+      'agentguard diff --last --store sqlite',
     ],
   },
   init: {
@@ -366,7 +368,7 @@ async function main() {
         break;
       }
       const { diff: diffCmd } = await import('./commands/diff.js');
-      await diffCmd(args.slice(1));
+      await diffCmd(args.slice(1), resolveStorageConfig(args.slice(1)));
       break;
     }
 

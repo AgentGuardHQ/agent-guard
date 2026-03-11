@@ -295,4 +295,118 @@ describe('diff command', () => {
       expect(stderrOutput).toContain('Summary Differences');
     });
   });
+
+  // ── Escalation Level Comparison ──
+
+  describe('escalation level comparison', () => {
+    it('shows escalation level changes between sessions', async () => {
+      const origEvents = createAllowedActionEvents('file.write', 'a.ts', 1000);
+      const replayEvents = [
+        testEvent('ActionRequested', { actionType: 'file.write', target: 'a.ts', agentId: 'test' }, 1000),
+        testEvent('ActionEscalated', { actionType: 'file.write', target: 'a.ts', escalationLevel: 'ELEVATED' }, 1001),
+        testEvent('ActionAllowed', { actionType: 'file.write', target: 'a.ts', reason: 'Allowed after escalation' }, 1002),
+        testEvent('ActionExecuted', { actionType: 'file.write', target: 'a.ts', result: 'success' }, 1003),
+      ];
+
+      writeTestJsonl('run-a', origEvents);
+      writeTestJsonl('run-b', replayEvents);
+
+      await runDiff(['run-a', 'run-b', '--dir', TEST_BASE_DIR]);
+      expect(stderrOutput).toContain('Escalation Levels');
+      expect(stderrOutput).toContain('NORMAL');
+      expect(stderrOutput).toContain('ELEVATED');
+    });
+
+    it('does not show escalation section when levels are the same', async () => {
+      const events = createAllowedActionEvents('file.write', 'a.ts', 1000);
+      writeTestJsonl('run-a', events);
+      writeTestJsonl('run-b', events);
+
+      await runDiff(['run-a', 'run-b', '--dir', TEST_BASE_DIR]);
+      expect(stderrOutput).not.toContain('Escalation Levels');
+    });
+  });
+
+  // ── Invariant Violation Highlighting ──
+
+  describe('invariant violation highlighting', () => {
+    it('shows invariant violations that differ between sessions', async () => {
+      const origEvents = createAllowedActionEvents('file.write', 'a.ts', 1000);
+      const replayEvents = [
+        testEvent('ActionRequested', { actionType: 'file.write', target: 'a.ts', agentId: 'test' }, 1000),
+        testEvent('InvariantViolation', { invariant: 'secret-exposure', action: 'file.write', reason: 'Secrets detected' }, 1001),
+        testEvent('ActionDenied', { actionType: 'file.write', target: 'a.ts', reason: 'Invariant violation' }, 1002),
+      ];
+
+      writeTestJsonl('run-a', origEvents);
+      writeTestJsonl('run-b', replayEvents);
+
+      await runDiff(['run-a', 'run-b', '--dir', TEST_BASE_DIR]);
+      expect(stderrOutput).toContain('Invariant Violations');
+      expect(stderrOutput).toContain('secret-exposure');
+    });
+
+    it('shows per-action governance details for divergent actions', async () => {
+      const origEvents = createAllowedActionEvents('file.write', 'a.ts', 1000);
+      const replayEvents = [
+        testEvent('ActionRequested', { actionType: 'file.write', target: 'a.ts', agentId: 'test' }, 1000),
+        testEvent('InvariantViolation', { invariant: 'blast-radius', action: 'file.write', reason: 'Too many files' }, 1001),
+        testEvent('ActionDenied', { actionType: 'file.write', target: 'a.ts', reason: 'blast-radius violation' }, 1002),
+      ];
+
+      writeTestJsonl('run-a', origEvents);
+      writeTestJsonl('run-b', replayEvents);
+
+      await runDiff(['run-a', 'run-b', '--dir', TEST_BASE_DIR]);
+      expect(stderrOutput).toContain('violation: blast-radius');
+    });
+  });
+
+  // ── Enriched JSON Output ──
+
+  describe('enriched JSON output', () => {
+    it('includes escalation metadata in JSON output', async () => {
+      const origEvents = createAllowedActionEvents('file.write', 'a.ts', 1000);
+      const replayEvents = [
+        testEvent('ActionRequested', { actionType: 'file.write', target: 'a.ts', agentId: 'test' }, 1000),
+        testEvent('ActionEscalated', { actionType: 'file.write', target: 'a.ts', escalationLevel: 'HIGH' }, 1001),
+        testEvent('ActionAllowed', { actionType: 'file.write', target: 'a.ts', reason: 'Allowed' }, 1002),
+        testEvent('ActionExecuted', { actionType: 'file.write', target: 'a.ts', result: 'success' }, 1003),
+      ];
+
+      writeTestJsonl('run-a', origEvents);
+      writeTestJsonl('run-b', replayEvents);
+
+      await runDiff(['run-a', 'run-b', '--json', '--dir', TEST_BASE_DIR]);
+      const parsed = JSON.parse(stdoutOutput);
+      expect(parsed.escalation).toBeDefined();
+      expect(parsed.escalation.sessionA).toBe('NORMAL');
+      expect(parsed.escalation.sessionB).toBe('HIGH');
+      expect(parsed.escalation.changed).toBe(true);
+    });
+
+    it('includes invariant violations in JSON output', async () => {
+      const origEvents = createAllowedActionEvents('file.write', 'a.ts', 1000);
+      const replayEvents = [
+        testEvent('ActionRequested', { actionType: 'file.write', target: 'a.ts', agentId: 'test' }, 1000),
+        testEvent('InvariantViolation', { invariant: 'no-force-push', reason: 'Force push detected' }, 1001),
+        testEvent('ActionDenied', { actionType: 'file.write', target: 'a.ts', reason: 'Violation' }, 1002),
+      ];
+
+      writeTestJsonl('run-a', origEvents);
+      writeTestJsonl('run-b', replayEvents);
+
+      await runDiff(['run-a', 'run-b', '--json', '--dir', TEST_BASE_DIR]);
+      const parsed = JSON.parse(stdoutOutput);
+      expect(parsed.invariantViolations).toBeDefined();
+      expect(parsed.invariantViolations.sessionA).toEqual({});
+      expect(parsed.invariantViolations.sessionB).toEqual({ 'no-force-push': 1 });
+    });
+
+    it('shows store flag in usage help', async () => {
+      await runDiff([]);
+      expect(stderrOutput).toContain('--store');
+      expect(stderrOutput).toContain('sqlite');
+    });
+  });
 });
