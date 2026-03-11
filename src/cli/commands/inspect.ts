@@ -4,7 +4,8 @@
 
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { renderEventStream, renderDecisionTable } from '../tui.js';
+import { renderEventStream, renderDecisionTable, renderPolicyTraces } from '../tui.js';
+import type { PolicyTraceEvent } from '../tui.js';
 import { getEventFilePath } from '../../events/jsonl.js';
 import { getDecisionFilePath } from '../../events/decision-jsonl.js';
 import type { DomainEvent } from '../../core/types.js';
@@ -13,6 +14,10 @@ import type { StorageConfig } from '../../storage/types.js';
 
 const BASE_DIR = '.agentguard';
 const EVENTS_DIR = join(BASE_DIR, 'events');
+
+function isPolicyTraceEvent(e: DomainEvent): e is PolicyTraceEvent & DomainEvent {
+  return e.kind === 'PolicyTraceRecorded';
+}
 
 // ---------------------------------------------------------------------------
 // JSONL helpers (default backend)
@@ -93,7 +98,8 @@ async function openSqliteDb(storageConfig: StorageConfig) {
 
 export async function inspect(args: string[], storageConfig?: StorageConfig): Promise<void> {
   const showDecisions = args.includes('--decisions');
-  const filteredArgs = args.filter((a) => a !== '--decisions' && a !== '--store' && a !== 'sqlite' && a !== 'jsonl');
+  const showTraces = args.includes('--traces');
+  const filteredArgs = args.filter((a) => a !== '--decisions' && a !== '--traces' && a !== '--store' && a !== 'sqlite' && a !== 'jsonl');
   const targetArg = filteredArgs[0];
 
   const useSqlite = storageConfig?.backend === 'sqlite';
@@ -189,7 +195,7 @@ export async function inspect(args: string[], storageConfig?: StorageConfig): Pr
     storage.close();
   } else {
     eventList = loadEventsJsonl(targetRunId);
-    if (eventList.length === 0 && !showDecisions) return;
+    if (eventList.length === 0 && !showDecisions && !showTraces) return;
 
     process.stderr.write(`\n  \x1b[1mRun:\x1b[0m ${targetRunId}\n`);
 
@@ -205,6 +211,16 @@ export async function inspect(args: string[], storageConfig?: StorageConfig): Pr
 
   if (!useSqlite || !showDecisions) {
     process.stderr.write(`\n  \x1b[1mRun:\x1b[0m ${targetRunId}\n`);
+  }
+
+  // Show policy evaluation traces if --traces flag is present
+  if (showTraces) {
+    const traceEvents = eventList.filter(isPolicyTraceEvent);
+    if (traceEvents.length > 0) {
+      process.stderr.write(renderPolicyTraces(traceEvents));
+    } else {
+      process.stderr.write('\n  \x1b[2mNo policy evaluation traces found for this run.\x1b[0m\n');
+    }
   }
 
   // Reconstruct action graph from events
