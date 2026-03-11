@@ -7,6 +7,7 @@
 
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { execSync } from 'node:child_process';
 import { parseArgs } from '../args.js';
 import {
   loadReplaySession,
@@ -17,6 +18,8 @@ import type { ReplaySession } from '../../kernel/replay-engine.js';
 import type { DomainEvent } from '../../core/types.js';
 import type { GovernanceExportHeader } from './export.js';
 import type { StorageConfig } from '../../storage/types.js';
+import { aggregateEvents, formatEvidenceMarkdown } from '../evidence-summary.js';
+import type { EvidenceMarkdownOptions } from '../evidence-summary.js';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -183,21 +186,80 @@ function formatGitHubAnnotation(result: CiCheckResult): string {
 }
 
 // ---------------------------------------------------------------------------
+// Evidence Posting
+// ---------------------------------------------------------------------------
+
+const COMMENT_MARKER = '<!-- agentguard-evidence-report -->';
+
+function detectPrNumber(): string | null {
+  try {
+    const result = execSync('gh pr view --json number --jq .number 2>/dev/null', {
+      encoding: 'utf8',
+      stdio: ['pipe', 'pipe', 'pipe'],
+    }).trim();
+    return result || null;
+  } catch {
+    return null;
+  }
+}
+
+function postEvidenceComment(prNumber: string, markdown: string): boolean {
+  const body = `${COMMENT_MARKER}\n${markdown}`;
+
+  // Delete any existing evidence comments
+  try {
+    const commentsJson = execSync(
+      `gh pr view ${prNumber} --json comments --jq '.comments[] | select(.body | startswith("${COMMENT_MARKER}")) | .id'`,
+      { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }
+    ).trim();
+
+    if (commentsJson) {
+      const commentIds = commentsJson.split('\n').filter((id) => /^\d+$/.test(id));
+      for (const id of commentIds) {
+        try {
+          execSync(`gh api repos/{owner}/{repo}/issues/comments/${id} -X DELETE`, {
+            stdio: ['pipe', 'pipe', 'pipe'],
+          });
+        } catch {
+          // Ignore delete failures
+        }
+      }
+    }
+  } catch {
+    // No existing comments
+  }
+
+  try {
+    execSync(`gh pr comment ${prNumber} --body -`, {
+      input: body,
+      encoding: 'utf8',
+      stdio: ['pipe', 'pipe', 'pipe'],
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // CLI Entry Point
 // ---------------------------------------------------------------------------
 
 export async function ciCheck(args: string[], storageConfig?: StorageConfig): Promise<number> {
   const parsed = parseArgs(args, {
-    boolean: ['--fail-on-violation', '--fail-on-denial', '--json', '--last'],
-    string: ['--base-dir'],
-    alias: { '-d': '--base-dir' },
+    boolean: ['--fail-on-violation', '--fail-on-denial', '--json', '--last', '--post-evidence'],
+    string: ['--base-dir', '--pr', '--artifact-url'],
+    alias: { '-d': '--base-dir', '-n': '--pr' },
   });
 
   const failOnViolation = !!parsed.flags['fail-on-violation'];
   const failOnDenial = !!parsed.flags['fail-on-denial'];
   const jsonOutput = !!parsed.flags.json;
   const useLast = !!parsed.flags.last;
+  const postEvidence = !!parsed.flags['post-evidence'];
   const baseDir = (parsed.flags['base-dir'] as string) || '.agentguard';
+  const prNumberFlag = (parsed.flags.pr as string) || null;
+  const artifactUrl = (parsed.flags['artifact-url'] as string) || undefined;
   const sessionFile = parsed.positional[0];
   const isGitHubActions = !!process.env.GITHUB_ACTIONS;
 
@@ -239,13 +301,18 @@ export async function ciCheck(args: string[], storageConfig?: StorageConfig): Pr
     process.stderr.write('\n  Usage: agentguard ci-check <session-file> [flags]\n');
     process.stderr.write('         agentguard ci-check --last [flags]\n\n');
     process.stderr.write('  Flags:\n');
-    process.stderr.write('    --fail-on-violation   Exit 1 if invariant violations found\n');
-    process.stderr.write('    --fail-on-denial      Exit 1 if any actions were denied\n');
-    process.stderr.write('    --json                Output as JSON\n');
-    process.stderr.write('    --last                Use the most recent local run\n');
-    process.stderr.write('    --base-dir, -d <dir>  Base directory for events\n');
+    process.stderr.write('    --fail-on-violation      Exit 1 if invariant violations found\n');
+    process.stderr.write('    --fail-on-denial         Exit 1 if any actions were denied\n');
+    process.stderr.write('    --json                   Output as JSON\n');
+    process.stderr.write('    --last                   Use the most recent local run\n');
+    process.stderr.write('    --post-evidence          Post evidence report as PR comment\n');
     process.stderr.write(
-      '    --store <backend>     Storage backend: jsonl (default) or sqlite\n\n'
+      '    --pr, -n <number>        Target PR number (auto-detected if omitted)\n'
+    );
+    process.stderr.write('    --artifact-url <url>     Link to full session artifact\n');
+    process.stderr.write('    --base-dir, -d <dir>     Base directory for events\n');
+    process.stderr.write(
+      '    --store <backend>        Storage backend: jsonl (default) or sqlite\n\n'
     );
     return 1;
   }
@@ -263,6 +330,35 @@ export async function ciCheck(args: string[], storageConfig?: StorageConfig): Pr
   // GitHub Actions annotations
   if (isGitHubActions) {
     process.stdout.write(formatGitHubAnnotation(result) + '\n');
+  }
+
+  // Post evidence report to PR
+  if (postEvidence) {
+    const prNumber = prNumberFlag || detectPrNumber();
+    if (!prNumber) {
+      process.stderr.write(
+        '\n  \x1b[33mWarning:\x1b[0m --post-evidence: could not determine PR number. ' +
+          'Use --pr <number> or run from a branch with an open PR.\n\n'
+      );
+    } else if (!/^\d+$/.test(prNumber)) {
+      process.stderr.write(
+        '\n  \x1b[33mWarning:\x1b[0m --post-evidence: PR number must be numeric.\n\n'
+      );
+    } else {
+      const evidenceSummary = aggregateEvents([...session.events]);
+      const markdownOptions: EvidenceMarkdownOptions = { artifactUrl };
+      const markdown = formatEvidenceMarkdown(evidenceSummary, markdownOptions);
+      const posted = postEvidenceComment(prNumber, markdown);
+      if (posted) {
+        process.stderr.write(
+          `  \x1b[32m\u2713\x1b[0m Evidence report posted to PR #${prNumber}\n\n`
+        );
+      } else {
+        process.stderr.write(
+          `\n  \x1b[33mWarning:\x1b[0m Failed to post evidence report to PR #${prNumber}.\n\n`
+        );
+      }
+    }
   }
 
   return result.pass ? 0 : 1;

@@ -163,6 +163,9 @@ const COMMANDS: Record<string, CommandHelp> = {
       { flag: '--fail-on-denial', description: 'Exit 1 if any actions were denied' },
       { flag: '--json', description: 'Output result as JSON' },
       { flag: '--last', description: 'Use the most recent local run' },
+      { flag: '--post-evidence', description: 'Post evidence report as PR comment' },
+      { flag: '--pr, -n <number>', description: 'Target PR number (auto-detected if omitted)' },
+      { flag: '--artifact-url <url>', description: 'Link to full session artifact' },
       { flag: '--base-dir, -d <dir>', description: 'Base directory for event storage' },
       { flag: '--store <backend>', description: 'Storage backend: jsonl (default) or sqlite' },
       {
@@ -174,6 +177,7 @@ const COMMANDS: Record<string, CommandHelp> = {
       'agentguard ci-check session.agentguard.jsonl --fail-on-violation',
       'agentguard ci-check --last --fail-on-denial --json',
       'agentguard ci-check --last --store sqlite --fail-on-violation',
+      'agentguard ci-check --last --post-evidence --pr 42',
     ],
   },
   policy: {

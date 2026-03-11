@@ -13,10 +13,17 @@ export interface EvidenceSummary {
   readonly escalations: number;
   readonly blastRadiusExceeded: number;
   readonly evidencePacksGenerated: number;
+  readonly maxEscalationLevel: string;
   readonly actionTypeBreakdown: Record<string, { allowed: number; denied: number }>;
   readonly denialReasons: string[];
   readonly violationDetails: string[];
   readonly runIds: string[];
+}
+
+/** Options for formatting the evidence markdown report. */
+export interface EvidenceMarkdownOptions {
+  /** URL to the full session artifact (e.g., GitHub Actions artifact link). */
+  readonly artifactUrl?: string;
 }
 
 const GOVERNANCE_KINDS = new Set([
@@ -34,6 +41,13 @@ const GOVERNANCE_KINDS = new Set([
   'SimulationCompleted',
 ]);
 
+const ESCALATION_ORDER: Record<string, number> = {
+  NORMAL: 0,
+  ELEVATED: 1,
+  HIGH: 2,
+  LOCKDOWN: 3,
+};
+
 /**
  * Aggregate raw governance events into a structured summary.
  * Only counts governance-related events in the metrics.
@@ -46,6 +60,7 @@ export function aggregateEvents(events: DomainEvent[]): EvidenceSummary {
   let escalations = 0;
   let blastRadiusExceeded = 0;
   let evidencePacksGenerated = 0;
+  let maxEscalationOrdinal = 0;
   const actionTypeBreakdown: Record<string, { allowed: number; denied: number }> = {};
   const denialReasons: string[] = [];
   const violationDetails: string[] = [];
@@ -107,8 +122,20 @@ export function aggregateEvents(events: DomainEvent[]): EvidenceSummary {
         evidencePacksGenerated++;
         break;
       }
+      case 'StateChanged': {
+        const to = (event.to as string) || '';
+        const ordinal = ESCALATION_ORDER[to] ?? 0;
+        if (ordinal > maxEscalationOrdinal) {
+          maxEscalationOrdinal = ordinal;
+        }
+        break;
+      }
     }
   }
+
+  const escalationNames = Object.entries(ESCALATION_ORDER);
+  const maxEscalationLevel =
+    escalationNames.find(([, v]) => v === maxEscalationOrdinal)?.[0] ?? 'NORMAL';
 
   return {
     totalEvents: governanceEvents.length,
@@ -119,6 +146,7 @@ export function aggregateEvents(events: DomainEvent[]): EvidenceSummary {
     escalations,
     blastRadiusExceeded,
     evidencePacksGenerated,
+    maxEscalationLevel,
     actionTypeBreakdown,
     denialReasons,
     violationDetails,
@@ -129,12 +157,15 @@ export function aggregateEvents(events: DomainEvent[]): EvidenceSummary {
 /**
  * Format an evidence summary as PR-ready markdown.
  */
-export function formatEvidenceMarkdown(summary: EvidenceSummary): string {
+export function formatEvidenceMarkdown(
+  summary: EvidenceSummary,
+  options?: EvidenceMarkdownOptions
+): string {
   const lines: string[] = [];
 
   lines.push('## Governance Evidence Report');
   lines.push('');
-  lines.push('| Metric | Count |');
+  lines.push('| Metric | Value |');
   lines.push('|--------|-------|');
   lines.push(`| Total governance events | ${summary.totalEvents} |`);
   lines.push(`| Actions allowed | ${summary.actionsAllowed} |`);
@@ -143,6 +174,7 @@ export function formatEvidenceMarkdown(summary: EvidenceSummary): string {
   lines.push(`| Invariant violations | ${summary.invariantViolations} |`);
   lines.push(`| Escalations | ${summary.escalations} |`);
   lines.push(`| Blast radius exceeded | ${summary.blastRadiusExceeded} |`);
+  lines.push(`| Escalation level | ${summary.maxEscalationLevel} |`);
 
   // Verdict line
   if (summary.actionsDenied === 0 && summary.invariantViolations === 0) {
@@ -202,6 +234,12 @@ export function formatEvidenceMarkdown(summary: EvidenceSummary): string {
   if (summary.runIds.length > 0) {
     lines.push('');
     lines.push(`*Sessions: ${summary.runIds.map((id) => `\`${id}\``).join(', ')}*`);
+  }
+
+  // Link to full session artifact
+  if (options?.artifactUrl) {
+    lines.push('');
+    lines.push(`**Full session data:** [Download governance session](${options.artifactUrl})`);
   }
 
   lines.push('');

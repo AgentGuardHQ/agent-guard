@@ -17,6 +17,7 @@ describe('evidence-summary', () => {
       expect(summary.invariantViolations).toBe(0);
       expect(summary.escalations).toBe(0);
       expect(summary.blastRadiusExceeded).toBe(0);
+      expect(summary.maxEscalationLevel).toBe('NORMAL');
       expect(summary.denialReasons).toEqual([]);
       expect(summary.violationDetails).toEqual([]);
       expect(summary.runIds).toEqual([]);
@@ -171,6 +172,36 @@ describe('evidence-summary', () => {
       // Only ActionAllowed is a governance event; RunStarted and FileSaved are not
       expect(summary.totalEvents).toBe(1);
     });
+
+    it('tracks max escalation level from StateChanged events', () => {
+      const events = [
+        makeEvent('StateChanged', { from: 'NORMAL', to: 'ELEVATED', trigger: 'denial' }),
+        makeEvent('StateChanged', { from: 'ELEVATED', to: 'HIGH', trigger: 'violation' }),
+      ];
+      const summary = aggregateEvents(events);
+      expect(summary.maxEscalationLevel).toBe('HIGH');
+    });
+
+    it('defaults to NORMAL when no StateChanged events exist', () => {
+      const events = [
+        makeEvent('ActionAllowed', {
+          actionType: 'file.read',
+          target: 'a.ts',
+          capability: 'read',
+        }),
+      ];
+      const summary = aggregateEvents(events);
+      expect(summary.maxEscalationLevel).toBe('NORMAL');
+    });
+
+    it('tracks highest escalation even if later de-escalated', () => {
+      const events = [
+        makeEvent('StateChanged', { from: 'NORMAL', to: 'LOCKDOWN', trigger: 'violation' }),
+        makeEvent('StateChanged', { from: 'LOCKDOWN', to: 'NORMAL', trigger: 'manual-reset' }),
+      ];
+      const summary = aggregateEvents(events);
+      expect(summary.maxEscalationLevel).toBe('LOCKDOWN');
+    });
   });
 
   describe('formatEvidenceMarkdown', () => {
@@ -256,6 +287,41 @@ describe('evidence-summary', () => {
       const summary = aggregateEvents([]);
       const md = formatEvidenceMarkdown(summary);
       expect(md).toContain('AgentGuard');
+    });
+
+    it('includes escalation level in the report', () => {
+      const events = [
+        makeEvent('StateChanged', { from: 'NORMAL', to: 'ELEVATED', trigger: 'denial' }),
+        makeEvent('ActionAllowed', {
+          actionType: 'file.read',
+          target: 'a.ts',
+          capability: 'read',
+        }),
+      ];
+      const summary = aggregateEvents(events);
+      const md = formatEvidenceMarkdown(summary);
+      expect(md).toContain('| Escalation level | ELEVATED |');
+    });
+
+    it('includes artifact URL when provided', () => {
+      const summary = aggregateEvents([]);
+      const md = formatEvidenceMarkdown(summary, {
+        artifactUrl: 'https://github.com/org/repo/actions/runs/123/artifacts/456',
+      });
+      expect(md).toContain('Full session data');
+      expect(md).toContain('https://github.com/org/repo/actions/runs/123/artifacts/456');
+    });
+
+    it('omits artifact link when no URL provided', () => {
+      const summary = aggregateEvents([]);
+      const md = formatEvidenceMarkdown(summary);
+      expect(md).not.toContain('Full session data');
+    });
+
+    it('omits artifact link when options is undefined', () => {
+      const summary = aggregateEvents([]);
+      const md = formatEvidenceMarkdown(summary, undefined);
+      expect(md).not.toContain('Full session data');
     });
   });
 });

@@ -50,6 +50,13 @@ on:
         required: false
         type: boolean
         default: false
+      post-evidence:
+        description: >
+          Post a governance evidence report as a PR comment.
+          Requires the workflow to have write permissions on pull-requests.
+        required: false
+        type: boolean
+        default: false
       agentguard-version:
         description: >
           Version of @red-codes/agentguard to install.
@@ -67,6 +74,9 @@ jobs:
   governance-check:
     name: Governance Verification
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -118,8 +128,31 @@ jobs:
           # Display the result
           cat governance-result.json
 
-          # Run again for terminal output and annotations (GITHUB_ACTIONS is set automatically)
-          agentguard ci-check $ARGS
+          # Build evidence posting flags
+          EVIDENCE_ARGS=""
+          if [ "${{ inputs.post-evidence }}" = "true" ]; then
+            EVIDENCE_ARGS="--post-evidence"
+          fi
+
+          # Run again for terminal output, annotations, and evidence posting
+          agentguard ci-check $ARGS $EVIDENCE_ARGS
+
+      - name: Export full session
+        id: export-session
+        if: steps.ci-check.outputs.skip != 'true' && always()
+        run: |
+          SESSION_FILE="governance-session.agentguard.jsonl"
+          if [ -n "${{ inputs.session-file }}" ] && [ -f "${{ inputs.session-file }}" ]; then
+            cp "${{ inputs.session-file }}" "$SESSION_FILE"
+          else
+            agentguard export --last -o "$SESSION_FILE" 2>/dev/null || true
+          fi
+
+          if [ -f "$SESSION_FILE" ]; then
+            echo "exported=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exported=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Upload governance report
         if: steps.ci-check.outputs.skip != 'true' && always()
@@ -128,3 +161,11 @@ jobs:
           name: governance-report
           path: governance-result.json
           retention-days: 30
+
+      - name: Upload full governance session
+        if: steps.export-session.outputs.exported == 'true' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: governance-session
+          path: governance-session.agentguard.jsonl
+          retention-days: 90
