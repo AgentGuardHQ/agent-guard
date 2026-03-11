@@ -359,7 +359,7 @@ async function main() {
 
     case 'claude-hook': {
       const { claudeHook } = await import('./commands/claude-hook.js');
-      await claudeHook(args[1]); // 'pre' or 'post'
+      await claudeHook(args[1], args.slice(2)); // 'pre' or 'post', then remaining flags (e.g., --store sqlite)
       break;
     }
 

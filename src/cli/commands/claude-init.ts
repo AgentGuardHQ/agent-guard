@@ -31,6 +31,11 @@ export async function claudeInit(args: string[] = []): Promise<void> {
   const isGlobal = args.includes('--global') || args.includes('-g');
   const isRemove = args.includes('--remove') || args.includes('--uninstall');
 
+  // Parse --store flag for storage backend (embedded into hook commands)
+  const storeIdx = args.findIndex((a) => a === '--store');
+  const storeBackend = storeIdx !== -1 ? args[storeIdx + 1] : undefined;
+  const storeSuffix = storeBackend ? ` --store ${storeBackend}` : '';
+
   // Resolve hook script path — handles both tsc output (commands/) and esbuild bundle (cli/)
   let hookScript = resolve(__dirname, 'claude-hook.js');
   if (!existsSync(hookScript)) {
@@ -81,7 +86,7 @@ export async function claudeInit(args: string[] = []): Promise<void> {
     hooks: [
       {
         type: 'command',
-        command: `node ${hookScript} pre`,
+        command: `node ${hookScript} pre${storeSuffix}`,
       },
     ],
   });
@@ -93,7 +98,7 @@ export async function claudeInit(args: string[] = []): Promise<void> {
     hooks: [
       {
         type: 'command',
-        command: `node ${hookScript} post`,
+        command: `node ${hookScript} post${storeSuffix}`,
       },
     ],
   });
@@ -104,7 +109,11 @@ export async function claudeInit(args: string[] = []): Promise<void> {
     `  ${FG.green}✓${RESET}  Hooks installed in ${FG.cyan}${settingsLabel}${RESET}\n`
   );
   process.stderr.write(`  ${DIM}PreToolUse:  governance enforcement (all tools)${RESET}\n`);
-  process.stderr.write(`  ${DIM}PostToolUse: error monitoring (Bash)${RESET}\n\n`);
+  process.stderr.write(`  ${DIM}PostToolUse: error monitoring (Bash)${RESET}\n`);
+  if (storeBackend) {
+    process.stderr.write(`  ${DIM}Storage:     ${storeBackend}${RESET}\n`);
+  }
+  process.stderr.write('\n');
   // Set core.hooksPath so git uses the repo's hooks/ directory
   // (pre-commit auto-stages telemetry, post-commit tracks dev activity)
   try {

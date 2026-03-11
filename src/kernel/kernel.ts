@@ -49,6 +49,11 @@ export interface KernelConfig extends MonitorConfig {
   runId?: string;
   sinks?: EventSink[];
   adapters?: AdapterRegistry;
+  /**
+   * When true, the kernel evaluates policies and invariants but skips adapter execution.
+   * Events and decision records are still emitted and persisted.
+   * Used by the Claude Code hook where Claude Code handles actual tool execution.
+   */
   dryRun?: boolean;
   /** Optional decision sinks for persisting GovernanceDecisionRecords */
   decisionSinks?: DecisionSink[];
