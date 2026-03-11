@@ -129,7 +129,13 @@ const EVENT_SCHEMAS: Record<string, EventSchema> = {
   },
   [STATE_CHANGED]: {
     required: ['from', 'to'],
-    optional: [],
+    optional: [
+      'trigger',
+      'totalDenials',
+      'totalViolations',
+      'denialThreshold',
+      'violationThreshold',
+    ],
   },
   [RUN_STARTED]: {
     required: ['runId'],
