@@ -1,6 +1,6 @@
 # Skill: Respond to PR Reviews
 
-Detect unresolved review comments on agent-authored PRs, make code changes to address the feedback, and reply to each thread. Keeps agent PRs moving toward merge without requiring human re-implementation. Designed for periodic scheduled execution.
+Detect unresolved review comments on agent-authored PRs, make code changes to address the feedback, validate changes against governance policy, and reply to each thread. Keeps agent PRs moving toward merge without requiring human re-implementation. Designed for periodic scheduled execution.
 
 ## Autonomy Directive
 
@@ -106,7 +106,22 @@ Make the code change that addresses the feedback. Follow project conventions:
 - `import type` for type-only imports
 - Single quotes, trailing commas (es5), semicolons
 
-#### 7c. Verify the Change
+#### 7c. Validate Against Governance Policy
+
+After making the change, simulate each modified file against governance policy:
+
+```bash
+npx agentguard simulate --action file.write --target <modified-file> --policy agentguard.yaml --json 2>/dev/null
+```
+
+If simulation shows a denial:
+- Do NOT commit the change
+- Reply to the review comment explaining the governance constraint
+- Note which policy rule or invariant blocked the change
+
+If the simulate command is not available, skip validation and proceed.
+
+#### 7d. Verify the Change
 
 After each change, run the full quality suite:
 
@@ -148,6 +163,24 @@ gh api repos/{owner}/{repo}/pulls/<PR_NUMBER>/comments/<COMMENT_ID>/replies \
 
 Applied in commit <SHORT_SHA>:
 - <brief description of the change>
+- **Governance check**: passed (no policy violations)
+
+---
+*Automated response by respond-to-pr-reviews skill on $(date -u +%Y-%m-%dT%H:%M:%SZ)*"
+```
+
+For comments blocked by governance policy:
+
+```bash
+gh api repos/{owner}/{repo}/pulls/<PR_NUMBER>/comments/<COMMENT_ID>/replies \
+  -X POST -f body="**AgentGuard Review Response Bot** — blocked by governance policy
+
+The requested change cannot be applied automatically:
+- **Policy rule**: <rule that denied the change>
+- **Reason**: <denial reason>
+- **Affected file**: <file path>
+
+This requires a policy review or manual override. Run \`npx agentguard inspect --last\` for details.
 
 ---
 *Automated response by respond-to-pr-reviews skill on $(date -u +%Y-%m-%dT%H:%M:%SZ)*"
@@ -191,6 +224,7 @@ git checkout -
 Report:
 - **PRs processed**: N (list PR numbers and titles)
 - **Comments addressed (code changed)**: N
+- **Comments blocked by governance**: N (list policy rules)
 - **Comments acknowledged (non-actionable)**: N
 - **Comments unresolvable**: N (list reasons)
 - **Commits pushed**: N (list commit SHAs)
@@ -204,6 +238,7 @@ Report:
 - **Never force push** — always regular push
 - **Never modify protected files**: `agentguard.yaml`, `.claude/settings.json`, files in `src/kernel/`, `src/policy/`, `src/invariants/` unless the review comment explicitly references them AND the linked issue authorizes it
 - **Never push if the full quality suite fails** — revert the change and reply explaining the failure
+- **Never push changes that governance policy denies** — report the denial in the review thread
 - **Skip comments already replied to** by `**AgentGuard Review Response Bot**`
 - **Do not approve, merge, or request changes** on PRs — only make code changes and reply to comments
 - **Do not address merge/approval requests** — only code change requests
