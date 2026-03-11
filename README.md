@@ -171,6 +171,12 @@ agentguard evidence-pr                    # Attach governance evidence summary t
 agentguard evidence-pr --pr <number>     # Post evidence to a specific PR
 agentguard evidence-pr --dry-run         # Preview evidence report
 
+# === Traces ===
+agentguard traces [runId]                 # Display policy evaluation traces for a run
+agentguard traces --last                  # Show traces for the most recent run
+agentguard traces --last --summary       # Summary statistics only
+agentguard traces --last --json          # JSON output
+
 # === Integration ===
 agentguard claude-init                    # Set up Claude Code hook integration
 agentguard init <type>                    # Scaffold governance extensions
@@ -286,7 +292,7 @@ src/
 ├── cli/                    # CLI entry point + commands
 │   ├── bin.ts              # Main entry
 │   ├── evidence-summary.ts # Evidence summary generator for PR reports
-│   └── commands/           # analytics, guard, inspect, replay, export, import, simulate, ci-check, plugin, policy, claude-hook, claude-init, init, diff, evidence-pr
+│   └── commands/           # analytics, guard, inspect, replay, export, import, simulate, ci-check, plugin, policy, claude-hook, claude-init, init, diff, evidence-pr, traces
 ├── storage/                # SQLite storage backend (opt-in alternative to JSONL)
 ├── telemetry/              # Runtime telemetry and logging
 └── core/                   # Shared utilities (types, actions, hash, rng, execution-log)
