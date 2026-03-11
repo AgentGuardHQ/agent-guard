@@ -76,7 +76,7 @@ A comprehensive codebase audit assessed the current system against the strategic
 | Cross-session Analytics (aggregation, clustering, trends) | Implemented | `src/analytics/` |
 | Plugin Ecosystem (discovery, registry, validation) | Implemented | `src/plugins/` |
 | Renderer Plugin System | Implemented | `src/renderers/` |
-| CLI (guard, inspect, events, replay, export, import, simulate, ci-check, analytics, plugin, policy, claude-hook, claude-init, init, diff, traces, evidence-pr) | Implemented | `src/cli/` |
+| CLI (guard, inspect, events, replay, export, import, simulate, ci-check, analytics, plugin, policy, claude-hook, claude-init, init, diff, evidence-pr) | Implemented | `src/cli/` |
 | Claude Code Hook Integration | Implemented | `src/adapters/claude-code.ts` |
 | VS Code Extension (sidebar panels, event reader, inline diagnostics) | Implemented | `vscode-extension/` |
 | Policy Pack Loader | Implemented | `src/policy/pack-loader.ts` |
