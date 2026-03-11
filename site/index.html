@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AgentGuard — Governed Action Runtime for AI Coding Agents</title>
+  <meta name="description" content="AgentGuard intercepts AI agent tool calls, enforces policies and invariants, and produces a verifiable execution trail. Deterministic governance for every action.">
+
+  <!-- OpenGraph -->
+  <meta property="og:title" content="AgentGuard — Governed Action Runtime for AI Coding Agents">
+  <meta property="og:description" content="Deterministic governance layer between AI agent proposals and execution. Policy enforcement, 8 safety invariants, full audit trail.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://jpleva91.github.io/agent-guard/">
+  <meta property="og:image" content="https://jpleva91.github.io/agent-guard/og-image.png">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="AgentGuard — Governed Action Runtime for AI Coding Agents">
+  <meta name="twitter:description" content="Deterministic governance layer between AI agent proposals and execution.">
+
+  <!-- Favicon (inline SVG shield) -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2322C55E' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'/><polyline points='9 12 11 14 15 10'/></svg>">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            bg: '#0F172A',
+            surface: '#1E293B',
+            'surface-light': '#334155',
+            cta: '#22C55E',
+            'cta-dark': '#16A34A',
+            text: '#F8FAFC',
+            muted: '#94A3B8',
+            danger: '#EF4444',
+            warning: '#F59E0B',
+          },
+          fontFamily: {
+            mono: ['JetBrains Mono', 'monospace'],
+            sans: ['IBM Plex Sans', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+
+  <style>
+    /* Base resets */
+    html { scroll-behavior: smooth; }
+    body { font-family: 'IBM Plex Sans', sans-serif; background: #0F172A; color: #F8FAFC; }
+
+    /* Dot grid background */
+    .dot-grid {
+      background-image: radial-gradient(circle, #334155 1px, transparent 1px);
+      background-size: 32px 32px;
+    }
+
+    /* Scroll reveal */
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Staggered children */
+    .reveal-stagger > .reveal:nth-child(1) { transition-delay: 0ms; }
+    .reveal-stagger > .reveal:nth-child(2) { transition-delay: 80ms; }
+    .reveal-stagger > .reveal:nth-child(3) { transition-delay: 160ms; }
+    .reveal-stagger > .reveal:nth-child(4) { transition-delay: 240ms; }
+    .reveal-stagger > .reveal:nth-child(5) { transition-delay: 320ms; }
+    .reveal-stagger > .reveal:nth-child(6) { transition-delay: 400ms; }
+    .reveal-stagger > .reveal:nth-child(7) { transition-delay: 480ms; }
+    .reveal-stagger > .reveal:nth-child(8) { transition-delay: 560ms; }
+
+    /* Terminal cursor */
+    .cursor {
+      display: inline-block;
+      width: 8px;
+      height: 18px;
+      background: #22C55E;
+      animation: blink 1s step-end infinite;
+      vertical-align: text-bottom;
+      margin-left: 2px;
+    }
+    @keyframes blink {
+      50% { opacity: 0; }
+    }
+
+    /* Card hover lift */
+    .card-lift {
+      transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+    }
+    .card-lift:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 32px rgba(34, 197, 94, 0.1);
+      border-color: #22C55E;
+    }
+
+    /* Pipeline connector arrows */
+    .pipeline-arrow {
+      position: relative;
+    }
+    .pipeline-arrow::after {
+      content: '';
+      position: absolute;
+      right: -20px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 0;
+      height: 0;
+      border-top: 8px solid transparent;
+      border-bottom: 8px solid transparent;
+      border-left: 12px solid #22C55E;
+    }
+    .pipeline-arrow.last::after {
+      display: none;
+    }
+
+    /* Copy button flash */
+    .copy-flash {
+      animation: flash 0.4s ease;
+    }
+    @keyframes flash {
+      0% { background-color: #22C55E; color: #0F172A; }
+      100% { background-color: transparent; }
+    }
+
+    /* Green glow */
+    .glow-green {
+      box-shadow: 0 0 40px rgba(34, 197, 94, 0.15);
+    }
+
+    /* Focus visible */
+    :focus-visible {
+      outline: 2px solid #22C55E;
+      outline-offset: 2px;
+    }
+
+    /* Counter number */
+    .counter {
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Nav transition */
+    #main-nav {
+      transition: background-color 0.3s ease, backdrop-filter 0.3s ease;
+    }
+
+    /* Mobile menu */
+    .mobile-menu {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+    }
+    .mobile-menu.open {
+      max-height: 400px;
+    }
+
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+      .reveal { opacity: 1; transform: none; transition: none; }
+      .cursor { animation: none; opacity: 1; }
+      .card-lift { transition: none; }
+      .card-lift:hover { transform: none; }
+      #main-nav { transition: none; }
+      .mobile-menu { transition: none; }
+    }
+  </style>
+</head>
+
+<body class="antialiased overflow-x-hidden">
+  <!-- Skip to content -->
+  <a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:bg-cta focus:text-bg focus:px-4 focus:py-2 focus:rounded font-mono text-sm">
+    Skip to content
+  </a>
+
+  <!-- ============================================ -->
+  <!-- NAV                                          -->
+  <!-- ============================================ -->
+  <nav id="main-nav" class="fixed top-0 left-0 right-0 z-50" aria-label="Main navigation">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+      <!-- Logo -->
+      <a href="#" class="flex items-center gap-2 group" aria-label="AgentGuard home">
+        <svg class="w-7 h-7 text-cta" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          <polyline points="9 12 11 14 15 10"/>
+        </svg>
+        <span class="font-mono font-bold text-lg text-text group-hover:text-cta transition-colors">AgentGuard</span>
+      </a>
+
+      <!-- Desktop links -->
+      <div class="hidden md:flex items-center gap-8">
+        <a href="#features" class="text-muted hover:text-text transition-colors text-sm font-medium">Features</a>
+        <a href="#architecture" class="text-muted hover:text-text transition-colors text-sm font-medium">Architecture</a>
+        <a href="#quickstart" class="text-muted hover:text-text transition-colors text-sm font-medium">Quick Start</a>
+        <a href="https://github.com/jpleva91/agent-guard" target="_blank" rel="noopener noreferrer" class="text-muted hover:text-text transition-colors text-sm font-medium">GitHub</a>
+        <a href="#quickstart" class="bg-cta hover:bg-cta-dark text-bg font-semibold text-sm px-4 py-2 rounded-lg transition-colors">Get Started</a>
+      </div>
+
+      <!-- Mobile hamburger -->
+      <button id="mobile-toggle" class="md:hidden text-muted hover:text-text p-2" aria-label="Toggle menu" aria-expanded="false">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Mobile menu -->
+    <div id="mobile-menu" class="mobile-menu md:hidden bg-surface border-t border-surface-light">
+      <div class="px-6 py-4 flex flex-col gap-4">
+        <a href="#features" class="text-muted hover:text-text transition-colors text-sm font-medium">Features</a>
+        <a href="#architecture" class="text-muted hover:text-text transition-colors text-sm font-medium">Architecture</a>
+        <a href="#quickstart" class="text-muted hover:text-text transition-colors text-sm font-medium">Quick Start</a>
+        <a href="https://github.com/jpleva91/agent-guard" target="_blank" rel="noopener noreferrer" class="text-muted hover:text-text transition-colors text-sm font-medium">GitHub</a>
+        <a href="#quickstart" class="bg-cta hover:bg-cta-dark text-bg font-semibold text-sm px-4 py-2 rounded-lg transition-colors text-center">Get Started</a>
+      </div>
+    </div>
+  </nav>
+
+  <main id="main">
+
+    <!-- ============================================ -->
+    <!-- HERO                                         -->
+    <!-- ============================================ -->
+    <section class="min-h-screen flex items-center dot-grid relative pt-20" aria-label="Hero">
+      <!-- Gradient overlay for depth -->
+      <div class="absolute inset-0 bg-gradient-to-b from-bg/80 via-bg/60 to-bg pointer-events-none" aria-hidden="true"></div>
+
+      <div class="max-w-7xl mx-auto px-6 py-16 grid lg:grid-cols-2 gap-12 lg:gap-16 items-center relative z-10">
+        <!-- Left column -->
+        <div class="reveal">
+          <p class="font-mono text-cta text-sm font-semibold tracking-wider uppercase mb-4">Open Source &middot; Apache 2.0</p>
+          <h1 class="font-mono font-bold text-4xl sm:text-5xl lg:text-6xl leading-tight mb-6">
+            Governed Action Runtime for <span class="text-cta">AI Coding Agents</span>
+          </h1>
+          <p class="text-muted text-lg leading-relaxed mb-8 max-w-xl">
+            Deterministic governance layer between what an AI agent proposes and what actually executes. Policy enforcement, safety invariants, and a full audit trail for every action.
+          </p>
+          <div class="flex flex-wrap gap-4">
+            <a href="#quickstart" class="bg-cta hover:bg-cta-dark text-bg font-semibold px-6 py-3 rounded-lg transition-colors text-sm inline-flex items-center gap-2">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              Get Started
+            </a>
+            <a href="https://github.com/jpleva91/agent-guard" target="_blank" rel="noopener noreferrer" class="border border-surface-light hover:border-muted text-text font-semibold px-6 py-3 rounded-lg transition-colors text-sm inline-flex items-center gap-2">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+              View on GitHub
+            </a>
+          </div>
+        </div>
+
+        <!-- Right column: Terminal -->
+        <div class="reveal" style="transition-delay: 200ms">
+          <div class="bg-surface rounded-xl border border-surface-light overflow-hidden glow-green" role="img" aria-label="Terminal demonstration showing AgentGuard evaluating actions">
+            <!-- Terminal title bar -->
+            <div class="flex items-center gap-2 px-4 py-3 bg-surface-light/50 border-b border-surface-light">
+              <span class="w-3 h-3 rounded-full bg-danger/60" aria-hidden="true"></span>
+              <span class="w-3 h-3 rounded-full bg-warning/60" aria-hidden="true"></span>
+              <span class="w-3 h-3 rounded-full bg-cta/60" aria-hidden="true"></span>
+              <span class="font-mono text-xs text-muted ml-2">agentguard guard --policy agentguard.yaml</span>
+            </div>
+            <!-- Terminal body -->
+            <div class="p-5 font-mono text-sm leading-relaxed min-h-[280px]">
+              <div id="terminal-output" aria-live="polite"></div>
+              <span class="cursor" aria-hidden="true"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================ -->
+    <!-- PROBLEM / SOLUTION                           -->
+    <!-- ============================================ -->
+    <section class="py-24 bg-surface/30" aria-labelledby="problem-heading">
+      <div class="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-12 lg:gap-20">
+        <!-- Problem -->
+        <div class="reveal">
+          <div class="flex items-center gap-3 mb-6">
+            <div class="w-10 h-10 rounded-lg bg-danger/10 flex items-center justify-center">
+              <svg class="w-5 h-5 text-danger" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </div>
+            <h2 id="problem-heading" class="font-mono font-bold text-2xl">The Problem</h2>
+          </div>
+          <ul class="space-y-4 text-muted">
+            <li class="flex items-start gap-3">
+              <svg class="w-5 h-5 text-danger mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              <span>AI agents execute file writes, shell commands, and git operations <strong class="text-text">with no governance layer</strong></span>
+            </li>
+            <li class="flex items-start gap-3">
+              <svg class="w-5 h-5 text-danger mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              <span>One bad tool call can push to main, leak secrets, or delete production files</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <svg class="w-5 h-5 text-danger mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              <span>No audit trail means no way to understand <strong class="text-text">what happened or why</strong></span>
+            </li>
+            <li class="flex items-start gap-3">
+              <svg class="w-5 h-5 text-danger mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              <span>Traditional AI safety focuses on model behavior, not execution-layer enforcement</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Solution -->
+        <div class="reveal" style="transition-delay: 150ms">
+          <div class="flex items-center gap-3 mb-6">
+            <div class="w-10 h-10 rounded-lg bg-cta/10 flex items-center justify-center">
+              <svg class="w-5 h-5 text-cta" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+            </div>
+            <h2 class="font-mono font-bold text-2xl">The Solution</h2>
+          </div>
+          <ul class="space-y-4 text-muted">
+            <li class="flex items-start gap-3">
+              <svg class="w-5 h-5 text-cta mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>Deterministic decision point between <strong class="text-text">proposal and execution</strong></span>
+            </li>
+            <li class="flex items-start gap-3">
+              <svg class="w-5 h-5 text-cta mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>YAML policies declare what agents can and cannot do &mdash; <strong class="text-text">version-controlled boundaries</strong></span>
+            </li>
+            <li class="flex items-start gap-3">
+              <svg class="w-5 h-5 text-cta mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>8 built-in invariants enforce safety on every action &mdash; <strong class="text-text">no configuration needed</strong></span>
+            </li>
+            <li class="flex items-start gap-3">
+              <svg class="w-5 h-5 text-cta mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>Full JSONL audit trail for every decision &mdash; <strong class="text-text">inspect, replay, export</strong></span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================ -->
+    <!-- FEATURES                                     -->
+    <!-- ============================================ -->
+    <section id="features" class="py-24" aria-labelledby="features-heading">
+      <div class="max-w-7xl mx-auto px-6">
+        <div class="text-center mb-16 reveal">
+          <h2 id="features-heading" class="font-mono font-bold text-3xl sm:text-4xl mb-4">Built for Safety at Scale</h2>
+          <p class="text-muted text-lg max-w-2xl mx-auto">Everything you need to govern AI agent actions in development, CI, and production environments.</p>
+        </div>
+
+        <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 reveal-stagger">
+          <!-- Card 1: 8 Safety Invariants -->
+          <div class="reveal bg-surface border border-surface-light rounded-xl p-6 card-lift">
+            <div class="w-10 h-10 rounded-lg bg-cta/10 flex items-center justify-center mb-4">
+              <svg class="w-5 h-5 text-cta" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <h3 class="font-mono font-semibold text-text mb-2">8 Safety Invariants</h3>
+            <p class="text-muted text-sm leading-relaxed">Secret detection, branch protection, blast radius limits, lockfile integrity, and more. Always on.</p>
+          </div>
+
+          <!-- Card 2: 23 Action Types -->
+          <div class="reveal bg-surface border border-surface-light rounded-xl p-6 card-lift">
+            <div class="w-10 h-10 rounded-lg bg-cta/10 flex items-center justify-center mb-4">
+              <svg class="w-5 h-5 text-cta" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            </div>
+            <h3 class="font-mono font-semibold text-text mb-2">23 Action Types</h3>
+            <p class="text-muted text-sm leading-relaxed">Canonical types across 8 classes: file, git, shell, npm, test, http, deploy, and infra.</p>
+          </div>
+
+          <!-- Card 3: Deterministic Kernel -->
+          <div class="reveal bg-surface border border-surface-light rounded-xl p-6 card-lift">
+            <div class="w-10 h-10 rounded-lg bg-cta/10 flex items-center justify-center mb-4">
+              <svg class="w-5 h-5 text-cta" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <h3 class="font-mono font-semibold text-text mb-2">Deterministic Kernel</h3>
+            <p class="text-muted text-sm leading-relaxed">Same action + same policy = same decision. Every time. No probabilistic surprises.</p>
+          </div>
+
+          <!-- Card 4: YAML Policies -->
+          <div class="reveal bg-surface border border-surface-light rounded-xl p-6 card-lift">
+            <div class="w-10 h-10 rounded-lg bg-cta/10 flex items-center justify-center mb-4">
+              <svg class="w-5 h-5 text-cta" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            </div>
+            <h3 class="font-mono font-semibold text-text mb-2">YAML Policies</h3>
+            <p class="text-muted text-sm leading-relaxed">Version-controlled boundary definitions. Deny, allow, scope, and branch conditions in plain YAML.</p>
+          </div>
+
+          <!-- Card 5: Full Audit Trail -->
+          <div class="reveal bg-surface border border-surface-light rounded-xl p-6 card-lift">
+            <div class="w-10 h-10 rounded-lg bg-cta/10 flex items-center justify-center mb-4">
+              <svg class="w-5 h-5 text-cta" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            </div>
+            <h3 class="font-mono font-semibold text-text mb-2">Full Audit Trail</h3>
+            <p class="text-muted text-sm leading-relaxed">JSONL event persistence. Every proposal, decision, and execution recorded for inspection.</p>
+          </div>
+
+          <!-- Card 6: Escalation System -->
+          <div class="reveal bg-surface border border-surface-light rounded-xl p-6 card-lift">
+            <div class="w-10 h-10 rounded-lg bg-cta/10 flex items-center justify-center mb-4">
+              <svg class="w-5 h-5 text-cta" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            </div>
+            <h3 class="font-mono font-semibold text-text mb-2">Escalation System</h3>
+            <p class="text-muted text-sm leading-relaxed">NORMAL &rarr; ELEVATED &rarr; HIGH &rarr; LOCKDOWN. Repeated violations trigger automatic lockdown.</p>
+          </div>
+
+          <!-- Card 7: Claude Code Integration -->
+          <div class="reveal bg-surface border border-surface-light rounded-xl p-6 card-lift">
+            <div class="w-10 h-10 rounded-lg bg-cta/10 flex items-center justify-center mb-4">
+              <svg class="w-5 h-5 text-cta" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            </div>
+            <h3 class="font-mono font-semibold text-text mb-2">Claude Code Integration</h3>
+            <p class="text-muted text-sm leading-relaxed">PreToolUse/PostToolUse hooks. Every Claude Code tool call governed by the kernel.</p>
+          </div>
+
+          <!-- Card 8: Session Replay -->
+          <div class="reveal bg-surface border border-surface-light rounded-xl p-6 card-lift">
+            <div class="w-10 h-10 rounded-lg bg-cta/10 flex items-center justify-center mb-4">
+              <svg class="w-5 h-5 text-cta" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            </div>
+            <h3 class="font-mono font-semibold text-text mb-2">Session Replay</h3>
+            <p class="text-muted text-sm leading-relaxed">Replay any agent session to see exactly what happened, what was denied, and why.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================ -->
+    <!-- ARCHITECTURE                                 -->
+    <!-- ============================================ -->
+    <section id="architecture" class="py-24 bg-surface/30" aria-labelledby="arch-heading">
+      <div class="max-w-7xl mx-auto px-6">
+        <div class="text-center mb-16 reveal">
+          <h2 id="arch-heading" class="font-mono font-bold text-3xl sm:text-4xl mb-4">Kernel Architecture</h2>
+          <p class="text-muted text-lg max-w-2xl mx-auto">Every agent action passes through a governed pipeline. Six stages, deterministic outcome.</p>
+        </div>
+
+        <!-- Pipeline visualization -->
+        <div class="reveal overflow-x-auto pb-4">
+          <div class="flex items-center justify-center gap-2 min-w-[800px] px-4">
+            <!-- Stage 1: Propose -->
+            <div class="pipeline-arrow flex-shrink-0">
+              <div class="bg-surface border-2 border-surface-light rounded-lg px-5 py-4 text-center w-[120px]">
+                <div class="font-mono font-bold text-text text-sm">Propose</div>
+                <div class="text-muted text-xs mt-1">Agent action</div>
+              </div>
+            </div>
+
+            <!-- Stage 2: Normalize -->
+            <div class="pipeline-arrow flex-shrink-0">
+              <div class="bg-surface border-2 border-surface-light rounded-lg px-5 py-4 text-center w-[120px]">
+                <div class="font-mono font-bold text-text text-sm">Normalize</div>
+                <div class="text-muted text-xs mt-1">AAB mapping</div>
+              </div>
+            </div>
+
+            <!-- Stage 3: Evaluate -->
+            <div class="pipeline-arrow flex-shrink-0">
+              <div class="bg-surface border-2 border-warning rounded-lg px-5 py-4 text-center w-[120px]">
+                <div class="font-mono font-bold text-warning text-sm">Evaluate</div>
+                <div class="text-muted text-xs mt-1">Policy rules</div>
+              </div>
+            </div>
+
+            <!-- Stage 4: Check -->
+            <div class="pipeline-arrow flex-shrink-0">
+              <div class="bg-surface border-2 border-warning rounded-lg px-5 py-4 text-center w-[120px]">
+                <div class="font-mono font-bold text-warning text-sm">Invariants</div>
+                <div class="text-muted text-xs mt-1">8 safety checks</div>
+              </div>
+            </div>
+
+            <!-- Stage 5: Execute/Deny -->
+            <div class="pipeline-arrow flex-shrink-0">
+              <div class="bg-surface border-2 border-cta rounded-lg px-5 py-4 text-center w-[140px]">
+                <div class="font-mono font-bold text-cta text-sm">Execute / Deny</div>
+                <div class="text-muted text-xs mt-1">Final decision</div>
+              </div>
+            </div>
+
+            <!-- Stage 6: Emit -->
+            <div class="pipeline-arrow last flex-shrink-0">
+              <div class="bg-surface border-2 border-cta rounded-lg px-5 py-4 text-center w-[120px]">
+                <div class="font-mono font-bold text-cta text-sm">Emit</div>
+                <div class="text-muted text-xs mt-1">JSONL events</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <p class="text-center text-muted text-sm mt-8 reveal max-w-xl mx-auto">
+          The kernel is the single decision point. Same action + same policy = same outcome. No side channels, no probabilistic evaluation, no exceptions.
+        </p>
+      </div>
+    </section>
+
+    <!-- ============================================ -->
+    <!-- QUICK START                                  -->
+    <!-- ============================================ -->
+    <section id="quickstart" class="py-24" aria-labelledby="qs-heading">
+      <div class="max-w-4xl mx-auto px-6">
+        <div class="text-center mb-16 reveal">
+          <h2 id="qs-heading" class="font-mono font-bold text-3xl sm:text-4xl mb-4">Quick Start</h2>
+          <p class="text-muted text-lg">Three commands. That's it.</p>
+        </div>
+
+        <div class="space-y-8">
+          <!-- Install -->
+          <div class="reveal">
+            <div class="flex items-center gap-2 mb-3">
+              <span class="font-mono text-cta text-sm font-semibold">01</span>
+              <span class="text-text font-semibold text-sm">Install globally</span>
+            </div>
+            <div class="relative group">
+              <pre class="bg-surface border border-surface-light rounded-xl p-5 font-mono text-sm overflow-x-auto"><code><span class="text-muted">$</span> <span class="text-text">npm install -g @red-codes/agentguard</span></code></pre>
+              <button class="copy-btn absolute top-3 right-3 text-muted hover:text-text p-2 rounded-lg hover:bg-surface-light transition-colors opacity-0 group-hover:opacity-100" data-code="npm install -g @red-codes/agentguard" aria-label="Copy to clipboard">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Try it -->
+          <div class="reveal" style="transition-delay: 100ms">
+            <div class="flex items-center gap-2 mb-3">
+              <span class="font-mono text-cta text-sm font-semibold">02</span>
+              <span class="text-text font-semibold text-sm">Evaluate an action (dry run)</span>
+            </div>
+            <div class="relative group">
+              <pre class="bg-surface border border-surface-light rounded-xl p-5 font-mono text-sm overflow-x-auto"><code><span class="text-muted">$</span> <span class="text-text">echo '{"tool":"Bash","command":"git push origin main"}' | npx agentguard guard --dry-run</span></code></pre>
+              <button class="copy-btn absolute top-3 right-3 text-muted hover:text-text p-2 rounded-lg hover:bg-surface-light transition-colors opacity-0 group-hover:opacity-100" data-code="echo '{&quot;tool&quot;:&quot;Bash&quot;,&quot;command&quot;:&quot;git push origin main&quot;}' | npx agentguard guard --dry-run" aria-label="Copy to clipboard">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Claude Code -->
+          <div class="reveal" style="transition-delay: 200ms">
+            <div class="flex items-center gap-2 mb-3">
+              <span class="font-mono text-cta text-sm font-semibold">03</span>
+              <span class="text-text font-semibold text-sm">Hook into Claude Code</span>
+            </div>
+            <div class="relative group">
+              <pre class="bg-surface border border-surface-light rounded-xl p-5 font-mono text-sm overflow-x-auto"><code><span class="text-muted">$</span> <span class="text-text">npx @red-codes/agentguard claude-init</span></code></pre>
+              <button class="copy-btn absolute top-3 right-3 text-muted hover:text-text p-2 rounded-lg hover:bg-surface-light transition-colors opacity-0 group-hover:opacity-100" data-code="npx @red-codes/agentguard claude-init" aria-label="Copy to clipboard">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================ -->
+    <!-- POLICY EXAMPLE                               -->
+    <!-- ============================================ -->
+    <section class="py-24 bg-surface/30" aria-labelledby="policy-heading">
+      <div class="max-w-7xl mx-auto px-6">
+        <div class="text-center mb-16 reveal">
+          <h2 id="policy-heading" class="font-mono font-bold text-3xl sm:text-4xl mb-4">Policy as Code</h2>
+          <p class="text-muted text-lg max-w-2xl mx-auto">Define governance boundaries in YAML. Drop it in your repo root.</p>
+        </div>
+
+        <div class="grid lg:grid-cols-2 gap-8 items-start">
+          <!-- YAML code block -->
+          <div class="reveal">
+            <div class="relative group">
+              <pre class="bg-surface border border-surface-light rounded-xl p-6 font-mono text-sm leading-relaxed overflow-x-auto"><code><span class="text-muted"># agentguard.yaml</span>
+<span class="text-cta">id</span>: default-policy
+<span class="text-cta">name</span>: Default Safety Policy
+<span class="text-cta">severity</span>: <span class="text-warning">4</span>
+
+<span class="text-cta">rules</span>:
+  - <span class="text-cta">action</span>: git.push
+    <span class="text-cta">effect</span>: <span class="text-danger">deny</span>
+    <span class="text-cta">branches</span>: [main, master]
+    <span class="text-cta">reason</span>: Direct push to protected branch
+
+  - <span class="text-cta">action</span>: git.force-push
+    <span class="text-cta">effect</span>: <span class="text-danger">deny</span>
+    <span class="text-cta">reason</span>: Force push rewrites shared history
+
+  - <span class="text-cta">action</span>: file.write
+    <span class="text-cta">effect</span>: <span class="text-danger">deny</span>
+    <span class="text-cta">target</span>: .env
+    <span class="text-cta">reason</span>: Secrets files must not be modified
+
+  - <span class="text-cta">action</span>: file.read
+    <span class="text-cta">effect</span>: <span class="text-cta">allow</span>
+    <span class="text-cta">reason</span>: Reading is always safe</code></pre>
+              <button class="copy-btn absolute top-3 right-3 text-muted hover:text-text p-2 rounded-lg hover:bg-surface-light transition-colors opacity-0 group-hover:opacity-100" data-code="id: default-policy
+name: Default Safety Policy
+severity: 4
+
+rules:
+  - action: git.push
+    effect: deny
+    branches: [main, master]
+    reason: Direct push to protected branch
+
+  - action: git.force-push
+    effect: deny
+    reason: Force push rewrites shared history
+
+  - action: file.write
+    effect: deny
+    target: .env
+    reason: Secrets files must not be modified
+
+  - action: file.read
+    effect: allow
+    reason: Reading is always safe" aria-label="Copy policy YAML to clipboard">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Explanation -->
+          <div class="reveal" style="transition-delay: 150ms">
+            <div class="space-y-6">
+              <div class="flex items-start gap-4">
+                <div class="w-8 h-8 rounded-lg bg-danger/10 flex items-center justify-center shrink-0 mt-0.5">
+                  <svg class="w-4 h-4 text-danger" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                </div>
+                <div>
+                  <h3 class="font-mono font-semibold text-text mb-1">Deny rules block dangerous actions</h3>
+                  <p class="text-muted text-sm leading-relaxed">Prevent direct pushes to protected branches, force pushes, and secrets file modifications.</p>
+                </div>
+              </div>
+
+              <div class="flex items-start gap-4">
+                <div class="w-8 h-8 rounded-lg bg-cta/10 flex items-center justify-center shrink-0 mt-0.5">
+                  <svg class="w-4 h-4 text-cta" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>
+                </div>
+                <div>
+                  <h3 class="font-mono font-semibold text-text mb-1">Allow rules grant explicit permission</h3>
+                  <p class="text-muted text-sm leading-relaxed">Safe operations like file reads are explicitly allowed. Clear intent, no ambiguity.</p>
+                </div>
+              </div>
+
+              <div class="flex items-start gap-4">
+                <div class="w-8 h-8 rounded-lg bg-warning/10 flex items-center justify-center shrink-0 mt-0.5">
+                  <svg class="w-4 h-4 text-warning" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                </div>
+                <div>
+                  <h3 class="font-mono font-semibold text-text mb-1">Scoped by branch, target, and severity</h3>
+                  <p class="text-muted text-sm leading-relaxed">Rules can target specific branches, file patterns, and severity levels. Compose multiple policies with precedence.</p>
+                </div>
+              </div>
+
+              <div class="flex items-start gap-4">
+                <div class="w-8 h-8 rounded-lg bg-surface-light flex items-center justify-center shrink-0 mt-0.5">
+                  <svg class="w-4 h-4 text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                </div>
+                <div>
+                  <h3 class="font-mono font-semibold text-text mb-1">Drop-in configuration</h3>
+                  <p class="text-muted text-sm leading-relaxed">Place <code class="text-cta bg-cta/10 px-1.5 py-0.5 rounded text-xs">agentguard.yaml</code> in your repo root. The CLI discovers it automatically.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================ -->
+    <!-- STATS BAR                                    -->
+    <!-- ============================================ -->
+    <section class="py-20 border-y border-surface-light" aria-label="Project statistics">
+      <div class="max-w-7xl mx-auto px-6">
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-8 text-center reveal-stagger">
+          <div class="reveal">
+            <div class="font-mono font-bold text-3xl sm:text-4xl text-text counter" data-target="345">0</div>
+            <div class="text-muted text-sm mt-1">Tests</div>
+          </div>
+          <div class="reveal">
+            <div class="font-mono font-bold text-3xl sm:text-4xl text-text counter" data-target="8">0</div>
+            <div class="text-muted text-sm mt-1">Invariants</div>
+          </div>
+          <div class="reveal">
+            <div class="font-mono font-bold text-3xl sm:text-4xl text-text counter" data-target="23">0</div>
+            <div class="text-muted text-sm mt-1">Action Types</div>
+          </div>
+          <div class="reveal">
+            <div class="font-mono font-bold text-3xl sm:text-4xl text-text counter" data-target="40">0</div>
+            <div class="text-muted text-sm mt-1">Event Kinds</div>
+          </div>
+          <div class="reveal">
+            <div class="font-mono font-bold text-3xl sm:text-4xl text-text counter" data-target="4">0</div>
+            <div class="text-muted text-sm mt-1">Policy Packs</div>
+          </div>
+          <div class="reveal">
+            <div class="font-mono font-bold text-3xl sm:text-4xl text-text counter" data-target="16">0</div>
+            <div class="text-muted text-sm mt-1">CLI Commands</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================ -->
+    <!-- CONTRIBUTING CTA                             -->
+    <!-- ============================================ -->
+    <section class="py-24" aria-labelledby="contribute-heading">
+      <div class="max-w-3xl mx-auto px-6">
+        <div class="reveal bg-surface border border-cta/30 rounded-2xl p-10 sm:p-14 text-center relative overflow-hidden">
+          <!-- Green gradient glow -->
+          <div class="absolute inset-0 bg-gradient-to-br from-cta/5 to-transparent pointer-events-none" aria-hidden="true"></div>
+
+          <div class="relative">
+            <p class="font-mono text-cta text-sm font-semibold tracking-wider uppercase mb-4">Open Source</p>
+            <h2 id="contribute-heading" class="font-mono font-bold text-3xl sm:text-4xl mb-4">Apache 2.0 Licensed</h2>
+            <p class="text-muted text-lg mb-8 max-w-lg mx-auto">AgentGuard is built in the open. Contributions, feedback, and stars are welcome.</p>
+            <div class="flex flex-wrap justify-center gap-4">
+              <a href="https://github.com/jpleva91/agent-guard/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener noreferrer" class="bg-cta hover:bg-cta-dark text-bg font-semibold px-6 py-3 rounded-lg transition-colors text-sm inline-flex items-center gap-2">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                Contributing Guide
+              </a>
+              <a href="https://github.com/jpleva91/agent-guard" target="_blank" rel="noopener noreferrer" class="border border-surface-light hover:border-muted text-text font-semibold px-6 py-3 rounded-lg transition-colors text-sm inline-flex items-center gap-2">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                Star on GitHub
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ============================================ -->
+  <!-- FOOTER                                       -->
+  <!-- ============================================ -->
+  <footer class="py-16 border-t border-surface-light" aria-label="Footer">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
+        <!-- Brand -->
+        <div>
+          <div class="flex items-center gap-2 mb-4">
+            <svg class="w-6 h-6 text-cta" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              <polyline points="9 12 11 14 15 10"/>
+            </svg>
+            <span class="font-mono font-bold text-text">AgentGuard</span>
+          </div>
+          <p class="text-muted text-sm leading-relaxed">Governed action runtime for AI coding agents. Deterministic safety at the execution layer.</p>
+        </div>
+
+        <!-- Project -->
+        <div>
+          <h3 class="font-mono font-semibold text-text text-sm mb-4">Project</h3>
+          <ul class="space-y-2">
+            <li><a href="#features" class="text-muted hover:text-text transition-colors text-sm">Features</a></li>
+            <li><a href="#architecture" class="text-muted hover:text-text transition-colors text-sm">Architecture</a></li>
+            <li><a href="#quickstart" class="text-muted hover:text-text transition-colors text-sm">Quick Start</a></li>
+            <li><a href="https://www.npmjs.com/package/@red-codes/agentguard" target="_blank" rel="noopener noreferrer" class="text-muted hover:text-text transition-colors text-sm">npm Package</a></li>
+          </ul>
+        </div>
+
+        <!-- Resources -->
+        <div>
+          <h3 class="font-mono font-semibold text-text text-sm mb-4">Resources</h3>
+          <ul class="space-y-2">
+            <li><a href="https://github.com/jpleva91/agent-guard/blob/main/docs/unified-architecture.md" target="_blank" rel="noopener noreferrer" class="text-muted hover:text-text transition-colors text-sm">Architecture Docs</a></li>
+            <li><a href="https://github.com/jpleva91/agent-guard/blob/main/docs/event-model.md" target="_blank" rel="noopener noreferrer" class="text-muted hover:text-text transition-colors text-sm">Event Model</a></li>
+            <li><a href="https://github.com/jpleva91/agent-guard/blob/main/docs/plugin-api.md" target="_blank" rel="noopener noreferrer" class="text-muted hover:text-text transition-colors text-sm">Plugin API</a></li>
+            <li><a href="https://github.com/jpleva91/agent-guard/blob/main/CHANGELOG.md" target="_blank" rel="noopener noreferrer" class="text-muted hover:text-text transition-colors text-sm">Changelog</a></li>
+          </ul>
+        </div>
+
+        <!-- Community -->
+        <div>
+          <h3 class="font-mono font-semibold text-text text-sm mb-4">Community</h3>
+          <ul class="space-y-2">
+            <li><a href="https://github.com/jpleva91/agent-guard" target="_blank" rel="noopener noreferrer" class="text-muted hover:text-text transition-colors text-sm">GitHub</a></li>
+            <li><a href="https://github.com/jpleva91/agent-guard/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener noreferrer" class="text-muted hover:text-text transition-colors text-sm">Contributing</a></li>
+            <li><a href="https://github.com/jpleva91/agent-guard/issues" target="_blank" rel="noopener noreferrer" class="text-muted hover:text-text transition-colors text-sm">Issues</a></li>
+            <li><a href="https://github.com/jpleva91/agent-guard/discussions" target="_blank" rel="noopener noreferrer" class="text-muted hover:text-text transition-colors text-sm">Discussions</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="border-t border-surface-light pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <p class="text-muted text-xs">Apache 2.0 License &middot; Built by <a href="https://github.com/jpleva91" target="_blank" rel="noopener noreferrer" class="text-text hover:text-cta transition-colors">jpleva91</a></p>
+        <p class="text-muted text-xs">Governed by its own policies.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ============================================ -->
+  <!-- SCRIPTS                                      -->
+  <!-- ============================================ -->
+  <script>
+    (function () {
+      'use strict';
+
+      // ---- Scroll Reveal (Intersection Observer) ----
+      var revealObserver = new IntersectionObserver(
+        function (entries) {
+          entries.forEach(function (entry) {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('visible');
+              revealObserver.unobserve(entry.target);
+            }
+          });
+        },
+        { threshold: 0.1, rootMargin: '0px 0px -40px 0px' }
+      );
+
+      document.querySelectorAll('.reveal').forEach(function (el) {
+        revealObserver.observe(el);
+      });
+
+      // ---- Nav Background on Scroll ----
+      var nav = document.getElementById('main-nav');
+      function updateNav() {
+        if (window.scrollY > 40) {
+          nav.style.backgroundColor = 'rgba(15, 23, 42, 0.95)';
+          nav.style.backdropFilter = 'blur(12px)';
+        } else {
+          nav.style.backgroundColor = 'transparent';
+          nav.style.backdropFilter = 'none';
+        }
+      }
+      window.addEventListener('scroll', updateNav, { passive: true });
+      updateNav();
+
+      // ---- Mobile Menu Toggle ----
+      var mobileToggle = document.getElementById('mobile-toggle');
+      var mobileMenu = document.getElementById('mobile-menu');
+      mobileToggle.addEventListener('click', function () {
+        var isOpen = mobileMenu.classList.toggle('open');
+        mobileToggle.setAttribute('aria-expanded', String(isOpen));
+      });
+      mobileMenu.querySelectorAll('a').forEach(function (link) {
+        link.addEventListener('click', function () {
+          mobileMenu.classList.remove('open');
+          mobileToggle.setAttribute('aria-expanded', 'false');
+        });
+      });
+
+      // ---- Copy to Clipboard ----
+      var checkmarkSvgContent = '<polyline points="20 6 9 17 4 12" stroke="currentColor" stroke-width="2" fill="none"/>';
+      var copySvgContent = '<rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor" stroke-width="2" fill="none"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" stroke="currentColor" stroke-width="2" fill="none"/>';
+
+      function setCopySvg(svg, content) {
+        while (svg.firstChild) svg.removeChild(svg.firstChild);
+        var temp = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        // Use a container to parse SVG fragments safely
+        var container = document.createElement('div');
+        container.insertAdjacentHTML('beforeend', '<svg xmlns="http://www.w3.org/2000/svg">' + content + '</svg>');
+        var parsed = container.querySelector('svg');
+        while (parsed.firstChild) {
+          svg.appendChild(parsed.firstChild);
+        }
+      }
+
+      document.querySelectorAll('.copy-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var code = btn.getAttribute('data-code');
+          navigator.clipboard.writeText(code).then(function () {
+            btn.classList.add('copy-flash');
+            var svg = btn.querySelector('svg');
+            setCopySvg(svg, checkmarkSvgContent);
+            setTimeout(function () {
+              btn.classList.remove('copy-flash');
+              setCopySvg(svg, copySvgContent);
+            }, 1500);
+          });
+        });
+      });
+
+      // ---- Counter Animation ----
+      var counterObserver = new IntersectionObserver(
+        function (entries) {
+          entries.forEach(function (entry) {
+            if (entry.isIntersecting) {
+              animateCounter(entry.target);
+              counterObserver.unobserve(entry.target);
+            }
+          });
+        },
+        { threshold: 0.5 }
+      );
+
+      document.querySelectorAll('.counter').forEach(function (el) {
+        counterObserver.observe(el);
+      });
+
+      function animateCounter(el) {
+        var target = parseInt(el.getAttribute('data-target'), 10);
+        var duration = 1200;
+        var start = performance.now();
+        var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        if (prefersReduced) {
+          el.textContent = target + '+';
+          return;
+        }
+
+        function tick(now) {
+          var elapsed = now - start;
+          var progress = Math.min(elapsed / duration, 1);
+          var eased = 1 - Math.pow(1 - progress, 3);
+          var current = Math.round(eased * target);
+          el.textContent = current + (progress >= 1 ? '+' : '');
+          if (progress < 1) {
+            requestAnimationFrame(tick);
+          }
+        }
+        requestAnimationFrame(tick);
+      }
+
+      // ---- Terminal Typing Animation ----
+      var terminalLines = [
+        { text: '  AgentGuard Runtime Active', cls: 'text-cta', delay: 0 },
+        { text: '  policy: agentguard.yaml | invariants: 8 active', cls: 'text-muted', delay: 0 },
+        { text: '', cls: '', delay: 300 },
+        { text: '  \u2713 file.write  src/auth/service.ts', cls: 'text-cta', delay: 0 },
+        { text: '  \u2713 shell.exec  npm test', cls: 'text-cta', delay: 0 },
+        { text: '  \u2717 git.push   main \u2192 DENIED (protect-main)', cls: 'text-danger', delay: 0 },
+        { text: '  \u26A0 invariant  protected-branch violated', cls: 'text-warning', delay: 0 },
+        { text: '', cls: '', delay: 600 },
+        { text: '  \u2713 file.write  src/utils/hash.ts', cls: 'text-cta', delay: 0 },
+        { text: '  \u2713 test.run    vitest (14 passed)', cls: 'text-cta', delay: 0 },
+        { text: '  \u2713 git.commit  "feat: add hash utility"', cls: 'text-cta', delay: 0 },
+        { text: '  \u2717 file.write  .env \u2192 DENIED (no-secret-exposure)', cls: 'text-danger', delay: 0 },
+        { text: '', cls: '', delay: 800 },
+        { text: '  escalation: NORMAL \u2192 ELEVATED (2 denials)', cls: 'text-warning', delay: 0 },
+      ];
+
+      var terminalOutput = document.getElementById('terminal-output');
+      var lineIndex = 0;
+      var charIndex = 0;
+      var currentSpan = null;
+
+      function typeNextChar() {
+        var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        if (lineIndex >= terminalLines.length) {
+          setTimeout(function () {
+            while (terminalOutput.firstChild) terminalOutput.removeChild(terminalOutput.firstChild);
+            lineIndex = 0;
+            charIndex = 0;
+            currentSpan = null;
+            typeNextChar();
+          }, 3000);
+          return;
+        }
+
+        var line = terminalLines[lineIndex];
+
+        if (charIndex === 0) {
+          currentSpan = document.createElement('div');
+          if (line.cls) currentSpan.className = line.cls;
+          currentSpan.style.minHeight = '1.5em';
+          terminalOutput.appendChild(currentSpan);
+        }
+
+        if (prefersReduced || line.text === '') {
+          currentSpan.textContent = line.text;
+          lineIndex++;
+          charIndex = 0;
+          setTimeout(typeNextChar, line.delay || (prefersReduced ? 50 : 150));
+          return;
+        }
+
+        if (charIndex < line.text.length) {
+          currentSpan.textContent = line.text.substring(0, charIndex + 1);
+          charIndex++;
+          setTimeout(typeNextChar, 18 + Math.random() * 12);
+        } else {
+          lineIndex++;
+          charIndex = 0;
+          setTimeout(typeNextChar, line.delay || 150);
+        }
+      }
+
+      // Start terminal animation after fonts load
+      if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(function () {
+          setTimeout(typeNextChar, 800);
+        });
+      } else {
+        setTimeout(typeNextChar, 1200);
+      }
+    })();
+  </script>
+</body>
+</html>

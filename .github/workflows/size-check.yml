@@ -6,6 +6,7 @@ on:
       - '*.md'
       - 'docs/**'
       - '.github/ISSUE_TEMPLATE/**'
+      - 'site/**'
 
 jobs:
   lint:
