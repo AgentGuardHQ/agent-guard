@@ -1,7 +1,7 @@
 // Tests for CLI init command — scaffold governance extensions
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { sep } from 'node:path';
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 
 vi.mock('node:fs', () => ({
   existsSync: vi.fn(),
@@ -267,6 +267,112 @@ describe('init command', () => {
         const code = await init(['--extension', type, '--name', `valid-${type}`]);
         expect(code, `Extension type "${type}" should be valid`).toBe(0);
       }
+    });
+  });
+
+  describe('policy templates', () => {
+    const MOCK_TEMPLATE = `# Mock template\nid: mock-policy\nrules: []\n`;
+
+    function setupTemplateMocks() {
+      vi.mocked(existsSync).mockImplementation((p: unknown) => {
+        const path = String(p);
+        // The templates directory must exist (for resolveTemplatesDir)
+        if (path.endsWith('templates')) return true;
+        // The template YAML file must exist
+        if (path.endsWith('.yaml') && path.includes('templates')) return true;
+        // The output agentguard.yaml must NOT exist
+        if (path.endsWith('agentguard.yaml')) return false;
+        return false;
+      });
+      vi.mocked(readFileSync).mockReturnValue(MOCK_TEMPLATE);
+    }
+
+    it('should scaffold a template when --template is provided', async () => {
+      setupTemplateMocks();
+      const code = await init(['--template', 'strict']);
+      expect(code).toBe(0);
+      expect(writeFileSync).toHaveBeenCalled();
+
+      const writeCalls = vi.mocked(writeFileSync).mock.calls;
+      const yamlCall = writeCalls.find(
+        (call) => typeof call[0] === 'string' && (call[0] as string).endsWith('agentguard.yaml')
+      );
+      expect(yamlCall).toBeDefined();
+      expect(yamlCall?.[1]).toBe(MOCK_TEMPLATE);
+    });
+
+    it('should accept -t alias for --template', async () => {
+      setupTemplateMocks();
+      const code = await init(['-t', 'development']);
+      expect(code).toBe(0);
+    });
+
+    it('should accept all four template names', async () => {
+      const templates = ['strict', 'permissive', 'ci-only', 'development'];
+      for (const tmpl of templates) {
+        vi.clearAllMocks();
+        vi.spyOn(console, 'log').mockImplementation(() => {});
+        vi.spyOn(console, 'error').mockImplementation(() => {});
+        setupTemplateMocks();
+
+        const code = await init(['--template', tmpl]);
+        expect(code, `Template "${tmpl}" should be valid`).toBe(0);
+      }
+    });
+
+    it('should return 1 for unknown template name', async () => {
+      const code = await init(['--template', 'nonexistent']);
+      expect(code).toBe(1);
+      expect(console.error).toHaveBeenCalled();
+    });
+
+    it('should return 1 if agentguard.yaml already exists', async () => {
+      vi.mocked(existsSync).mockImplementation((p: unknown) => {
+        const path = String(p);
+        if (path.endsWith('templates')) return true;
+        if (path.endsWith('.yaml') && path.includes('templates')) return true;
+        // Output file already exists
+        if (path.endsWith('agentguard.yaml')) return true;
+        return false;
+      });
+      vi.mocked(readFileSync).mockReturnValue(MOCK_TEMPLATE);
+
+      const code = await init(['--template', 'strict']);
+      expect(code).toBe(1);
+      expect(console.error).toHaveBeenCalled();
+    });
+
+    it('should write to custom directory when --dir is provided', async () => {
+      setupTemplateMocks();
+      const code = await init(['--template', 'permissive', '--dir', '/tmp/my-project']);
+      expect(code).toBe(0);
+
+      const writeCalls = vi.mocked(writeFileSync).mock.calls;
+      const yamlCall = writeCalls.find(
+        (call) => typeof call[0] === 'string' && (call[0] as string).includes('my-project')
+      );
+      expect(yamlCall).toBeDefined();
+    });
+
+    it('should display success message with template name', async () => {
+      setupTemplateMocks();
+      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+      await init(['--template', 'development']);
+
+      const allOutput = consoleSpy.mock.calls.flat().join('\n');
+      expect(allOutput).toContain('development');
+    });
+
+    it('should include template info in help output', async () => {
+      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+      await init([]);
+
+      const allOutput = consoleSpy.mock.calls.flat().join('\n');
+      expect(allOutput).toContain('--template');
+      expect(allOutput).toContain('strict');
+      expect(allOutput).toContain('permissive');
+      expect(allOutput).toContain('ci-only');
+      expect(allOutput).toContain('development');
     });
   });
 });

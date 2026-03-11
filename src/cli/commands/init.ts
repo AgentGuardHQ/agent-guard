@@ -1,4 +1,4 @@
-// CLI command: agentguard init — scaffold new governance extensions.
+// CLI command: agentguard init — scaffold new governance extensions or policy templates.
 //
 // Generates boilerplate for extension types:
 //   invariant          Custom invariant pack
@@ -6,9 +6,16 @@
 //   adapter            Custom execution adapter
 //   renderer           Custom governance renderer
 //   replay-processor   Custom replay processor
+//
+// Or scaffold a policy template:
+//   --template strict       Maximum guardrails
+//   --template permissive   Default-allow with safety nets
+//   --template ci-only      Read-only CI pipeline mode
+//   --template development  Balanced for active development
 
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { parseArgs } from '../args.js';
 import { bold, color, dim } from '../colors.js';
 
@@ -22,6 +29,10 @@ const EXTENSION_TYPES = [
 
 type ExtensionType = (typeof EXTENSION_TYPES)[number];
 
+const TEMPLATE_NAMES = ['strict', 'permissive', 'ci-only', 'development'] as const;
+
+type TemplateName = (typeof TEMPLATE_NAMES)[number];
+
 interface ScaffoldFile {
   path: string;
   content: string;
@@ -32,9 +43,16 @@ interface ScaffoldFile {
  */
 export async function init(args: string[]): Promise<number> {
   const parsed = parseArgs(args, {
-    string: ['--extension', '--name', '--dir'],
-    alias: { '-e': '--extension', '-n': '--name', '-d': '--dir' },
+    string: ['--extension', '--name', '--dir', '--template'],
+    alias: { '-e': '--extension', '-n': '--name', '-d': '--dir', '-t': '--template' },
   });
+
+  const templateName = parsed.flags.template as string | undefined;
+
+  // Template mode: scaffold an agentguard.yaml from a built-in template
+  if (templateName) {
+    return initTemplate(templateName, parsed.flags.dir as string | undefined);
+  }
 
   const extensionType = (parsed.flags.extension as string) ?? parsed.positional[0];
   const name = parsed.flags.name as string | undefined;
@@ -95,6 +113,69 @@ export async function init(args: string[]): Promise<number> {
   console.log(`    npm install`);
   console.log(`    # Edit src/index.ts to implement your extension`);
   console.log(`    agentguard plugin install .\n`);
+
+  return 0;
+}
+
+function isValidTemplateName(name: string): name is TemplateName {
+  return (TEMPLATE_NAMES as readonly string[]).includes(name);
+}
+
+/**
+ * Resolve the templates directory. Uses the bundled templates/ directory
+ * relative to the project root (works both in dev and dist builds).
+ */
+function resolveTemplatesDir(): string {
+  // Walk up from this file to find the project root (where templates/ lives)
+  const thisFile = fileURLToPath(import.meta.url);
+  let dir = dirname(thisFile);
+  for (let i = 0; i < 5; i++) {
+    const candidate = join(dir, 'templates');
+    if (existsSync(candidate)) {
+      return candidate;
+    }
+    dir = dirname(dir);
+  }
+  return join(dirname(thisFile), '..', '..', '..', 'templates');
+}
+
+/**
+ * Scaffold an agentguard.yaml from a built-in policy template.
+ */
+function initTemplate(templateName: string, targetDir?: string): number {
+  if (!isValidTemplateName(templateName)) {
+    console.error(`\n  ${color('Error', 'red')}: Unknown template "${templateName}".`);
+    console.error(`  Available templates: ${TEMPLATE_NAMES.join(', ')}\n`);
+    return 1;
+  }
+
+  const templatesDir = resolveTemplatesDir();
+  const templatePath = join(templatesDir, `${templateName}.yaml`);
+
+  if (!existsSync(templatePath)) {
+    console.error(`\n  ${color('Error', 'red')}: Template file not found: ${templatePath}`);
+    console.error(`  Ensure the templates/ directory is present in the AgentGuard installation.\n`);
+    return 1;
+  }
+
+  const outputDir = resolve(targetDir ?? '.');
+  const outputPath = join(outputDir, 'agentguard.yaml');
+
+  if (existsSync(outputPath)) {
+    console.error(`\n  ${color('Error', 'red')}: ${outputPath} already exists.`);
+    console.error(`  Remove or rename the existing file before scaffolding a template.\n`);
+    return 1;
+  }
+
+  const content = readFileSync(templatePath, 'utf8');
+  writeFileSync(outputPath, content, 'utf8');
+
+  console.log(`\n  ${color('✓', 'green')} Scaffolded ${bold(templateName)} policy template\n`);
+  console.log(`  ${bold('File created:')}`);
+  console.log(`    ${dim(outputPath)}\n`);
+  console.log(`  ${bold('Next steps:')}`);
+  console.log(`    # Review and customize the policy rules`);
+  console.log(`    agentguard guard --policy agentguard.yaml --dry-run\n`);
 
   return 0;
 }
@@ -859,10 +940,11 @@ agentguard plugin install .
 
 function printInitHelp(): void {
   console.log(`
-  ${bold('agentguard init')} — Scaffold a new governance extension
+  ${bold('agentguard init')} — Scaffold a new governance extension or policy template
 
   ${bold('Usage:')}
     agentguard init --extension <type> [--name <name>] [--dir <path>]
+    agentguard init --template <name> [--dir <path>]
     agentguard init <type> [--name <name>] [--dir <path>]
 
   ${bold('Extension types:')}
@@ -872,16 +954,23 @@ function printInitHelp(): void {
     renderer           Custom governance renderer
     replay-processor   Custom replay processor
 
+  ${bold('Policy templates:')}
+    strict             Maximum guardrails — deny all destructive ops
+    permissive         Default-allow with safety nets for dangerous ops
+    ci-only            Read-only CI pipeline mode — build and test only
+    development        Balanced guardrails for active development
+
   ${bold('Flags:')}
-    --extension, -e    Extension type (required)
+    --extension, -e    Extension type
+    --template, -t     Policy template name (creates agentguard.yaml)
     --name, -n         Extension name (default: my-<type>)
-    --dir, -d          Output directory (default: ./<name>)
+    --dir, -d          Output directory (default: ./<name> or . for templates)
 
   ${bold('Examples:')}
+    agentguard init --template strict
+    agentguard init --template development --dir ./my-project
     agentguard init --extension renderer --name json-renderer
     agentguard init invariant --name vendor-guard
     agentguard init policy-pack --name strict-policy
-    agentguard init adapter --name docker-adapter
-    agentguard init replay-processor --name denial-counter
 `);
 }
