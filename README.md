@@ -246,6 +246,7 @@ src/
 │   ├── cluster.ts          # Violation clustering by dimension
 │   ├── engine.ts           # Analytics engine orchestrator
 │   ├── reporter.ts         # Output formatters (terminal, JSON, markdown)
+│   ├── risk-scorer.ts      # Per-run risk scoring engine
 │   ├── trends.ts           # Violation trend computation
 │   └── types.ts            # Analytics type definitions
 ├── adapters/               # Execution adapters

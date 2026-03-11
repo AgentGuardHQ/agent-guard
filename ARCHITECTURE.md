@@ -43,7 +43,7 @@ Each top-level directory under `src/` maps to a single architectural concept:
 
 ```
 src/
-├── analytics/     Cross-session violation analytics (aggregation, clustering, trends)
+├── analytics/     Cross-session violation analytics (aggregation, clustering, trends, risk scoring)
 ├── kernel/        Governed action kernel (orchestrate, normalize, decide, escalate)
 ├── events/        Canonical event model (schema, bus, store, JSONL persistence)
 ├── policy/        Policy system (evaluator, loaders, pack loader)

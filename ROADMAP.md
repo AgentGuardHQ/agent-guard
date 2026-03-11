@@ -302,7 +302,7 @@ The JSONL persistence layer was the right starting point — append-only, human-
 
 - [ ] Enhanced telemetry beyond current flat event logging
 - [ ] Run comparison and diff (`agentguard diff <run1> <run2>`)
-- [ ] Risk scoring per agent run
+- [x] Risk scoring per agent run
 - [ ] Failure clustering and trend detection (extend `src/analytics/`)
 - [ ] Timeline viewer for governance sessions (`agentguard replay --ui`)
 - [ ] Policy evaluation traces visualization
