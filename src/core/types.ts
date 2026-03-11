@@ -213,7 +213,11 @@ export type EventKind =
   | 'CommitCreated'
   | 'CodeReviewed'
   | 'DeployCompleted'
-  | 'LintCompleted';
+  | 'LintCompleted'
+  // Agent Liveness
+  | 'HeartbeatEmitted'
+  | 'HeartbeatMissed'
+  | 'AgentUnresponsive';
 
 /** Event schema definition — required and optional field names */
 export interface EventSchema {

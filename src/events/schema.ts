@@ -76,6 +76,11 @@ export const CODE_REVIEWED: EventKind = 'CodeReviewed';
 export const DEPLOY_COMPLETED: EventKind = 'DeployCompleted';
 export const LINT_COMPLETED: EventKind = 'LintCompleted';
 
+// Agent Liveness
+export const HEARTBEAT_EMITTED: EventKind = 'HeartbeatEmitted';
+export const HEARTBEAT_MISSED: EventKind = 'HeartbeatMissed';
+export const AGENT_UNRESPONSIVE: EventKind = 'AgentUnresponsive';
+
 // --- Event Schemas ---
 const EVENT_SCHEMAS: Record<string, EventSchema> = {
   [ERROR_OBSERVED]: {
@@ -267,6 +272,18 @@ const EVENT_SCHEMAS: Record<string, EventSchema> = {
   [LINT_COMPLETED]: {
     required: ['result'],
     optional: ['tool', 'errors', 'warnings', 'fixed'],
+  },
+  [HEARTBEAT_EMITTED]: {
+    required: ['agentId'],
+    optional: ['sequenceNumber', 'uptimeMs', 'metadata'],
+  },
+  [HEARTBEAT_MISSED]: {
+    required: ['agentId', 'missedCount'],
+    optional: ['lastHeartbeatAt', 'expectedIntervalMs', 'metadata'],
+  },
+  [AGENT_UNRESPONSIVE]: {
+    required: ['agentId', 'missedCount', 'threshold'],
+    optional: ['lastHeartbeatAt', 'metadata'],
   },
 };
 
