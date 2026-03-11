@@ -518,6 +518,109 @@ const DESTRUCTIVE_PATTERNS: DestructivePattern[] = [
     riskLevel: 'critical',
     category: 'network',
   },
+  // System — critical/high (shutdown/reboot/halt)
+  {
+    pattern: /\bshutdown\b/,
+    description: 'System shutdown',
+    riskLevel: 'critical',
+    category: 'system',
+  },
+  {
+    pattern: /\breboot\b/,
+    description: 'System reboot',
+    riskLevel: 'high',
+    category: 'system',
+  },
+  {
+    pattern: /\bpoweroff\b/,
+    description: 'System power off',
+    riskLevel: 'critical',
+    category: 'system',
+  },
+  {
+    pattern: /\bhalt\b/,
+    description: 'System halt',
+    riskLevel: 'critical',
+    category: 'system',
+  },
+  {
+    pattern: /\binit\s+[06]\b/,
+    description: 'Change system runlevel (shutdown/reboot)',
+    riskLevel: 'critical',
+    category: 'system',
+  },
+  // Package management — critical (npm unpublish)
+  {
+    pattern: /\bnpm\s+unpublish\b/,
+    description: 'Unpublish npm package (removes from registry)',
+    riskLevel: 'critical',
+    category: 'package',
+  },
+  // Container/orchestration — high (expanded)
+  {
+    pattern: /\bkubectl\s+drain\b/,
+    description: 'Drain Kubernetes node (evict all pods)',
+    riskLevel: 'high',
+    category: 'container',
+  },
+  {
+    pattern: /\bdocker\s+swarm\s+leave\b/,
+    description: 'Leave Docker swarm cluster',
+    riskLevel: 'high',
+    category: 'container',
+  },
+  // Cloud infrastructure — critical (AWS/GCP/Azure)
+  {
+    pattern: /\baws\s+s3\s+rb\b/,
+    description: 'Remove AWS S3 bucket',
+    riskLevel: 'critical',
+    category: 'infra',
+  },
+  {
+    pattern: /\baws\s+s3\s+rm\s+.*--recursive\b/,
+    description: 'Recursively delete AWS S3 objects',
+    riskLevel: 'critical',
+    category: 'infra',
+  },
+  {
+    pattern: /\baws\s+ec2\s+terminate-instances\b/,
+    description: 'Terminate AWS EC2 instances',
+    riskLevel: 'critical',
+    category: 'infra',
+  },
+  {
+    pattern: /\bgcloud\s+compute\s+instances\s+delete\b/,
+    description: 'Delete GCP Compute Engine instances',
+    riskLevel: 'critical',
+    category: 'infra',
+  },
+  {
+    pattern: /\baz\s+vm\s+delete\b/,
+    description: 'Delete Azure virtual machines',
+    riskLevel: 'critical',
+    category: 'infra',
+  },
+  // Database — critical (expanded)
+  {
+    pattern: /\bpg_dropcluster\b/,
+    description: 'Drop PostgreSQL cluster',
+    riskLevel: 'critical',
+    category: 'database',
+  },
+  // Database — critical (Cassandra)
+  {
+    pattern: /\bDROP\s+KEYSPACE\b/i,
+    description: 'Drop Cassandra keyspace',
+    riskLevel: 'critical',
+    category: 'database',
+  },
+  // Git — critical (history rewriting)
+  {
+    pattern: /\bgit\s+filter-branch\b/,
+    description: 'Rewrite git history (destructive)',
+    riskLevel: 'critical',
+    category: 'filesystem',
+  },
 ];
 
 function isDestructiveCommand(command: string): boolean {

@@ -40,8 +40,8 @@ describe('agentguard/core/aab', () => {
   });
 
   describe('DESTRUCTIVE_PATTERNS', () => {
-    it('has at least 71 patterns', () => {
-      expect(DESTRUCTIVE_PATTERNS.length).toBeGreaterThanOrEqual(71);
+    it('has at least 87 patterns', () => {
+      expect(DESTRUCTIVE_PATTERNS.length).toBeGreaterThanOrEqual(87);
     });
 
     it('every pattern has required fields', () => {
@@ -404,6 +404,84 @@ describe('agentguard/core/aab', () => {
       expect(isDestructiveCommand('nft flush ruleset')).toBe(true);
     });
 
+    // System shutdown/reboot patterns
+    it('detects shutdown', () => {
+      expect(isDestructiveCommand('shutdown -h now')).toBe(true);
+      expect(isDestructiveCommand('shutdown -r +5')).toBe(true);
+    });
+
+    it('detects reboot', () => {
+      expect(isDestructiveCommand('reboot')).toBe(true);
+    });
+
+    it('detects poweroff', () => {
+      expect(isDestructiveCommand('poweroff')).toBe(true);
+    });
+
+    it('detects halt', () => {
+      expect(isDestructiveCommand('halt')).toBe(true);
+    });
+
+    it('detects init 0/6 (runlevel change)', () => {
+      expect(isDestructiveCommand('init 0')).toBe(true);
+      expect(isDestructiveCommand('init 6')).toBe(true);
+    });
+
+    // npm unpublish
+    it('detects npm unpublish', () => {
+      expect(isDestructiveCommand('npm unpublish my-package@1.0.0')).toBe(true);
+      expect(isDestructiveCommand('npm unpublish my-package --force')).toBe(true);
+    });
+
+    // Kubernetes drain
+    it('detects kubectl drain', () => {
+      expect(isDestructiveCommand('kubectl drain node-1 --ignore-daemonsets')).toBe(true);
+    });
+
+    // Docker swarm leave
+    it('detects docker swarm leave', () => {
+      expect(isDestructiveCommand('docker swarm leave --force')).toBe(true);
+    });
+
+    // Cloud infrastructure destructive operations
+    it('detects aws s3 rb', () => {
+      expect(isDestructiveCommand('aws s3 rb s3://my-bucket --force')).toBe(true);
+    });
+
+    it('detects aws s3 rm --recursive', () => {
+      expect(isDestructiveCommand('aws s3 rm s3://my-bucket/ --recursive')).toBe(true);
+    });
+
+    it('detects aws ec2 terminate-instances', () => {
+      expect(isDestructiveCommand('aws ec2 terminate-instances --instance-ids i-123')).toBe(true);
+    });
+
+    it('detects gcloud compute instances delete', () => {
+      expect(isDestructiveCommand('gcloud compute instances delete my-vm --zone us-east1-b')).toBe(
+        true
+      );
+    });
+
+    it('detects az vm delete', () => {
+      expect(isDestructiveCommand('az vm delete --name my-vm --resource-group rg')).toBe(true);
+    });
+
+    // PostgreSQL cluster drop
+    it('detects pg_dropcluster', () => {
+      expect(isDestructiveCommand('pg_dropcluster 14 main')).toBe(true);
+    });
+
+    // Cassandra keyspace drop
+    it('detects DROP KEYSPACE (Cassandra)', () => {
+      expect(isDestructiveCommand('DROP KEYSPACE my_keyspace')).toBe(true);
+      expect(isDestructiveCommand('drop keyspace test_ks')).toBe(true);
+    });
+
+    // Git filter-branch (history rewriting)
+    it('detects git filter-branch', () => {
+      expect(isDestructiveCommand('git filter-branch --tree-filter "rm -rf secrets"')).toBe(true);
+    });
+
     // Safe commands
     it('returns false for safe commands', () => {
       expect(isDestructiveCommand('ls -la')).toBe(false);
@@ -427,6 +505,13 @@ describe('agentguard/core/aab', () => {
       expect(isDestructiveCommand('pulumi up')).toBe(false);
       expect(isDestructiveCommand('git stash list')).toBe(false);
       expect(isDestructiveCommand('nft list ruleset')).toBe(false);
+      expect(isDestructiveCommand('aws s3 ls')).toBe(false);
+      expect(isDestructiveCommand('aws ec2 describe-instances')).toBe(false);
+      expect(isDestructiveCommand('gcloud compute instances list')).toBe(false);
+      expect(isDestructiveCommand('az vm list')).toBe(false);
+      expect(isDestructiveCommand('kubectl get nodes')).toBe(false);
+      expect(isDestructiveCommand('npm publish')).toBe(false);
+      expect(isDestructiveCommand('git log --all')).toBe(false);
     });
 
     it('returns false for empty/null input', () => {
@@ -480,6 +565,22 @@ describe('agentguard/core/aab', () => {
       expect(getDestructiveDetails('pulumi destroy')!.category).toBe('infra');
       expect(getDestructiveDetails('git stash drop')!.category).toBe('filesystem');
       expect(getDestructiveDetails('nft flush ruleset')!.category).toBe('network');
+      // New expanded pattern categories
+      expect(getDestructiveDetails('shutdown -h now')!.category).toBe('system');
+      expect(getDestructiveDetails('reboot')!.category).toBe('system');
+      expect(getDestructiveDetails('poweroff')!.category).toBe('system');
+      expect(getDestructiveDetails('halt')!.category).toBe('system');
+      expect(getDestructiveDetails('init 0')!.category).toBe('system');
+      expect(getDestructiveDetails('npm unpublish pkg')!.category).toBe('package');
+      expect(getDestructiveDetails('kubectl drain node')!.category).toBe('container');
+      expect(getDestructiveDetails('docker swarm leave')!.category).toBe('container');
+      expect(getDestructiveDetails('aws s3 rb s3://b')!.category).toBe('infra');
+      expect(getDestructiveDetails('aws ec2 terminate-instances')!.category).toBe('infra');
+      expect(getDestructiveDetails('gcloud compute instances delete vm')!.category).toBe('infra');
+      expect(getDestructiveDetails('az vm delete --name v')!.category).toBe('infra');
+      expect(getDestructiveDetails('pg_dropcluster 14 main')!.category).toBe('database');
+      expect(getDestructiveDetails('DROP KEYSPACE ks')!.category).toBe('database');
+      expect(getDestructiveDetails('git filter-branch')!.category).toBe('filesystem');
     });
 
     it('returns critical risk level for high-severity commands', () => {
@@ -496,6 +597,22 @@ describe('agentguard/core/aab', () => {
       expect(getDestructiveDetails('db.dropDatabase()')!.riskLevel).toBe('critical');
       expect(getDestructiveDetails('db.users.drop()')!.riskLevel).toBe('critical');
       expect(getDestructiveDetails('nft flush ruleset')!.riskLevel).toBe('critical');
+      // New critical-level patterns (cloud, system, package)
+      expect(getDestructiveDetails('shutdown -h now')!.riskLevel).toBe('critical');
+      expect(getDestructiveDetails('poweroff')!.riskLevel).toBe('critical');
+      expect(getDestructiveDetails('halt')!.riskLevel).toBe('critical');
+      expect(getDestructiveDetails('init 0')!.riskLevel).toBe('critical');
+      expect(getDestructiveDetails('npm unpublish pkg')!.riskLevel).toBe('critical');
+      expect(getDestructiveDetails('aws s3 rb s3://b')!.riskLevel).toBe('critical');
+      expect(getDestructiveDetails('aws s3 rm s3://b/ --recursive')!.riskLevel).toBe('critical');
+      expect(getDestructiveDetails('aws ec2 terminate-instances')!.riskLevel).toBe('critical');
+      expect(getDestructiveDetails('gcloud compute instances delete vm')!.riskLevel).toBe(
+        'critical'
+      );
+      expect(getDestructiveDetails('az vm delete --name v')!.riskLevel).toBe('critical');
+      expect(getDestructiveDetails('pg_dropcluster 14 main')!.riskLevel).toBe('critical');
+      expect(getDestructiveDetails('DROP KEYSPACE ks')!.riskLevel).toBe('critical');
+      expect(getDestructiveDetails('git filter-branch')!.riskLevel).toBe('critical');
     });
 
     it('returns high risk level for moderate-severity commands', () => {
@@ -518,6 +635,10 @@ describe('agentguard/core/aab', () => {
       expect(getDestructiveDetails('snap remove pkg')!.riskLevel).toBe('high');
       expect(getDestructiveDetails('cargo uninstall pkg')!.riskLevel).toBe('high');
       expect(getDestructiveDetails('git stash drop')!.riskLevel).toBe('high');
+      // New high-level patterns (cloud, container)
+      expect(getDestructiveDetails('reboot')!.riskLevel).toBe('high');
+      expect(getDestructiveDetails('kubectl drain node')!.riskLevel).toBe('high');
+      expect(getDestructiveDetails('docker swarm leave')!.riskLevel).toBe('high');
     });
 
     it('matches rm -rf even within sudo rm -rf', () => {
