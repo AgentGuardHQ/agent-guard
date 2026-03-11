@@ -53,13 +53,11 @@ export async function init(args: string[]): Promise<number> {
 
   const extensionName = name ?? `my-${extensionType}`;
 
-
   if (!/^[a-z0-9][a-z0-9-]*$/.test(extensionName)) {
     console.error(`\n  ${color('Error', 'red')}: Invalid extension name "${extensionName}".`);
     console.error(`  Names must match /^[a-z0-9][a-z0-9-]*$/ to be safe for code generation.\n`);
     return 1;
   }
-
 
   const targetDir = resolve(dir ?? extensionName);
 
