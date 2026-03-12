@@ -40,6 +40,12 @@ const TOOL_ACTION_MAP: Record<string, string> = {
   Bash: 'shell.exec',
   Glob: 'file.read',
   Grep: 'file.read',
+  NotebookEdit: 'file.write',
+  TodoWrite: 'shell.exec',
+  WebFetch: 'http.request',
+  WebSearch: 'http.request',
+  Agent: 'shell.exec',
+  Skill: 'shell.exec',
 };
 
 function detectGitAction(command: string): string | null {

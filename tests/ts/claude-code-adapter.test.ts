@@ -76,12 +76,80 @@ describe('normalizeClaudeCodeAction', () => {
   it('normalizes unknown tool gracefully', () => {
     const payload: ClaudeCodeHookPayload = {
       hook: 'PreToolUse',
+      tool_name: 'SomeUnknownTool',
+      tool_input: { data: 'test' },
+    };
+    const action = normalizeClaudeCodeAction(payload);
+    expect(action.tool).toBe('SomeUnknownTool');
+    expect(action.agent).toBe('claude-code');
+  });
+
+  it('normalizes NotebookEdit tool', () => {
+    const payload: ClaudeCodeHookPayload = {
+      hook: 'PreToolUse',
+      tool_name: 'NotebookEdit',
+      tool_input: { notebook_path: '/tmp/notebook.ipynb', cell_id: 'abc' },
+    };
+    const action = normalizeClaudeCodeAction(payload);
+    expect(action.tool).toBe('NotebookEdit');
+    expect(action.file).toBe('/tmp/notebook.ipynb');
+    expect(action.metadata).toHaveProperty('cell_id', 'abc');
+  });
+
+  it('normalizes TodoWrite tool', () => {
+    const payload: ClaudeCodeHookPayload = {
+      hook: 'PreToolUse',
+      tool_name: 'TodoWrite',
+      tool_input: { todos: [{ content: 'task', status: 'pending' }] },
+    };
+    const action = normalizeClaudeCodeAction(payload);
+    expect(action.tool).toBe('TodoWrite');
+    expect(action.metadata).toHaveProperty('todos');
+  });
+
+  it('normalizes WebFetch tool', () => {
+    const payload: ClaudeCodeHookPayload = {
+      hook: 'PreToolUse',
+      tool_name: 'WebFetch',
+      tool_input: { url: 'https://example.com', prompt: 'summarize' },
+    };
+    const action = normalizeClaudeCodeAction(payload);
+    expect(action.tool).toBe('WebFetch');
+    expect(action.target).toBe('https://example.com');
+  });
+
+  it('normalizes WebSearch tool', () => {
+    const payload: ClaudeCodeHookPayload = {
+      hook: 'PreToolUse',
+      tool_name: 'WebSearch',
+      tool_input: { query: 'typescript best practices' },
+    };
+    const action = normalizeClaudeCodeAction(payload);
+    expect(action.tool).toBe('WebSearch');
+    expect(action.target).toBe('typescript best practices');
+  });
+
+  it('normalizes Agent tool with truncated prompt', () => {
+    const payload: ClaudeCodeHookPayload = {
+      hook: 'PreToolUse',
       tool_name: 'Agent',
-      tool_input: { prompt: 'do something' },
+      tool_input: { prompt: 'a'.repeat(200) },
     };
     const action = normalizeClaudeCodeAction(payload);
     expect(action.tool).toBe('Agent');
-    expect(action.agent).toBe('claude-code');
+    expect(action.target).toHaveLength(100);
+  });
+
+  it('normalizes Skill tool', () => {
+    const payload: ClaudeCodeHookPayload = {
+      hook: 'PreToolUse',
+      tool_name: 'Skill',
+      tool_input: { skill: 'commit', args: '-m "fix"' },
+    };
+    const action = normalizeClaudeCodeAction(payload);
+    expect(action.tool).toBe('Skill');
+    expect(action.target).toBe('commit');
+    expect(action.metadata).toHaveProperty('skill', 'commit');
   });
 });
 
@@ -150,7 +218,10 @@ describe('normalizeClaudeCodeAction — session_id propagation', () => {
   });
 
   it('propagates session identity through all tool types', () => {
-    const tools = ['Write', 'Edit', 'Read', 'Bash', 'Glob', 'Grep', 'Agent'];
+    const tools = [
+      'Write', 'Edit', 'Read', 'Bash', 'Glob', 'Grep',
+      'NotebookEdit', 'TodoWrite', 'WebFetch', 'WebSearch', 'Agent', 'Skill',
+    ];
     for (const tool of tools) {
       const payload: ClaudeCodeHookPayload = {
         hook: 'PreToolUse',

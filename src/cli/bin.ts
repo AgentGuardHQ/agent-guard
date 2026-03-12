@@ -235,7 +235,8 @@ const COMMANDS: Record<string, CommandHelp> = {
     flags: [
       {
         flag: '--extension, -e <type>',
-        description: 'Extension type: invariant, policy-pack, adapter, renderer, replay-processor',
+        description:
+          'Extension type: invariant, policy-pack, adapter, renderer, replay-processor, firestore',
       },
       { flag: '--name, -n <name>', description: 'Extension name (default: my-<type>)' },
       { flag: '--dir, -d <path>', description: 'Output directory (default: ./<name>)' },
@@ -601,4 +602,9 @@ function printUsage(error: string): void {
   console.error('  Run "agentguard help" for usage info.');
 }
 
-main();
+main().catch((err: unknown) => {
+  const message = err instanceof Error ? err.message : String(err);
+  console.error(`\n  agentguard: fatal error — ${message}`);
+  console.error('  Run "agentguard help" for usage info.\n');
+  process.exit(1);
+});
