@@ -57,8 +57,11 @@ async function handlePreToolUse(payload: ClaudeCodeHookPayload, cliArgs: string[
   let policyDefs: unknown[] = [];
   try {
     policyDefs = loadPolicyDefs();
-  } catch {
+  } catch (policyErr) {
     // Policy loading failure is non-fatal — continue with no policy (allow all)
+    process.stderr.write(
+      `agentguard: warning — no policy loaded (${policyErr instanceof Error ? policyErr.message : 'unknown error'}). All actions will be allowed.\n`
+    );
   }
 
   // Generate run ID

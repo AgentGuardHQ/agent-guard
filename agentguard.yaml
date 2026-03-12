@@ -36,6 +36,32 @@ rules:
     target: rm -rf
     reason: Destructive shell commands blocked
 
+  # Credential file protection
+  - action: file.write
+    effect: deny
+    target: ".npmrc"
+    reason: npm credentials file must not be modified by agents
+
+  - action: file.write
+    effect: deny
+    target: "id_rsa"
+    reason: SSH private keys must not be modified
+
+  - action: file.write
+    effect: deny
+    target: "id_ed25519"
+    reason: SSH private keys must not be modified
+
+  # Deployment and publish protection
+  - action: deploy.trigger
+    effect: deny
+    reason: Deploy actions require explicit authorization
+
+  - action: infra.destroy
+    effect: deny
+    reason: Infrastructure destruction requires explicit authorization
+
+  # Defaults
   - action: file.read
     effect: allow
     reason: Reading is always safe

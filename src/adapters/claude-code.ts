@@ -99,6 +99,58 @@ export function normalizeClaudeCodeAction(payload: ClaudeCodeHookPayload): RawAg
         metadata: { hook: payload.hook, path: input.path, sessionId: payload.session_id },
       };
 
+    case 'NotebookEdit':
+      return {
+        tool: 'NotebookEdit',
+        file: input.notebook_path as string | undefined,
+        agent,
+        metadata: { hook: payload.hook, cell_id: input.cell_id, sessionId: payload.session_id },
+      };
+
+    case 'TodoWrite':
+      return {
+        tool: 'TodoWrite',
+        agent,
+        metadata: { hook: payload.hook, todos: input.todos, sessionId: payload.session_id },
+      };
+
+    case 'WebFetch':
+      return {
+        tool: 'WebFetch',
+        target: input.url as string | undefined,
+        agent,
+        metadata: { hook: payload.hook, prompt: input.prompt, sessionId: payload.session_id },
+      };
+
+    case 'WebSearch':
+      return {
+        tool: 'WebSearch',
+        target: input.query as string | undefined,
+        agent,
+        metadata: { hook: payload.hook, query: input.query, sessionId: payload.session_id },
+      };
+
+    case 'Agent':
+      return {
+        tool: 'Agent',
+        target: (input.prompt as string | undefined)?.slice(0, 100),
+        agent,
+        metadata: { hook: payload.hook, prompt: input.prompt, sessionId: payload.session_id },
+      };
+
+    case 'Skill':
+      return {
+        tool: 'Skill',
+        target: input.skill as string | undefined,
+        agent,
+        metadata: {
+          hook: payload.hook,
+          skill: input.skill,
+          args: input.args,
+          sessionId: payload.session_id,
+        },
+      };
+
     default:
       return {
         tool: payload.tool_name,

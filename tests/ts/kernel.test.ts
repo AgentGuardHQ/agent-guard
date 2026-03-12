@@ -381,3 +381,38 @@ describe('Kernel with policies', () => {
     expect(result.decision.evidencePack).not.toBeNull();
   });
 });
+
+describe('Kernel proposal timeout', () => {
+  it('rejects when proposal exceeds timeout', async () => {
+    // Create a slow adapter that takes longer than the timeout
+    const { createAdapterRegistry } = await import('../../src/core/adapters.js');
+    const slowRegistry = createAdapterRegistry();
+    slowRegistry.register('file', async () => {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      return { stdout: '', stderr: '', exitCode: 0 };
+    });
+
+    const kernel = createKernel({
+      adapters: slowRegistry,
+      proposalTimeoutMs: 50,
+    });
+
+    await expect(
+      kernel.propose({ tool: 'Read', file: 'test.ts', agent: 'test' })
+    ).rejects.toThrow('timed out');
+  });
+
+  it('does not timeout when proposal completes quickly', async () => {
+    const kernel = createKernel({
+      dryRun: true,
+      proposalTimeoutMs: 5000,
+    });
+
+    const result = await kernel.propose({
+      tool: 'Read',
+      file: 'test.ts',
+      agent: 'test',
+    });
+    expect(result.allowed).toBe(true);
+  });
+});

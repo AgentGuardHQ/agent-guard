@@ -1,6 +1,6 @@
 // Tests for invariant definitions and checker — TypeScript version
 import { describe, it, expect, beforeEach } from 'vitest';
-import { DEFAULT_INVARIANTS } from '../../src/invariants/definitions.js';
+import { DEFAULT_INVARIANTS, SENSITIVE_FILE_PATTERNS } from '../../src/invariants/definitions.js';
 import type { SystemState } from '../../src/invariants/definitions.js';
 import { checkAllInvariants, buildSystemState } from '../../src/invariants/checker.js';
 import { resetEventCounter } from '../../src/events/schema.js';
@@ -47,6 +47,61 @@ describe('no-secret-exposure', () => {
   it('holds when modifiedFiles is empty', () => {
     const result = inv.check({});
     expect(result.holds).toBe(true);
+  });
+
+  it('fails for .npmrc file', () => {
+    const result = inv.check({ modifiedFiles: ['.npmrc'] });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('.npmrc');
+  });
+
+  it('fails for SSH key id_rsa', () => {
+    const result = inv.check({ modifiedFiles: ['~/.ssh/id_rsa'] });
+    expect(result.holds).toBe(false);
+  });
+
+  it('fails for SSH key id_ed25519', () => {
+    const result = inv.check({ modifiedFiles: ['~/.ssh/id_ed25519'] });
+    expect(result.holds).toBe(false);
+  });
+
+  it('fails for secrets.yaml', () => {
+    const result = inv.check({ modifiedFiles: ['config/secrets.yaml'] });
+    expect(result.holds).toBe(false);
+  });
+
+  it('fails for vault.json', () => {
+    const result = inv.check({ modifiedFiles: ['vault.json'] });
+    expect(result.holds).toBe(false);
+  });
+
+  it('fails for keystore files', () => {
+    const result = inv.check({ modifiedFiles: ['app.keystore'] });
+    expect(result.holds).toBe(false);
+  });
+
+  it('fails for .netrc', () => {
+    const result = inv.check({ modifiedFiles: ['.netrc'] });
+    expect(result.holds).toBe(false);
+  });
+
+  it('fails for .p12 certificate', () => {
+    const result = inv.check({ modifiedFiles: ['cert.p12'] });
+    expect(result.holds).toBe(false);
+  });
+});
+
+describe('SENSITIVE_FILE_PATTERNS export', () => {
+  it('is an array with expanded patterns', () => {
+    expect(Array.isArray(SENSITIVE_FILE_PATTERNS)).toBe(true);
+    expect(SENSITIVE_FILE_PATTERNS.length).toBeGreaterThan(6);
+  });
+
+  it('includes new patterns', () => {
+    expect(SENSITIVE_FILE_PATTERNS).toContain('.npmrc');
+    expect(SENSITIVE_FILE_PATTERNS).toContain('id_rsa');
+    expect(SENSITIVE_FILE_PATTERNS).toContain('secrets.yaml');
+    expect(SENSITIVE_FILE_PATTERNS).toContain('vault.json');
   });
 });
 

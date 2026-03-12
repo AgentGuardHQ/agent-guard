@@ -121,7 +121,7 @@ describe('Kernel Simulation Integration', () => {
     expect(result.decisionRecord!.simulation!.riskLevel).toBe('low');
   });
 
-  it('simulation failure does not crash kernel', async () => {
+  it('simulation failure does not crash kernel and emits failure event', async () => {
     const registry = createSimulatorRegistry();
     registry.register(makeFailingSimulator());
 
@@ -139,6 +139,14 @@ describe('Kernel Simulation Integration', () => {
     // Should still process normally despite simulator crash
     expect(result.allowed).toBe(true);
     expect(result.decisionRecord).toBeDefined();
+
+    // Should emit a SimulationCompleted event with failure metadata
+    const simEvents = result.events.filter((e) => e.kind === 'SimulationCompleted');
+    expect(simEvents.length).toBe(1);
+    const simEvent = simEvents[0] as Record<string, unknown>;
+    const metadata = simEvent.metadata as Record<string, unknown>;
+    expect(metadata.failed).toBe(true);
+    expect(metadata.error).toContain('Simulator crashed');
   });
 
   it('kernel without simulators works as before', async () => {

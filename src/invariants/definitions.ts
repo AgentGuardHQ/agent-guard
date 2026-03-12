@@ -35,6 +35,31 @@ export interface SystemState {
   currentCommand?: string;
 }
 
+/** Patterns matched as substrings (case-insensitive) against file paths. */
+export const SENSITIVE_FILE_PATTERNS = [
+  '.env',
+  'credentials',
+  '.pem',
+  '.key',
+  'secret',
+  'token',
+  '.npmrc',
+  '.netrc',
+  '.pgpass',
+  '.htpasswd',
+  'id_rsa',
+  'id_ed25519',
+  'id_ecdsa',
+  'id_dsa',
+  '.p12',
+  '.pfx',
+  '.jks',
+  'keystore',
+  'secrets.yaml',
+  'secrets.yml',
+  'vault.json',
+];
+
 export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
   {
     id: 'no-secret-exposure',
@@ -42,7 +67,7 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
     description: 'Sensitive files (.env, credentials, keys) must not be committed or exposed',
     severity: 5,
     check(state) {
-      const sensitivePatterns = ['.env', 'credentials', '.pem', '.key', 'secret', 'token'];
+      const sensitivePatterns = SENSITIVE_FILE_PATTERNS;
       const exposedFiles = (state.modifiedFiles || []).filter((f) => {
         const lower = f.toLowerCase();
         return sensitivePatterns.some((p) => lower.includes(p));
