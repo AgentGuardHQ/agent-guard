@@ -125,23 +125,23 @@ A comprehensive codebase audit assessed the current system against the strategic
 
 ### Reference Monitor Bypass Vectors
 
-Two bypass paths violate the complete mediation requirement of the AAB:
+One bypass path remains in the AAB (one previously identified vector has been resolved):
 
 **1. Unknown actions default-allow.**
 `src/policy/evaluator.ts` returns `allowed: true` when no policy rule matches an action. Unrecognized tool calls pass through governance unchecked. This violates the core principle of reference monitors: default deny.
 
-**2. Missing adapters silently skip execution.**
-`src/kernel/kernel.ts` marks actions with no registered adapter as `executed: false` but `allowed: true`. The action was "approved" but never executed, with no denial event in the audit trail.
+**~~2. Missing adapters silently skip execution.~~ — Resolved.**
+`src/kernel/kernel.ts` now emits `ActionDenied` when no registered adapter exists, closing this bypass vector.
 
 ### Claims Requiring Correction
 
-- **"Complete Mediation"** — Not achieved due to the two bypass vectors above.
+- **"Complete Mediation"** — Not achieved due to the remaining default-allow bypass vector above.
 - **"Tamper-proof"** — Event sink errors are silently swallowed. Escalation state can be reset without audit lock.
 - **Intervention types (PAUSE, ROLLBACK, TEST_ONLY)** — Defined in `src/kernel/decision.ts` but only DENY is enforced. Others are metadata labels.
 
-### Destructive Pattern Coverage Gap
+### Destructive Pattern Coverage Gap — Resolved
 
-The AAB detects only 10 destructive shell patterns (`src/kernel/aab.ts`). Missing: `sudo`, `pkill`, `killall`, `truncate`, `shred`, `chown`, `docker rm/rmi/system prune`, `systemctl stop/disable`, database-specific DROP commands, `npm uninstall -g`.
+The AAB now detects 87 destructive shell patterns (`src/kernel/aab.ts`), expanded from the original 10. Coverage includes `sudo`, `pkill`, `killall`, `truncate`, `shred`, `chown`, `docker rm/rmi/system prune`, `systemctl stop/disable`, database-specific DROP commands, `npm uninstall -g`, and many more.
 
 ### Escalation Audit Gap — Resolved
 
@@ -246,7 +246,7 @@ This is the architectural hinge. These changes transform the AAB from advisory i
 - [ ] Default-deny unknown actions in `src/policy/evaluator.ts` (change fallback from `allowed: true` to `allowed: false`)
 - [x] Deny actions with no registered adapter in `src/kernel/kernel.ts` (emit `ActionDenied` instead of silently skipping)
 - [x] Persist escalation state changes as `StateChanged` DomainEvents in `src/kernel/monitor.ts`
-- [ ] Expand destructive command patterns in `src/kernel/aab.ts` (add 15+ patterns covering sudo, pkill, docker, systemctl, database commands)
+- [x] Expand destructive command patterns in `src/kernel/aab.ts` (expanded from 10 to 87 patterns covering sudo, pkill, docker, systemctl, database commands, and more)
 - [ ] Enforce intervention types beyond DENY (implement PAUSE and ROLLBACK behaviors in kernel execution)
 
 ### Phase 7 — Capability-Scoped Sessions `PLANNED`
