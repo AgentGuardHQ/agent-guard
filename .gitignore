@@ -17,3 +17,5 @@ runtime/replay/*
 !.agentguard/decisions/.gitkeep
 logs/*
 !logs/.gitkeep
+# Hook-generated event counters (redundant with governance DB)
+.events.json
