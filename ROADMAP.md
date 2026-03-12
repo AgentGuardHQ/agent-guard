@@ -304,7 +304,7 @@ The JSONL persistence layer was the right starting point — append-only, human-
 - [ ] Enhanced telemetry beyond current flat event logging
 - [x] Run comparison and diff (`agentguard diff <run1> <run2>`) (`src/cli/commands/diff.ts`)
 - [x] Risk scoring per agent run
-- [ ] Failure clustering and trend detection (extend `src/analytics/`)
+- [x] Failure clustering and trend detection (`src/analytics/cluster.ts`, `src/analytics/trends.ts`)
 - [ ] Timeline viewer for governance sessions (`agentguard replay --ui`)
 - [x] Policy evaluation traces CLI (`agentguard traces`)
 - [ ] Metrics export (Prometheus / OpenTelemetry)
