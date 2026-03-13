@@ -584,25 +584,117 @@ Key references:
 
 ```
 agent-guard/
-  src/agentguard/         # Governance runtime
-    core/                 # AAB + RTA engine
-    policies/             # Policy evaluation + loading
-    invariants/           # Invariant definitions + checking
-    evidence/             # Evidence pack generation
-    monitor.ts            # Escalation monitoring
-  src/domain/             # Pure domain logic
-    actions.ts            # Canonical Action Representation
-    events.ts             # Canonical event definitions
-    reference-monitor.ts  # Decision trail + batch auth
-    invariants.ts         # Domain invariant evaluation
-    policy.ts             # Capability-based policy evaluation
-  src/orchestration/      # Multi-agent pipeline
-    orchestrator.ts       # Pipeline runner
-    stages.ts             # Stage definitions + validation gates
-    roles.ts              # Agent role permissions
-  policy/                 # Policy configuration
-    action_rules.json     # Action validation rules
-    capabilities.json     # Agent capability boundaries
-  paper/                  # This research artifact
-  examples/governance/    # Runnable evaluation scenarios
+  src/
+    kernel/                     # Governed action kernel
+      kernel.ts                 # Orchestrator (propose → evaluate → execute → emit)
+      aab.ts                    # Action Authorization Boundary (normalization)
+      blast-radius.ts           # Weighted blast radius computation
+      decision.ts               # Runtime assurance engine
+      monitor.ts                # Escalation state machine
+      evidence.ts               # Evidence pack generation
+      replay-comparator.ts      # Replay outcome comparison
+      replay-engine.ts          # Deterministic replay engine
+      replay-processor.ts       # Replay event processor
+      heartbeat.ts              # Agent heartbeat monitor
+      decisions/                # Typed decision records
+        factory.ts              # Decision record factory
+        types.ts                # Decision record type definitions
+      simulation/               # Pre-execution impact simulation
+        filesystem-simulator.ts # File system impact simulation
+        git-simulator.ts        # Git operation simulation
+        package-simulator.ts    # Package change simulation
+        forecast.ts             # Impact forecast builder
+        registry.ts             # Simulator registry
+        types.ts                # Simulation type definitions
+    events/                     # Canonical event model
+      schema.ts                 # Event kinds, factory, validation
+      bus.ts                    # Generic typed EventBus
+      store.ts                  # In-memory event store
+      jsonl.ts                  # JSONL event persistence (audit trail)
+      decision-jsonl.ts         # Decision record persistence
+    policy/                     # Policy system
+      composer.ts               # Policy composition (multi-file merging)
+      evaluator.ts              # Rule matching engine
+      loader.ts                 # Policy validation + loading
+      pack-loader.ts            # Policy pack loader (community policy sets)
+      yaml-loader.ts            # YAML policy parser
+    invariants/                 # Invariant system
+      definitions.ts            # Built-in invariant definitions
+      checker.ts                # Invariant evaluation engine
+    analytics/                  # Cross-session violation analytics
+      aggregator.ts             # Violation aggregation across sessions
+      cluster.ts                # Violation clustering by dimension
+      engine.ts                 # Analytics engine orchestrator
+      reporter.ts               # Output formatters (terminal, JSON, markdown)
+      risk-scorer.ts            # Per-run risk scoring engine
+      trends.ts                 # Violation trend computation
+      types.ts                  # Analytics type definitions
+    adapters/                   # Execution adapters
+      registry.ts               # Adapter registry (action class → handler)
+      file.ts                   # File action handler
+      shell.ts                  # Shell action handler
+      git.ts                    # Git action handler
+      claude-code.ts            # Claude Code hook adapter
+    cli/                        # CLI entry point + commands
+      bin.ts                    # CLI entry point
+      args.ts                   # Argument parsing utilities
+      colors.ts                 # Terminal color helpers
+      tui.ts                    # TUI renderer (terminal action stream)
+      policy-resolver.ts        # Policy file discovery and resolution
+      recorder.ts               # Event recording
+      replay.ts                 # Session replay logic
+      session-store.ts          # Session management
+      file-event-store.ts       # File-based event persistence
+      evidence-summary.ts       # Evidence summary generator for PR reports
+      commands/                 # CLI command implementations
+    plugins/                    # Plugin ecosystem
+      discovery.ts              # Plugin discovery mechanism
+      registry.ts               # Plugin registry
+      sandbox.ts                # Plugin sandboxing
+      validator.ts              # Plugin validation
+      types.ts                  # Plugin type definitions
+    renderers/                  # Renderer plugin system
+      registry.ts               # Renderer registry
+      tui-renderer.ts           # TUI renderer implementation
+      types.ts                  # Renderer type definitions
+    storage/                    # Storage backends (SQLite + Firestore)
+      factory.ts                # Storage bundle factory
+      migrations.ts             # Schema migrations (version-based)
+      sqlite-analytics.ts       # SQLite-backed analytics queries
+      sqlite-session.ts         # SQLite session lifecycle
+      sqlite-sink.ts            # SQLite event/decision sink
+      sqlite-store.ts           # SQLite event store implementation
+      firestore-analytics.ts    # Firestore-backed analytics queries
+      firestore-sink.ts         # Firestore event/decision sink
+      firestore-store.ts        # Firestore event store implementation
+      types.ts                  # Storage type definitions
+    telemetry/                  # Runtime telemetry
+      runtimeLogger.ts          # Runtime logging implementation
+      tracepoint.ts             # Kernel-level tracepoint interface
+      tracer.ts                 # Tracepoint execution engine
+      types.ts                  # Telemetry type definitions
+    core/                       # Shared utilities
+      types.ts                  # Shared TypeScript type definitions
+      actions.ts                # Canonical action types (8 classes, 23 types)
+      hash.ts                   # Content hashing utilities
+      adapters.ts               # Adapter registry interface
+      rng.ts                    # Seeded random number generator
+      execution-log/            # Execution audit log
+        bridge.ts               # Bridge between event systems
+        event-log.ts            # Event logging
+        event-projections.ts    # Event projections
+        event-schema.ts         # Event schema definitions
+  vscode-extension/             # VS Code extension
+    src/
+      extension.ts              # Extension entry point
+      providers/                # Tree data providers (run status, history, events)
+      services/                 # Event reader, notifications, diagnostics
+  policy/                       # Policy configuration (JSON)
+  policies/                     # Policy packs (YAML: ci-safe, enterprise, open-source, strict)
+  paper/                        # This research artifact
+  tests/                        # Test suites (JS + TypeScript/vitest)
+  docs/                         # System documentation
+  examples/                     # Example governance scenarios
+  hooks/                        # Git hooks (post-commit, post-merge)
+  scripts/                      # Build and utility scripts
 ```
