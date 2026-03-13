@@ -556,12 +556,18 @@ describe('no-credential-file-creation', () => {
   });
 });
 
+
 describe('no-package-script-injection', () => {
   const inv = findInvariant('no-package-script-injection');
+
+describe('no-permission-escalation', () => {
+  const inv = findInvariant('no-permission-escalation');
+
 
   it('has severity 4', () => {
     expect(inv.severity).toBe(4);
   });
+
 
   it('holds when target is not package.json', () => {
     const result = inv.check({
@@ -690,10 +696,13 @@ describe('no-package-script-injection', () => {
     expect(result.actual).toContain('scripts section modified');
   });
 
+
+
   it('holds with empty state', () => {
     const result = inv.check({});
     expect(result.holds).toBe(true);
   });
+
 
   it('detects install lifecycle script', () => {
     const result = inv.check({
@@ -722,6 +731,154 @@ describe('no-package-script-injection', () => {
       fileContentDiff: '"scripts": { "postinstall": "bad" }',
     });
     expect(result.holds).toBe(false);
+
+  it('holds for safe shell commands', () => {
+    const result = inv.check({ currentCommand: 'ls -la /tmp' });
+    expect(result.holds).toBe(true);
+  });
+
+  it('holds for chmod with safe permissions', () => {
+    const result = inv.check({ currentCommand: 'chmod 644 file.txt' });
+    expect(result.holds).toBe(true);
+  });
+
+  it('holds for chmod 755 (others can read+execute but not write)', () => {
+    const result = inv.check({ currentCommand: 'chmod 755 script.sh' });
+    expect(result.holds).toBe(true);
+  });
+
+  it('fails for chmod 777', () => {
+    const result = inv.check({ currentCommand: 'chmod 777 /tmp/shared' });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('world-writable');
+  });
+
+  it('fails for chmod 776', () => {
+    const result = inv.check({ currentCommand: 'chmod 776 file.txt' });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('world-writable');
+  });
+
+  it('fails for chmod 666', () => {
+    const result = inv.check({ currentCommand: 'chmod 666 file.txt' });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('world-writable');
+  });
+
+  it('fails for chmod o+w', () => {
+    const result = inv.check({ currentCommand: 'chmod o+w file.txt' });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('world-writable');
+  });
+
+  it('fails for chmod a+w', () => {
+    const result = inv.check({ currentCommand: 'chmod a+w file.txt' });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('world-writable');
+  });
+
+  it('fails for chmod +w (implicit all)', () => {
+    const result = inv.check({ currentCommand: 'chmod +w file.txt' });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('world-writable');
+  });
+
+  it('fails for chmod u+s (setuid)', () => {
+    const result = inv.check({ currentCommand: 'chmod u+s /usr/bin/app' });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('setuid');
+  });
+
+  it('fails for chmod g+s (setgid)', () => {
+    const result = inv.check({ currentCommand: 'chmod g+s /usr/bin/app' });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('setuid/setgid');
+  });
+
+  it('fails for chmod +s', () => {
+    const result = inv.check({ currentCommand: 'chmod +s /usr/bin/app' });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('setuid/setgid');
+  });
+
+  it('fails for chmod 4755 (setuid via octal)', () => {
+    const result = inv.check({ currentCommand: 'chmod 4755 /usr/bin/app' });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('setuid/setgid');
+  });
+
+  it('fails for chmod 2755 (setgid via octal)', () => {
+    const result = inv.check({ currentCommand: 'chmod 2755 /usr/bin/app' });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('setuid/setgid');
+  });
+
+  it('fails for chmod 6755 (setuid+setgid via octal)', () => {
+    const result = inv.check({ currentCommand: 'chmod 6755 /usr/bin/app' });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('setuid/setgid');
+  });
+
+  it('fails for chown command', () => {
+    const result = inv.check({ currentCommand: 'chown root:root /etc/config' });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('chown');
+  });
+
+  it('fails for chgrp command', () => {
+    const result = inv.check({ currentCommand: 'chgrp www-data /var/www' });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('chgrp');
+  });
+
+  it('fails for sudo chown', () => {
+    const result = inv.check({ currentCommand: 'sudo chown -R root:root /opt/app' });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('chown');
+  });
+
+  it('fails when target is /etc/sudoers', () => {
+    const result = inv.check({ currentTarget: '/etc/sudoers' });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('sudoers');
+  });
+
+  it('fails when target is in /etc/sudoers.d/', () => {
+    const result = inv.check({ currentTarget: '/etc/sudoers.d/custom-rules' });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('sudoers');
+  });
+
+  it('handles Windows backslash paths for sudoers', () => {
+    const result = inv.check({ currentTarget: 'C:\\etc\\sudoers' });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('sudoers');
+  });
+
+  it('detects multiple violations simultaneously', () => {
+    const result = inv.check({
+      currentCommand: 'chmod 777 /tmp/shared',
+      currentTarget: '/etc/sudoers.d/agent-rule',
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('world-writable');
+    expect(result.actual).toContain('sudoers');
+  });
+
+  it('holds when target is a safe file', () => {
+    const result = inv.check({ currentTarget: 'src/index.ts' });
+    expect(result.holds).toBe(true);
+  });
+
+  it('holds for chmod with flags but safe permissions', () => {
+    const result = inv.check({ currentCommand: 'chmod -R 750 /opt/app' });
+    expect(result.holds).toBe(true);
+  });
+
+  it('does not false-positive on chown substring in other words', () => {
+    const result = inv.check({ currentCommand: 'echo "achowner" | cat' });
+    expect(result.holds).toBe(true);
+
   });
 });
 

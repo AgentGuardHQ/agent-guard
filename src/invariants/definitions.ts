@@ -321,6 +321,7 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
   },
 
   {
+
     id: 'no-package-script-injection',
     name: 'No Package Script Injection',
     description:
@@ -386,6 +387,90 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
         holds: false,
         expected: 'No script modifications in package.json',
         actual: 'package.json scripts section modified',
+
+    id: 'no-permission-escalation',
+    name: 'No Permission Escalation',
+    description:
+      'Agents must not escalate filesystem permissions (world-writable, setuid/setgid, ownership changes, sudoers)',
+    severity: 4,
+    check(state) {
+      const command = state.currentCommand || '';
+      const target = state.currentTarget || '';
+      const violations: string[] = [];
+
+      if (command !== '') {
+        const lowerCmd = command.toLowerCase();
+
+        // Detect chmod to world-writable or broad permissions
+        if (/\bchmod\b/.test(lowerCmd)) {
+          // Octal modes: any mode where the "others" digit has write bit set (bit 2)
+          const octalMatch = command.match(/\bchmod\s+(?:-[a-zA-Z]+\s+)*([0-7]{3,4})\b/);
+          if (octalMatch) {
+            const mode = octalMatch[1];
+            const othersDigit = parseInt(mode[mode.length - 1], 10);
+            if ((othersDigit & 2) !== 0) {
+              violations.push(`world-writable chmod: ${mode}`);
+            }
+          }
+
+          // Symbolic modes: o+w, a+w, +w (implicit all), o=rwx, a=rwx
+          if (
+            /\bchmod\s+(?:-[a-zA-Z]+\s+)*(?:o\+[rwxXst]*w|a\+[rwxXst]*w|\+[rwxXst]*w|o=[rwxXst]*w[rwxXst]*|a=[rwxXst]*w[rwxXst]*)\b/.test(
+              command
+            )
+          ) {
+            violations.push('world-writable symbolic chmod');
+          }
+
+          // Setuid/setgid: u+s, g+s, +s, or octal modes with special bits 4/2/6
+          if (
+            /\bchmod\s+(?:-[a-zA-Z]+\s+)*(?:[ug]\+[rwxXt]*s|[ug]=[rwxXst]*s[rwxXst]*|\+[rwxXt]*s)\b/.test(
+              command
+            )
+          ) {
+            violations.push('setuid/setgid chmod');
+          }
+          if (octalMatch) {
+            const mode = octalMatch[1];
+            if (mode.length === 4) {
+              const specialBits = parseInt(mode[0], 10);
+              if ((specialBits & 6) !== 0) {
+                violations.push(`setuid/setgid octal chmod: ${mode}`);
+              }
+            }
+          }
+        }
+
+        // Detect chown/chgrp commands (word boundary to avoid false positives)
+        if (/\bchown\b/.test(lowerCmd)) {
+          violations.push('ownership change via chown');
+        }
+        if (/\bchgrp\b/.test(lowerCmd)) {
+          violations.push('group change via chgrp');
+        }
+      }
+
+      // Detect writes to sudoers files
+      if (target !== '') {
+        const normalizedTarget = target.toLowerCase().replace(/\\/g, '/');
+        if (
+          normalizedTarget.endsWith('/sudoers') ||
+          normalizedTarget.includes('/sudoers.d/') ||
+          normalizedTarget.includes('/etc/sudoers')
+        ) {
+          violations.push(`sudoers file targeted: ${target}`);
+        }
+      }
+
+      const holds = violations.length === 0;
+
+      return {
+        holds,
+        expected: 'No permission escalation operations',
+        actual: holds
+          ? 'No permission escalation detected'
+          : `Permission escalation detected (${violations.join('; ')})`,
+
       };
     },
   },
