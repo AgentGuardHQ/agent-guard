@@ -8,10 +8,16 @@ import {
   queryTopDeniedActions,
   queryViolationRateOverTime,
   querySessionStats,
+  aggregateEventCountsSqlite,
+  aggregateEventCountsByRunSqlite,
+  aggregateRunSummariesSqlite,
+  paginateEventsSqlite,
 } from '../../src/storage/sqlite-analytics.js';
 import { createSqliteDecisionSink } from '../../src/storage/sqlite-sink.js';
 import type { DomainEvent } from '../../src/core/types.js';
 import type { GovernanceDecisionRecord } from '../../src/kernel/decisions/types.js';
+
+let tsCounter = 1000;
 
 function makeEvent(
   id: string,
@@ -23,7 +29,7 @@ function makeEvent(
   return {
     id,
     kind,
-    timestamp: timestamp ?? Date.now(),
+    timestamp: timestamp ?? tsCounter++,
     fingerprint: `fp_${id}`,
     ...extra,
   } as DomainEvent;
@@ -267,6 +273,203 @@ describe('SQLite analytics', () => {
 
       const result = querySessionStats(db);
       expect(result[0].denialCount).toBe(0);
+    });
+  });
+
+  describe('aggregateEventCountsSqlite', () => {
+    it('returns empty counts for an empty database', () => {
+      const result = aggregateEventCountsSqlite(db);
+      expect(result.byKind).toEqual({});
+      expect(result.total).toBe(0);
+      expect(result.sessionCount).toBe(0);
+    });
+
+    it('groups event counts by kind', () => {
+      const sink = createSqliteEventSink(db, 'run_1');
+      sink.write(makeEvent('e1', 'ActionRequested', 'run_1'));
+      sink.write(makeEvent('e2', 'ActionRequested', 'run_1'));
+      sink.write(makeEvent('e3', 'PolicyDenied', 'run_1'));
+      sink.write(makeEvent('e4', 'ActionAllowed', 'run_1'));
+
+      const result = aggregateEventCountsSqlite(db);
+      expect(result.byKind).toEqual({
+        ActionRequested: 2,
+        PolicyDenied: 1,
+        ActionAllowed: 1,
+      });
+      expect(result.total).toBe(4);
+      expect(result.sessionCount).toBe(1);
+    });
+
+    it('counts sessions across multiple runs', () => {
+      const sink1 = createSqliteEventSink(db, 'run_1');
+      sink1.write(makeEvent('e1', 'ActionRequested', 'run_1'));
+      const sink2 = createSqliteEventSink(db, 'run_2');
+      sink2.write(makeEvent('e2', 'ActionRequested', 'run_2'));
+
+      const result = aggregateEventCountsSqlite(db);
+      expect(result.sessionCount).toBe(2);
+      expect(result.total).toBe(2);
+    });
+  });
+
+  describe('aggregateEventCountsByRunSqlite', () => {
+    it('returns empty for an empty database', () => {
+      const result = aggregateEventCountsByRunSqlite(db);
+      expect(result.byRun).toEqual({});
+      expect(result.total).toBe(0);
+      expect(result.sessionCount).toBe(0);
+    });
+
+    it('groups event counts by run ID', () => {
+      const sink1 = createSqliteEventSink(db, 'run_1');
+      sink1.write(makeEvent('e1', 'ActionRequested', 'run_1'));
+      sink1.write(makeEvent('e2', 'PolicyDenied', 'run_1'));
+      const sink2 = createSqliteEventSink(db, 'run_2');
+      sink2.write(makeEvent('e3', 'ActionAllowed', 'run_2'));
+
+      const result = aggregateEventCountsByRunSqlite(db);
+      expect(result.byRun).toEqual({ run_1: 2, run_2: 1 });
+      expect(result.total).toBe(3);
+      expect(result.sessionCount).toBe(2);
+    });
+  });
+
+  describe('aggregateRunSummariesSqlite', () => {
+    it('returns empty for an empty database', () => {
+      const result = aggregateRunSummariesSqlite(db);
+      expect(result).toHaveLength(0);
+    });
+
+    it('computes per-run violation and denial counts', () => {
+      const sink1 = createSqliteEventSink(db, 'run_1');
+      sink1.write(makeEvent('e1', 'ActionRequested', 'run_1'));
+      sink1.write(makeEvent('e2', 'PolicyDenied', 'run_1'));
+      sink1.write(makeEvent('e3', 'InvariantViolation', 'run_1'));
+      sink1.write(makeEvent('e4', 'ActionExecuted', 'run_1'));
+
+      const summaries = aggregateRunSummariesSqlite(db);
+      expect(summaries).toHaveLength(1);
+      const s = summaries[0];
+      expect(s.runId).toBe('run_1');
+      expect(s.totalEvents).toBe(4);
+      // PolicyDenied + InvariantViolation are both violations
+      expect(s.violationCount).toBe(2);
+      // PolicyDenied is a denial
+      expect(s.denialCount).toBe(1);
+      // ActionExecuted + ActionRequested are actions
+      expect(s.actionCount).toBe(2);
+    });
+
+    it('handles multiple runs independently', () => {
+      const sink1 = createSqliteEventSink(db, 'run_1');
+      sink1.write(makeEvent('e1', 'ActionDenied', 'run_1'));
+      sink1.write(makeEvent('e2', 'ActionDenied', 'run_1'));
+      const sink2 = createSqliteEventSink(db, 'run_2');
+      sink2.write(makeEvent('e3', 'ActionAllowed', 'run_2'));
+
+      const summaries = aggregateRunSummariesSqlite(db);
+      expect(summaries).toHaveLength(2);
+
+      const run1 = summaries.find((s) => s.runId === 'run_1')!;
+      expect(run1.totalEvents).toBe(2);
+      expect(run1.violationCount).toBe(2);
+      expect(run1.denialCount).toBe(2);
+      expect(run1.actionCount).toBe(0);
+
+      const run2 = summaries.find((s) => s.runId === 'run_2')!;
+      expect(run2.totalEvents).toBe(1);
+      expect(run2.violationCount).toBe(0);
+      expect(run2.denialCount).toBe(0);
+    });
+
+    it('tracks timestamp ranges per run', () => {
+      const sink = createSqliteEventSink(db, 'run_1');
+      sink.write(makeEvent('e1', 'ActionRequested', 'run_1'));
+      sink.write(makeEvent('e2', 'ActionAllowed', 'run_1'));
+
+      const summaries = aggregateRunSummariesSqlite(db);
+      expect(summaries[0].minTimestamp).toBeLessThanOrEqual(summaries[0].maxTimestamp);
+    });
+  });
+
+  describe('paginateEventsSqlite', () => {
+    it('returns empty for an empty database', () => {
+      const result = paginateEventsSqlite(db, { limit: 10 });
+      expect(result.events).toHaveLength(0);
+      expect(result.nextCursor).toBeNull();
+      expect(result.totalCount).toBe(0);
+    });
+
+    it('returns all events when limit exceeds count', () => {
+      const sink = createSqliteEventSink(db, 'run_1');
+      sink.write(makeEvent('e1', 'ActionRequested', 'run_1'));
+      sink.write(makeEvent('e2', 'ActionAllowed', 'run_1'));
+
+      const result = paginateEventsSqlite(db, { limit: 10 });
+      expect(result.events).toHaveLength(2);
+      expect(result.nextCursor).toBeNull();
+      expect(result.totalCount).toBe(2);
+    });
+
+    it('paginates with a cursor', () => {
+      const sink = createSqliteEventSink(db, 'run_1');
+      sink.write(makeEvent('p1', 'ActionRequested', 'run_1'));
+      sink.write(makeEvent('p2', 'ActionAllowed', 'run_1'));
+      sink.write(makeEvent('p3', 'ActionExecuted', 'run_1'));
+
+      // First page: limit 1
+      const page1 = paginateEventsSqlite(db, { limit: 1 });
+      expect(page1.events).toHaveLength(1);
+      expect(page1.events[0].id).toBe('p1');
+      expect(page1.nextCursor).not.toBeNull();
+      expect(page1.totalCount).toBe(3);
+
+      // Second page using cursor
+      const page2 = paginateEventsSqlite(db, { limit: 1, cursor: page1.nextCursor! });
+      expect(page2.events).toHaveLength(1);
+      expect(page2.events[0].id).toBe('p2');
+      expect(page2.nextCursor).not.toBeNull();
+
+      // Third page
+      const page3 = paginateEventsSqlite(db, { limit: 1, cursor: page2.nextCursor! });
+      expect(page3.events).toHaveLength(1);
+      expect(page3.events[0].id).toBe('p3');
+      expect(page3.nextCursor).toBeNull();
+    });
+
+    it('filters by event kind', () => {
+      const sink = createSqliteEventSink(db, 'run_1');
+      sink.write(makeEvent('f1', 'ActionRequested', 'run_1'));
+      sink.write(makeEvent('f2', 'PolicyDenied', 'run_1'));
+      sink.write(makeEvent('f3', 'ActionRequested', 'run_1'));
+
+      const result = paginateEventsSqlite(db, { limit: 10, kind: 'PolicyDenied' });
+      expect(result.events).toHaveLength(1);
+      expect(result.events[0].kind).toBe('PolicyDenied');
+      expect(result.totalCount).toBe(1);
+    });
+
+    it('combines cursor and kind filter', () => {
+      const sink = createSqliteEventSink(db, 'run_1');
+      sink.write(makeEvent('c1', 'ActionRequested', 'run_1'));
+      sink.write(makeEvent('c2', 'ActionRequested', 'run_1'));
+      sink.write(makeEvent('c3', 'PolicyDenied', 'run_1'));
+      sink.write(makeEvent('c4', 'ActionRequested', 'run_1'));
+
+      // Get first ActionRequested, then paginate
+      const page1 = paginateEventsSqlite(db, { limit: 1, kind: 'ActionRequested' });
+      expect(page1.events).toHaveLength(1);
+      expect(page1.events[0].id).toBe('c1');
+      expect(page1.nextCursor).not.toBeNull();
+
+      const page2 = paginateEventsSqlite(db, {
+        limit: 1,
+        cursor: page1.nextCursor!,
+        kind: 'ActionRequested',
+      });
+      expect(page2.events).toHaveLength(1);
+      expect(page2.events[0].id).toBe('c2');
     });
   });
 });

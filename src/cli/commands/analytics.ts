@@ -19,7 +19,8 @@ export async function analytics(args: string[], storageConfig?: StorageConfig): 
   let report;
   if (storageConfig?.backend === 'sqlite') {
     const { createStorageBundle } = await import('../../storage/factory.js');
-    const { aggregateViolationsSqlite } = await import('../../storage/sqlite-analytics.js');
+    const { aggregateViolationsSqlite, aggregateEventCountsSqlite } =
+      await import('../../storage/sqlite-analytics.js');
     const { listRunIds, loadRunEvents } = await import('../../storage/sqlite-store.js');
     const { clusterViolations } = await import('../../analytics/cluster.js');
     const { computeAllTrends } = await import('../../analytics/trends.js');
@@ -32,10 +33,22 @@ export async function analytics(args: string[], storageConfig?: StorageConfig): 
     const { violations, sessionCount } = aggregateViolationsSqlite(db);
     const clusters = clusterViolations(violations, minClusterSize ?? 2);
     const trends = computeAllTrends(violations);
+
+    // Use SQL-native GROUP BY for violation counts instead of iterating in JS
+    const eventCounts = aggregateEventCountsSqlite(db);
+    const violationKindSet = new Set([
+      'InvariantViolation',
+      'PolicyDenied',
+      'ActionDenied',
+      'BlastRadiusExceeded',
+      'MergeGuardFailure',
+      'UnauthorizedAction',
+    ]);
     const violationsByKind: Record<string, number> = {};
-    for (const v of violations) {
-      violationsByKind[v.kind] = (violationsByKind[v.kind] ?? 0) + 1;
+    for (const [kind, count] of Object.entries(eventCounts.byKind)) {
+      if (violationKindSet.has(kind)) violationsByKind[kind] = count;
     }
+
     const topInferredCauses = clusters
       .filter((c) => c.inferredCause)
       .map((c) => ({ cause: c.inferredCause!, count: c.count }))

@@ -34,12 +34,21 @@ export {
   queryTopDeniedActions,
   queryViolationRateOverTime,
   querySessionStats,
+  aggregateEventCountsSqlite,
+  aggregateEventCountsByRunSqlite,
+  aggregateRunSummariesSqlite,
+  paginateEventsSqlite,
 } from './sqlite-analytics.js';
 export type {
   TopDeniedAction,
   ViolationTimeBucket,
   SessionSummary,
   TimeBucketGranularity,
+  EventCountsByKind,
+  EventCountsByRun,
+  RunSummary,
+  PaginateEventsOptions,
+  PaginatedEvents,
 } from './sqlite-analytics.js';
 export { createFirestoreEventSink, createFirestoreDecisionSink } from './firestore-sink.js';
 export {

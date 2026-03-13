@@ -62,7 +62,11 @@ export function aggregateViolationsSqlite(db: Database.Database): {
   return { violations, sessionCount: sessionRow.c, allEvents };
 }
 
-/** Load all events from the database for full analytics pipeline compatibility */
+/**
+ * Load all events from the database for full analytics pipeline compatibility.
+ * @deprecated Prefer {@link aggregateEventCountsSqlite} or {@link paginateEventsSqlite}
+ * for large datasets — this function loads every event into memory.
+ */
 export function loadAllEventsSqlite(db: Database.Database): {
   events: DomainEvent[];
   sessionCount: number;
@@ -194,4 +198,216 @@ export function querySessionStats(db: Database.Database): SessionSummary[] {
     actionCount: r.action_count,
     denialCount: r.denial_count,
   }));
+}
+
+// ---------------------------------------------------------------------------
+// SQL-native aggregation — computes summaries without loading full event data.
+// ---------------------------------------------------------------------------
+
+/** Summary counts for events grouped by kind */
+export interface EventCountsByKind {
+  readonly byKind: Readonly<Record<string, number>>;
+  readonly total: number;
+  readonly sessionCount: number;
+}
+
+/** Summary counts for events grouped by run ID */
+export interface EventCountsByRun {
+  readonly byRun: Readonly<Record<string, number>>;
+  readonly total: number;
+  readonly sessionCount: number;
+}
+
+/** Per-run summary with violation, denial, and action counts */
+export interface RunSummary {
+  readonly runId: string;
+  readonly totalEvents: number;
+  readonly violationCount: number;
+  readonly denialCount: number;
+  readonly actionCount: number;
+  readonly minTimestamp: number;
+  readonly maxTimestamp: number;
+}
+
+/** Options for cursor-based event pagination */
+export interface PaginateEventsOptions {
+  /** Resume after this timestamp (exclusive). Omit to start from the beginning. */
+  readonly cursor?: number;
+  /** Maximum number of events to return. */
+  readonly limit: number;
+  /** Optional filter by event kind. */
+  readonly kind?: string;
+}
+
+/** Paginated result set with a cursor for the next page */
+export interface PaginatedEvents {
+  readonly events: DomainEvent[];
+  /** Timestamp cursor for the next page, or null if this is the last page. */
+  readonly nextCursor: number | null;
+  /** Total number of events matching the filter (without pagination). */
+  readonly totalCount: number;
+}
+
+/**
+ * Aggregate event counts by kind using SQL GROUP BY.
+ * Returns categorical summaries without loading event data into memory.
+ */
+export function aggregateEventCountsSqlite(db: Database.Database): EventCountsByKind {
+  const rows = db.prepare('SELECT kind, COUNT(*) as count FROM events GROUP BY kind').all() as {
+    kind: string;
+    count: number;
+  }[];
+
+  const byKind: Record<string, number> = {};
+  let total = 0;
+  for (const row of rows) {
+    byKind[row.kind] = row.count;
+    total += row.count;
+  }
+
+  const sessionRow = db.prepare('SELECT COUNT(DISTINCT run_id) as c FROM events').get() as {
+    c: number;
+  };
+
+  return { byKind, total, sessionCount: sessionRow.c };
+}
+
+/**
+ * Aggregate event counts by run ID using SQL GROUP BY.
+ * Returns per-session event counts without loading event data.
+ */
+export function aggregateEventCountsByRunSqlite(db: Database.Database): EventCountsByRun {
+  const rows = db.prepare('SELECT run_id, COUNT(*) as count FROM events GROUP BY run_id').all() as {
+    run_id: string;
+    count: number;
+  }[];
+
+  const byRun: Record<string, number> = {};
+  let total = 0;
+  for (const row of rows) {
+    byRun[row.run_id] = row.count;
+    total += row.count;
+  }
+
+  return { byRun, total, sessionCount: rows.length };
+}
+
+/** Event kinds that represent denials (used for per-run summary queries) */
+const DENIAL_KINDS = ['ActionDenied', 'PolicyDenied'];
+
+/** Event kinds that represent executed or requested actions (for action counts) */
+const ACTION_KINDS = ['ActionExecuted', 'ActionRequested'];
+
+/**
+ * Compute per-run summaries using a single SQL GROUP BY query.
+ * Returns violation, denial, and action counts per run without loading raw events.
+ * This replaces the pattern of loading all events per run and counting in JS.
+ */
+export function aggregateRunSummariesSqlite(db: Database.Database): RunSummary[] {
+  // Single query: get counts per (run_id, kind) pair, plus timestamp range
+  const rows = db
+    .prepare(
+      `SELECT run_id, kind, COUNT(*) as count,
+              MIN(timestamp) as min_ts, MAX(timestamp) as max_ts
+       FROM events
+       GROUP BY run_id, kind`
+    )
+    .all() as {
+    run_id: string;
+    kind: string;
+    count: number;
+    min_ts: number;
+    max_ts: number;
+  }[];
+
+  // Pivot the (run_id, kind) rows into per-run summaries
+  const runMap = new Map<
+    string,
+    {
+      totalEvents: number;
+      violationCount: number;
+      denialCount: number;
+      actionCount: number;
+      minTimestamp: number;
+      maxTimestamp: number;
+    }
+  >();
+
+  const violationSet = new Set(VIOLATION_KINDS);
+  const denialSet = new Set(DENIAL_KINDS);
+  const actionSet = new Set(ACTION_KINDS);
+
+  for (const row of rows) {
+    let summary = runMap.get(row.run_id);
+    if (!summary) {
+      summary = {
+        totalEvents: 0,
+        violationCount: 0,
+        denialCount: 0,
+        actionCount: 0,
+        minTimestamp: row.min_ts,
+        maxTimestamp: row.max_ts,
+      };
+      runMap.set(row.run_id, summary);
+    }
+
+    summary.totalEvents += row.count;
+    if (violationSet.has(row.kind)) summary.violationCount += row.count;
+    if (denialSet.has(row.kind)) summary.denialCount += row.count;
+    if (actionSet.has(row.kind)) summary.actionCount += row.count;
+    if (row.min_ts < summary.minTimestamp) summary.minTimestamp = row.min_ts;
+    if (row.max_ts > summary.maxTimestamp) summary.maxTimestamp = row.max_ts;
+  }
+
+  return [...runMap.entries()].map(([runId, s]) => ({
+    runId,
+    totalEvents: s.totalEvents,
+    violationCount: s.violationCount,
+    denialCount: s.denialCount,
+    actionCount: s.actionCount,
+    minTimestamp: s.minTimestamp,
+    maxTimestamp: s.maxTimestamp,
+  }));
+}
+
+/**
+ * Paginate events using cursor-based pagination.
+ * Uses the `timestamp` column as the cursor — events are returned in chronological order.
+ * For large datasets, call repeatedly with the returned `nextCursor` to stream through results.
+ */
+export function paginateEventsSqlite(
+  db: Database.Database,
+  options: PaginateEventsOptions
+): PaginatedEvents {
+  const { cursor, limit, kind } = options;
+  const conditions: string[] = [];
+  const params: unknown[] = [];
+
+  if (cursor !== undefined) {
+    conditions.push('timestamp > ?');
+    params.push(cursor);
+  }
+  if (kind) {
+    conditions.push('kind = ?');
+    params.push(kind);
+  }
+
+  const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
+  // Fetch limit + 1 to detect whether there is a next page
+  const rows = db
+    .prepare(`SELECT data, timestamp FROM events ${where} ORDER BY timestamp LIMIT ?`)
+    .all(...params, limit + 1) as { data: string; timestamp: number }[];
+
+  const hasMore = rows.length > limit;
+  const pageRows = hasMore ? rows.slice(0, limit) : rows;
+  const events = pageRows.map((r) => JSON.parse(r.data) as DomainEvent);
+  const nextCursor = hasMore ? pageRows[pageRows.length - 1].timestamp : null;
+
+  // Total count for the filter (without pagination)
+  const countSql = `SELECT COUNT(*) as c FROM events ${kind ? 'WHERE kind = ?' : ''}`;
+  const countParams = kind ? [kind] : [];
+  const countRow = db.prepare(countSql).get(...countParams) as { c: number };
+
+  return { events, nextCursor, totalCount: countRow.c };
 }
