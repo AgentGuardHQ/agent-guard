@@ -56,6 +56,13 @@ const MIGRATIONS: readonly Migration[] = [
       `);
     },
   },
+  {
+    version: 2,
+    description: 'Add composite index (kind, timestamp) on events for covering index scans',
+    up(db) {
+      db.exec('CREATE INDEX IF NOT EXISTS idx_events_kind_timestamp ON events (kind, timestamp)');
+    },
+  },
 ];
 
 /**

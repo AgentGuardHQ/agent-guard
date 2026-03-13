@@ -14,7 +14,7 @@ The system has one architectural spine: the **canonical event model**. All syste
 - JSONL event persistence for audit trail and replay
 - Claude Code adapter for PreToolUse/PostToolUse hooks
 - TypeScript source (`src/`), compiled to `dist/` via tsc + esbuild
-- CLI has runtime dependencies (`chokidar`, `commander`, `pino`); optional `better-sqlite3` for SQLite storage backend
+- CLI has runtime dependencies (`chokidar`, `commander`, `pino`); optional `better-sqlite3` for SQLite storage backend; optional Firestore for cloud-based governance data sharing
 - Build tooling: tsc + esbuild + vitest (dev dependencies only)
 
 ## Quick Start

@@ -14,7 +14,7 @@ describe('SQLite migrations', () => {
 
   it('creates all tables on first run', () => {
     const applied = runMigrations(db);
-    expect(applied).toBe(1);
+    expect(applied).toBe(2);
 
     const tables = db
       .prepare("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
@@ -42,20 +42,21 @@ describe('SQLite migrations', () => {
     expect(names).toContain('idx_events_fingerprint');
     expect(names).toContain('idx_decisions_run_ts');
     expect(names).toContain('idx_decisions_outcome');
+    expect(names).toContain('idx_events_kind_timestamp');
   });
 
   it('is idempotent — running twice applies nothing the second time', () => {
     const first = runMigrations(db);
     const second = runMigrations(db);
 
-    expect(first).toBe(1);
+    expect(first).toBe(2);
     expect(second).toBe(0);
   });
 
   it('tracks schema version', () => {
     expect(getSchemaVersion(db)).toBe(0);
     runMigrations(db);
-    expect(getSchemaVersion(db)).toBe(1);
+    expect(getSchemaVersion(db)).toBe(2);
   });
 
   it('enables WAL mode (on file-based databases)', () => {
@@ -81,5 +82,34 @@ describe('SQLite migrations', () => {
     expect(row.applied_at).toBeTruthy();
     // Should be a valid ISO timestamp
     expect(new Date(row.applied_at).getTime()).toBeGreaterThan(0);
+  });
+
+  it('applies v2 composite index incrementally on existing v1 database', () => {
+    // Simulate a v1 database by manually creating the schema
+    db.exec(
+      'CREATE TABLE migrations (version INTEGER PRIMARY KEY, applied_at TEXT NOT NULL)'
+    );
+    db.exec("INSERT INTO migrations (version, applied_at) VALUES (1, '2026-01-01T00:00:00Z')");
+    db.exec(`
+      CREATE TABLE events (
+        id TEXT PRIMARY KEY, run_id TEXT NOT NULL, kind TEXT NOT NULL,
+        timestamp INTEGER NOT NULL, fingerprint TEXT NOT NULL, data TEXT NOT NULL
+      )
+    `);
+    db.exec('CREATE INDEX idx_events_kind ON events (kind)');
+    db.exec('CREATE INDEX idx_events_timestamp ON events (timestamp)');
+
+    expect(getSchemaVersion(db)).toBe(1);
+
+    const applied = runMigrations(db);
+    expect(applied).toBe(1);
+    expect(getSchemaVersion(db)).toBe(2);
+
+    const indexes = db
+      .prepare(
+        "SELECT name FROM sqlite_master WHERE type='index' AND name = 'idx_events_kind_timestamp'"
+      )
+      .all() as { name: string }[];
+    expect(indexes).toHaveLength(1);
   });
 });

@@ -316,6 +316,8 @@ The JSONL persistence layer was the right starting point — append-only, human-
 - [x] JSONL export compatibility — `agentguard export` still produces portable JSONL
 - [x] Storage location: `~/.agentguard/agentguard.db` (home directory, out of repo tree)
 - [x] Retain JSONL as optional fallback/streaming sink for real-time tailing
+- [x] Firestore NoSQL storage backend for cross-session governance data sharing (`src/storage/firestore-store.ts`, `firestore-sink.ts`, `firestore-analytics.ts`)
+- [x] `agentguard init firestore` scaffold command for secure Firestore backend setup
 - [ ] Wire up `sessions` table — insert on `RunStarted`, update on `RunEnded` (dead schema today)
 - [ ] Migration v2: add `action_type` column to `events` table, `severity` column to `decisions` table
 - [ ] Add composite index `(kind, timestamp)` on events for covering index scans
