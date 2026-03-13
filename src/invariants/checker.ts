@@ -75,5 +75,9 @@ export function buildSystemState(context: Record<string, unknown> = {}): SystemS
     currentCommand: (context.currentCommand as string) || '',
     currentActionType: (context.currentActionType as string) || '',
     fileContentDiff: (context.fileContentDiff as string) || '',
+    isNetworkRequest: (context.isNetworkRequest as boolean) || false,
+    requestUrl: (context.requestUrl as string) || '',
+    requestDomain: (context.requestDomain as string) || '',
+    networkAllowlist: (context.networkAllowlist as string[]) || [],
   };
 }

@@ -7,6 +7,7 @@ import type { RawAgentAction } from './aab.js';
 import type { NormalizedIntent, EvalResult } from '../policy/evaluator.js';
 import { checkAllInvariants, buildSystemState } from '../invariants/checker.js';
 import type { InvariantCheck } from '../invariants/checker.js';
+import { extractDomain, extractUrlFromCommand } from '../invariants/definitions.js';
 import { createEvidencePack } from './evidence.js';
 import type { EvidencePack } from './evidence.js';
 import { loadPolicies } from '../policy/loader.js';
@@ -120,6 +121,30 @@ export function createEngine(config: EngineConfig = {}): Engine {
         authEvents.push(traceEvent);
       }
 
+      // Detect network request and extract URL/domain for egress governance
+      const isNetworkRequest = intent.action === 'http.request';
+      let requestUrl = (systemContext.requestUrl as string) || '';
+      let requestDomain = (systemContext.requestDomain as string) || '';
+
+      if (isNetworkRequest) {
+        // Extract URL from target (WebFetch/WebSearch tools set target to URL)
+        if (!requestUrl && intent.target) {
+          const targetDomain = extractDomain(intent.target);
+          if (targetDomain) {
+            requestUrl = intent.target;
+            requestDomain = targetDomain;
+          }
+        }
+        // Extract URL from shell commands (curl/wget)
+        if (!requestUrl && intent.command) {
+          const cmdUrl = extractUrlFromCommand(intent.command);
+          if (cmdUrl) {
+            requestUrl = cmdUrl;
+            requestDomain = extractDomain(cmdUrl) || '';
+          }
+        }
+      }
+
       const state = buildSystemState({
         ...systemContext,
         currentTarget: intent.target,
@@ -130,6 +155,9 @@ export function createEngine(config: EngineConfig = {}): Engine {
         forcePush: intent.action === 'git.force-push',
         directPush: intent.action === 'git.push',
         isPush: intent.action === 'git.push' || intent.action === 'git.force-push',
+        isNetworkRequest,
+        requestUrl,
+        requestDomain,
       });
 
       const {

@@ -37,6 +37,14 @@ export interface SystemState {
   currentActionType?: string;
   /** Content diff or new content for the current file action (for content-aware invariants) */
   fileContentDiff?: string;
+  /** Whether the current action is a network request (http.request) */
+  isNetworkRequest?: boolean;
+  /** Full URL of the network request (if available) */
+  requestUrl?: string;
+  /** Domain (hostname) extracted from the request URL */
+  requestDomain?: string;
+  /** Allowlisted domains for network egress (if set, non-listed domains are denied) */
+  networkAllowlist?: string[];
 }
 
 /** Patterns matched as substrings (case-insensitive) against file paths. */
@@ -88,6 +96,32 @@ export const CREDENTIAL_PATH_PATTERNS = [
 
 /** Exact basenames (case-insensitive) that are credential files at any depth. */
 export const CREDENTIAL_BASENAME_PATTERNS = ['.npmrc', '.pypirc', '.netrc', '.curlrc'];
+
+/** Extracts a domain (hostname) from a URL string. Returns null on failure. */
+export function extractDomain(url: string): string | null {
+  try {
+    const parsed = new URL(url);
+    return parsed.hostname || null;
+  } catch {
+    return null;
+  }
+}
+
+/** Extracts a URL from a curl or wget shell command. Returns null if not found. */
+export function extractUrlFromCommand(command: string): string | null {
+  if (!command || typeof command !== 'string') return null;
+
+  // Match curl/wget followed by flags and a URL
+  const urlPattern =
+    /\b(?:curl|wget)\s+(?:(?:-[a-zA-Z]+\s+)*(?:"[^"]*"\s+)*)*(?:['"]?(https?:\/\/[^\s'"]+)['"]?)/;
+  const match = command.match(urlPattern);
+  if (match) return match[1];
+
+  // Fallback: find any http(s) URL in the command
+  const genericUrlPattern = /https?:\/\/[^\s'"]+/;
+  const genericMatch = command.match(genericUrlPattern);
+  return genericMatch ? genericMatch[0] : null;
+}
 
 /** Matches .env files: .env, .env.local, .env.production, etc. */
 const ENV_FILE_REGEX = /(?:^|[\\/])\.env(?:\.\w+)?$/i;
@@ -468,6 +502,57 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
         actual: holds
           ? 'No recursive destructive operations detected'
           : `Recursive destructive operation detected: ${violations.join(', ')}`,
+      };
+    },
+  },
+
+  {
+    id: 'network-egress-governance',
+    name: 'Network Egress Governance',
+    description:
+      'HTTP requests to non-allowlisted domains are denied when a network allowlist is configured',
+    severity: 4,
+    check(state) {
+      // Only applies to network requests
+      if (!state.isNetworkRequest) {
+        return { holds: true, expected: 'N/A', actual: 'Not a network request' };
+      }
+
+      const allowlist = state.networkAllowlist;
+
+      // If no allowlist is configured, the invariant is effectively disabled (fail-open)
+      if (!allowlist || allowlist.length === 0) {
+        return {
+          holds: true,
+          expected: 'N/A',
+          actual: 'No network allowlist configured (fail-open)',
+        };
+      }
+
+      const domain = state.requestDomain || '';
+
+      // If no domain could be extracted, deny conservatively
+      if (domain === '') {
+        return {
+          holds: false,
+          expected: `Request domain in allowlist: ${allowlist.join(', ')}`,
+          actual: 'No domain could be extracted from request',
+        };
+      }
+
+      // Check if the domain (or a parent domain) is in the allowlist
+      const allowed = allowlist.some((entry) => {
+        const lowerEntry = entry.toLowerCase();
+        const lowerDomain = domain.toLowerCase();
+        return lowerDomain === lowerEntry || lowerDomain.endsWith('.' + lowerEntry);
+      });
+
+      return {
+        holds: allowed,
+        expected: `Request domain in allowlist: ${allowlist.join(', ')}`,
+        actual: allowed
+          ? `Domain ${domain} is allowlisted`
+          : `Domain ${domain} is not in the allowlist`,
       };
     },
   },

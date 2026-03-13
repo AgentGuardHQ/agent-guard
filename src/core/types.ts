@@ -815,6 +815,14 @@ export interface SystemState {
   readonly currentTarget?: string;
   /** Shell command of the current action (for shell.exec detection) */
   readonly currentCommand?: string;
+  /** Whether the current action is a network request (http.request) */
+  readonly isNetworkRequest?: boolean;
+  /** Full URL of the network request (if available) */
+  readonly requestUrl?: string;
+  /** Domain (hostname) extracted from the request URL */
+  readonly requestDomain?: string;
+  /** Allowlisted domains for network egress (if set, non-listed domains are denied) */
+  readonly networkAllowlist?: readonly string[];
   [key: string]: unknown;
 }
 
