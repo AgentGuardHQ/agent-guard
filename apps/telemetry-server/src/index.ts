@@ -1,1 +1,2 @@
-export const VERSION = '0.0.1';
+export const VERSION = '0.1.0';
+export { app } from './app.js';

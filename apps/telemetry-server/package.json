@@ -1,7 +1,7 @@
 {
   "name": "@red-codes/telemetry-server",
   "version": "0.1.0",
-  "description": "Telemetry server for AgentGuard (placeholder)",
+  "description": "Telemetry API server for AgentGuard — deployable to Vercel, AWS Lambda, or standalone Node.js",
   "type": "module",
   "license": "Apache-2.0",
   "private": true,
@@ -15,12 +15,16 @@
   },
   "scripts": {
     "build": "tsc -b",
-    
+    "dev": "tsx src/server.ts",
+    "start": "node dist/server.js",
     "lint": "eslint src/",
     "ts:check": "tsc --noEmit",
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@red-codes/core": "workspace:*"
+    "@red-codes/core": "workspace:*",
+    "@red-codes/telemetry": "workspace:*",
+    "hono": "^4.7.0",
+    "@hono/node-server": "^1.14.0"
   }
 }

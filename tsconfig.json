@@ -18,6 +18,7 @@
     { "path": "packages/telemetry" },
     { "path": "packages/plugins" },
     { "path": "packages/renderers" },
-    { "path": "apps/cli" }
+    { "path": "apps/cli" },
+    { "path": "apps/telemetry-server" }
   ]
 }
