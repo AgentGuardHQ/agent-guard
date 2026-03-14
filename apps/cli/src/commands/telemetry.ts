@@ -23,7 +23,9 @@ export async function telemetry(args: string[]): Promise<number> {
       printTelemetryHelp();
       return 0;
     default:
-      process.stderr.write(`  ${color('Error:', 'red')} Unknown telemetry subcommand: ${subcommand}\n`);
+      process.stderr.write(
+        `  ${color('Error:', 'red')} Unknown telemetry subcommand: ${subcommand}\n`
+      );
       process.stderr.write(`  Run ${dim('agentguard telemetry help')} for usage info.\n`);
       return 1;
   }
@@ -31,7 +33,8 @@ export async function telemetry(args: string[]): Promise<number> {
 
 async function enrollSubcommand(args: string[]): Promise<number> {
   const serverIdx = args.findIndex((a) => a === '--server' || a === '-s');
-  const serverUrl = serverIdx !== -1 ? args[serverIdx + 1] : process.env.AGENTGUARD_TELEMETRY_SERVER;
+  const serverUrl =
+    serverIdx !== -1 ? args[serverIdx + 1] : process.env.AGENTGUARD_TELEMETRY_SERVER;
 
   if (!serverUrl) {
     process.stderr.write(
@@ -41,12 +44,8 @@ async function enrollSubcommand(args: string[]): Promise<number> {
     return 1;
   }
 
-  const {
-    createTelemetryClient,
-    loadIdentity,
-    generateIdentity,
-    saveIdentity,
-  } = await import('@red-codes/telemetry-client');
+  const { createTelemetryClient, loadIdentity, generateIdentity, saveIdentity } =
+    await import('@red-codes/telemetry-client');
 
   process.stderr.write(`  ${dim('Enrolling with server:')} ${serverUrl}\n`);
 
@@ -86,7 +85,9 @@ async function statusSubcommand(): Promise<number> {
 
   if (identity) {
     process.stderr.write(`  ${dim('Install ID:')} ${identity.install_id}\n`);
-    process.stderr.write(`  ${dim('Enrolled:')}   ${identity.enrollment_token ? color('yes', 'green') : color('no', 'yellow')}\n`);
+    process.stderr.write(
+      `  ${dim('Enrolled:')}   ${identity.enrollment_token ? color('yes', 'green') : color('no', 'yellow')}\n`
+    );
     if (identity.enrolled_at) {
       process.stderr.write(`  ${dim('Enrolled at:')} ${identity.enrolled_at}\n`);
     }
@@ -99,7 +100,9 @@ async function statusSubcommand(): Promise<number> {
     const { createTelemetryClient } = await import('@red-codes/telemetry-client');
     const client = await createTelemetryClient({ mode: mode === 'off' ? 'anonymous' : mode });
     const status = client.status();
-    process.stderr.write(`  ${dim('Queue size:')} ${status.queueSize} events (${formatBytes(status.queueSizeBytes)})\n`);
+    process.stderr.write(
+      `  ${dim('Queue size:')} ${status.queueSize} events (${formatBytes(status.queueSizeBytes)})\n`
+    );
     client.stop();
   } catch {
     // Queue not available
@@ -130,7 +133,9 @@ async function enableSubcommand(args: string[]): Promise<number> {
   }
 
   saveIdentity(identity);
-  process.stderr.write(`  ${color('✓', 'green')} Telemetry ${bold('enabled')} (mode: ${modeArg})\n`);
+  process.stderr.write(
+    `  ${color('✓', 'green')} Telemetry ${bold('enabled')} (mode: ${modeArg})\n`
+  );
   return 0;
 }
 

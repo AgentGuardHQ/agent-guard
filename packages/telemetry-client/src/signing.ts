@@ -27,11 +27,7 @@ export function signPayload(body: string, privateKeyPem: string): string {
 }
 
 /** Verify an Ed25519 signature against a canonical JSON body. */
-export function verifySignature(
-  body: string,
-  signature: string,
-  publicKeyPem: string
-): boolean {
+export function verifySignature(body: string, signature: string, publicKeyPem: string): boolean {
   try {
     const key = createPublicKey(publicKeyPem);
     return verify(null, Buffer.from(body, 'utf8'), key, Buffer.from(signature, 'base64'));

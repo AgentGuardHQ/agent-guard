@@ -284,7 +284,10 @@ const COMMANDS: Record<string, CommandHelp> = {
     usage: 'agentguard telemetry <command> [flags]',
     flags: [
       { flag: '--server, -s <url>', description: 'Telemetry server URL (enroll command)' },
-      { flag: '--mode, -m <mode>', description: 'Telemetry mode: anonymous or verified (enable command)' },
+      {
+        flag: '--mode, -m <mode>',
+        description: 'Telemetry mode: anonymous or verified (enable command)',
+      },
     ],
     examples: [
       'agentguard telemetry status',

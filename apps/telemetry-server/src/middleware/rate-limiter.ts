@@ -12,10 +12,7 @@ export interface RateLimiterConfig {
  * @param config - Window size and max request count
  * @param keyFn - Function to extract the rate limit key from the request context
  */
-export function createRateLimiter(
-  config: RateLimiterConfig,
-  keyFn: (c: Context) => string | null
-) {
+export function createRateLimiter(config: RateLimiterConfig, keyFn: (c: Context) => string | null) {
   const windows = new Map<string, number[]>();
 
   // Periodic cleanup to prevent memory leaks

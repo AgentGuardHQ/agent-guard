@@ -43,9 +43,7 @@ export function saveIdentity(identity: TelemetryIdentity, path?: string): void {
     mkdirSync(dirname(filePath), { recursive: true });
     writeFileSync(filePath, JSON.stringify(identity, null, 2), { mode: 0o600 });
   } catch (err) {
-    process.stderr.write(
-      `[agentguard] Warning: failed to save telemetry identity: ${err}\n`
-    );
+    process.stderr.write(`[agentguard] Warning: failed to save telemetry identity: ${err}\n`);
   }
 }
 

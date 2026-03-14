@@ -27,9 +27,7 @@ export function createJsonlQueue(path?: string): TelemetryQueue {
   function readLines(): string[] {
     try {
       const content = readFileSync(filePath, 'utf8');
-      return content
-        .split('\n')
-        .filter((l) => l.trim().length > 0);
+      return content.split('\n').filter((l) => l.trim().length > 0);
     } catch {
       return [];
     }

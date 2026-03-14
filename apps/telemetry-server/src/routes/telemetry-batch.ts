@@ -9,7 +9,12 @@ import type { ServerConfig } from '../config.js';
 const MAX_BATCH_SIZE = 50;
 const VALID_RUNTIMES = new Set(['claude-code', 'copilot', 'ci', 'unknown']);
 const VALID_ENVIRONMENTS = new Set(['local', 'ci', 'container']);
-const VALID_EVENT_TYPES = new Set(['guard_triggered', 'policy_denied', 'execution_allowed', 'error']);
+const VALID_EVENT_TYPES = new Set([
+  'guard_triggered',
+  'policy_denied',
+  'execution_allowed',
+  'error',
+]);
 const VALID_RESULTS = new Set(['allowed', 'denied', 'error']);
 
 interface BatchPayloadEvent {
@@ -34,7 +39,8 @@ function validateEvent(event: BatchPayloadEvent): string | null {
   if (!event.timestamp || typeof event.timestamp !== 'number') return 'missing timestamp';
   if (!event.version || typeof event.version !== 'string') return 'missing version';
   if (!event.runtime || !VALID_RUNTIMES.has(event.runtime)) return 'invalid runtime';
-  if (!event.environment || !VALID_ENVIRONMENTS.has(event.environment)) return 'invalid environment';
+  if (!event.environment || !VALID_ENVIRONMENTS.has(event.environment))
+    return 'invalid environment';
   if (!event.event_type || !VALID_EVENT_TYPES.has(event.event_type)) return 'invalid event_type';
   if (!event.policy || typeof event.policy !== 'string') return 'missing policy';
   if (!event.result || !VALID_RESULTS.has(event.result)) return 'invalid result';
