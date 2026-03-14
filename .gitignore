@@ -1,5 +1,6 @@
 dist/
 node_modules/
+coverage/
 
 # Database files — never commit (use remote storage for sharing)
 *.db
