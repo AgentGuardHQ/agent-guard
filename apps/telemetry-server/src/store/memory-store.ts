@@ -34,11 +34,7 @@ function clampOffset(offset?: number): number {
   return Math.max(offset ?? 0, 0);
 }
 
-function matchesTimeRange(
-  timestamp: number | string,
-  since?: string,
-  until?: string
-): boolean {
+function matchesTimeRange(timestamp: number | string, since?: string, until?: string): boolean {
   const ts = typeof timestamp === 'number' ? timestamp : new Date(timestamp).getTime();
   if (since && ts < new Date(since).getTime()) return false;
   if (until && ts > new Date(until).getTime()) return false;
