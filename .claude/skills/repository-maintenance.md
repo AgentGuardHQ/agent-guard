@@ -37,7 +37,7 @@ gh label create "source:backlog-steward" --color "C5DEF5" --description "Auto-cr
 Read governance analytics to prioritize maintenance actions:
 
 ```bash
-npx agentguard analytics --format json 2>/dev/null | head -50
+node apps/cli/dist/bin.js analytics --format json 2>/dev/null | head -50
 ```
 
 Extract:
@@ -66,7 +66,7 @@ gh pr list --state merged --base main --json number,title,body,mergedAt --limit 
 Search the codebase for TODO, FIXME, HACK, and XXX comments:
 
 ```bash
-grep -rn "TODO\|FIXME\|HACK\|XXX\|WORKAROUND" src/ tests/ --include="*.ts" --include="*.js" | head -50
+grep -rn "TODO\|FIXME\|HACK\|XXX\|WORKAROUND" packages/ apps/ tests/ --include="*.ts" --include="*.js" --exclude-dir=node_modules --exclude-dir=dist | head -50
 ```
 
 For each match, extract:

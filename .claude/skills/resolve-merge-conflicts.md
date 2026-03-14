@@ -176,12 +176,12 @@ Skip to the next PR.
 Run the full quality suite to ensure the rebase didn't break anything:
 
 ```bash
-npm run build:ts && npm run ts:check && npm run lint && npm run format && npm run ts:test && npm test
+pnpm build && pnpm ts:check && pnpm lint && pnpm format && ppnpm test && pnpm test
 ```
 
 If the suite fails:
-1. Attempt auto-fix: `npm run lint:fix && npm run format:fix`
-2. Re-run: `npm run build:ts && npm run ts:check && npm run lint && npm run format && npm run ts:test && npm test`
+1. Attempt auto-fix: `pnpm lint:fix && pnpm format:fix`
+2. Re-run: `pnpm build && pnpm ts:check && pnpm lint && pnpm format && ppnpm test && pnpm test`
 3. If still failing: the rebase introduced a regression. Reset the branch and post a diagnostic comment:
 
 ```bash

@@ -38,7 +38,7 @@ If no log files exist, report "No governance logs found — nothing to audit" an
 Use the AgentGuard analytics engine for aggregated cross-session data:
 
 ```bash
-npx agentguard analytics --format json 2>/dev/null | head -200
+node apps/cli/dist/bin.js analytics --format json 2>/dev/null | head -200
 ```
 
 Extract:

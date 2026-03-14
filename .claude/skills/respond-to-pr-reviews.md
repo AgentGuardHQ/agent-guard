@@ -111,7 +111,7 @@ Make the code change that addresses the feedback. Follow project conventions:
 After making the change, simulate each modified file against governance policy:
 
 ```bash
-npx agentguard simulate --action file.write --target <modified-file> --policy agentguard.yaml --json 2>/dev/null
+node apps/cli/dist/bin.js simulate --action file.write --target <modified-file> --policy agentguard.yaml --json 2>/dev/null
 ```
 
 If simulation shows a denial:
@@ -126,11 +126,11 @@ If the simulate command is not available, skip validation and proceed.
 After each change, run the full quality suite:
 
 ```bash
-npm run build:ts && npm run ts:check && npm run lint && npm run format && npm run ts:test && npm test
+pnpm build && pnpm ts:check && pnpm lint && pnpm format && ppnpm test && pnpm test
 ```
 
 If the suite fails after the change:
-1. Attempt auto-fix: `npm run lint:fix && npm run format:fix`
+1. Attempt auto-fix: `pnpm lint:fix && pnpm format:fix`
 2. Re-run the suite
 3. If still failing: **revert the change** for this comment, note it as unresolvable, and move to the next comment
 
@@ -180,7 +180,7 @@ The requested change cannot be applied automatically:
 - **Reason**: <denial reason>
 - **Affected file**: <file path>
 
-This requires a policy review or manual override. Run \`npx agentguard inspect --last\` for details.
+This requires a policy review or manual override. Run \`node apps/cli/dist/bin.js inspect --last\` for details.
 
 ---
 *Automated response by respond-to-pr-reviews skill on $(date -u +%Y-%m-%dT%H:%M:%SZ)*"
@@ -236,7 +236,7 @@ Report:
 - Process a maximum of **3 PRs per run**
 - **Only respond to PRs authored by `@me`** — never modify PRs authored by humans or other agents
 - **Never force push** — always regular push
-- **Never modify protected files**: `agentguard.yaml`, `.claude/settings.json`, files in `src/kernel/`, `src/policy/`, `src/invariants/` unless the review comment explicitly references them AND the linked issue authorizes it
+- **Never modify protected files**: `agentguard.yaml`, `.claude/settings.json`, files in `packages/kernel/src/`, `packages/policy/src/`, `packages/invariants/src/` unless the review comment explicitly references them AND the linked issue authorizes it
 - **Never push if the full quality suite fails** — revert the change and reply explaining the failure
 - **Never push changes that governance policy denies** — report the denial in the review thread
 - **Skip comments already replied to** by `**AgentGuard Review Response Bot**`

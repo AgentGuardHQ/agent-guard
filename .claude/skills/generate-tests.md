@@ -17,26 +17,26 @@ Invoke the `start-governance-runtime` skill to ensure the AgentGuard kernel is a
 List source files and their corresponding test files:
 
 ```bash
-find src -name "*.ts" -not -name "*.d.ts" | sort
-find tests/ts -name "*.test.ts" | sort
+find packages apps -name "*.ts" -not -name "*.d.ts" -not -path "*/node_modules/*" -not -path "*/dist/*" | sort
+find packages apps -name "*.test.ts" -not -path "*/node_modules/*" | sort
 ```
 
-For each source file in `src/`, check if a corresponding test file exists in `tests/ts/`. A source file `src/foo/bar.ts` should have a test at `tests/ts/bar.test.ts` or `tests/ts/foo-bar.test.ts`.
+For each source file, check if a corresponding test file exists in the same package's `tests/` directory. For example, `packages/kernel/src/kernel.ts` should have a test at `packages/kernel/tests/kernel.test.ts`.
 
 Prioritize untested files by:
-1. Core kernel files (`src/kernel/`) — highest priority
-2. Policy and invariant files (`src/policy/`, `src/invariants/`)
-3. Adapter files (`src/adapters/`)
-4. CLI command files (`src/cli/commands/`)
-5. Utility files (`src/core/`)
+1. Core kernel files (`packages/kernel/src/`) — highest priority
+2. Policy and invariant files (`packages/policy/src/`, `packages/invariants/src/`)
+3. Adapter files (`packages/adapters/src/`)
+4. CLI command files (`apps/cli/src/commands/`)
+5. Utility files (`packages/core/src/`)
 
 ### 3. Study Existing Test Patterns
 
 Read 2-3 existing test files to understand conventions:
 
 ```bash
-cat tests/ts/aab.test.ts | head -50
-cat tests/ts/kernel-engine.test.ts | head -50
+cat packages/kernel/tests/agentguard-aab.test.ts | head -50
+cat packages/kernel/tests/agentguard-engine.test.ts | head -50
 ```
 
 Extract patterns:
@@ -56,14 +56,14 @@ Pick the highest-priority untested module (max 1 per run). Read the source file 
 - Dependencies that need mocking
 
 ```bash
-cat src/<path-to-target>.ts
+cat packages/<pkg>/src/<target>.ts
 ```
 
 ### 5. Generate Test File
 
 Create a test file following the established patterns:
 
-- File path: `tests/ts/<module-name>.test.ts`
+- File path: `packages/<pkg>/tests/<module-name>.test.ts`
 - Import the module under test
 - Use `describe` blocks matching exported functions/classes
 - Include tests for:
@@ -76,8 +76,8 @@ Create a test file following the established patterns:
 ### 6. Verify Tests Pass
 
 ```bash
-npm run build:ts
-npx vitest run tests/ts/<module-name>.test.ts
+pnpm build
+npx vitest run packages/<pkg>/tests/<module-name>.test.ts
 ```
 
 If tests fail:
@@ -89,7 +89,7 @@ If tests fail:
 
 ```bash
 git checkout -b test/add-<module-name>-tests
-git add tests/ts/<module-name>.test.ts
+git add packages/<pkg>/tests/<module-name>.test.ts
 git commit -m "test: add tests for <module-name>"
 git push -u origin test/add-<module-name>-tests
 ```
@@ -101,7 +101,7 @@ gh pr create \
   --title "test: add tests for <module-name>" \
   --body "## Summary
 
-Adds test coverage for \`src/<path-to-target>.ts\`.
+Adds test coverage for \`packages/<pkg>/src/<target>.ts\`.
 
 ## Test Coverage
 
@@ -128,8 +128,8 @@ gh label create "source:test-agent" --color "0E8A16" --description "Auto-created
 ### 8. Summary
 
 Report:
-- **Module tested**: `src/<path>`
-- **Test file created**: `tests/ts/<module-name>.test.ts`
+- **Module tested**: `packages/<pkg>/src/<path>`
+- **Test file created**: `packages/<pkg>/tests/<module-name>.test.ts`
 - **Test cases**: N (N passing)
 - **PR created**: #<N>
 - If no untested modules found: "All source modules have test coverage"
@@ -141,6 +141,6 @@ Report:
 - **Follow existing test patterns exactly** — match the import style, describe/it structure, and assertion patterns from existing tests.
 - **Never delete existing test files** — only add new ones.
 - **Never overwrite existing test files** — if a test file already exists for the target module, skip it.
-- If `npm run build:ts` fails, STOP — the codebase must compile before tests can be generated.
+- If `pnpm build` fails, STOP — the codebase must compile before tests can be generated.
 - If `gh` CLI is not authenticated, still generate the test file locally but skip PR creation.
-- Target modules must be in `src/` — do not generate tests for files outside the source tree.
+- Target modules must be in `packages/*/src/` or `apps/*/src/` — do not generate tests for files outside the source tree.

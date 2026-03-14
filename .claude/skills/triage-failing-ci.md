@@ -91,11 +91,11 @@ Read the log output and classify into one of these categories:
 
 | Category | Indicators |
 |----------|------------|
-| **lint** | ESLint errors, `npm run lint` exit code |
-| **format** | Prettier check failures, `npm run format` exit code |
+| **lint** | ESLint errors, `pnpm lint` exit code |
+| **format** | Prettier check failures, `pnpm format` exit code |
 | **typecheck** | `tsc` errors, `TS\d+:` error codes |
-| **test** | vitest/test failures, assertion errors, `npm test` exit code |
-| **build** | `esbuild` errors, `npm run build:ts` exit code |
+| **test** | vitest/test failures, assertion errors, `pnpm test` exit code |
+| **build** | `esbuild` errors, `pnpm build` exit code |
 | **governance** | Failure correlates with a governance denial (from step 3c) |
 | **other** | Network errors, timeout, infrastructure issues |
 
@@ -118,8 +118,8 @@ git pull origin <HEAD_BRANCH>
 **Lint errors:**
 
 ```bash
-npm run lint:fix
-npm run lint
+pnpm lint:fix
+pnpm lint
 ```
 
 If errors persist after auto-fix, read the specific errors and fix manually.
@@ -127,8 +127,8 @@ If errors persist after auto-fix, read the specific errors and fix manually.
 **Format errors:**
 
 ```bash
-npm run format:fix
-npm run format
+pnpm format:fix
+pnpm format
 ```
 
 **Type errors:**
@@ -136,7 +136,7 @@ npm run format
 Read the `tsc` error output. Fix the specific type issues in the reported files. Then verify:
 
 ```bash
-npm run ts:check
+pnpm ts:check
 ```
 
 **Test failures:**
@@ -149,7 +149,7 @@ Read the test output. Investigate the failing test and the code it exercises:
 Then verify:
 
 ```bash
-npm run ts:test
+ppnpm test
 ```
 
 **Build errors:**
@@ -157,7 +157,7 @@ npm run ts:test
 Read the build output. Fix the reported issues (missing exports, syntax errors, etc.). Then verify:
 
 ```bash
-npm run build:ts
+pnpm build
 ```
 
 #### 4c. If the Fix Attempt Fails
@@ -169,7 +169,7 @@ If you cannot resolve the failure after **2 attempts**, STOP fixing this run. Po
 #### 5a. Run the Full Suite
 
 ```bash
-npm run build:ts && npm run ts:check && npm run lint && npm run format && npm run ts:test && npm test
+pnpm build && pnpm ts:check && pnpm lint && pnpm format && ppnpm test && pnpm test
 ```
 
 If any step fails that was not part of the original failure, do not push — you may have introduced a regression. Revert your changes and skip this run.
@@ -242,7 +242,7 @@ gh pr comment <PR_NUMBER> --body "**AgentGuard CI Triage Bot** — governance-re
 ## Recommended Action
 
 Review the governance policy to determine if the denial was intentional:
-- Run \`npx agentguard inspect --last\` to see full decision history
+- Run \`node apps/cli/dist/bin.js inspect --last\` to see full decision history
 - Check if the denied action is necessary for CI to pass
 - If the denial was correct, the implementation approach needs adjustment
 - If the denial was overly restrictive, consider a policy update

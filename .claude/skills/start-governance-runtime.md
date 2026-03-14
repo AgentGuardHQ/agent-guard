@@ -4,6 +4,16 @@ Ensure the AgentGuard kernel is active and intercepting all tool calls before an
 
 ## Steps
 
+### 0. Build the CLI
+
+Ensure the AgentGuard CLI is compiled from the latest source before hooks reference it:
+
+```bash
+pnpm build
+```
+
+If the build fails, STOP — governance hooks depend on the compiled CLI at `apps/cli/dist/bin.js`.
+
 ### 1. Check Hook Registration
 
 Read the local Claude Code settings and verify the PreToolUse governance hook is installed with SQLite storage:
@@ -19,7 +29,7 @@ Look for a `PreToolUse` entry whose command contains `claude-hook` and `--store 
 Run the AgentGuard hook installer with SQLite storage:
 
 ```bash
-npx agentguard claude-init --remove 2>/dev/null; npx agentguard claude-init --store sqlite
+node apps/cli/dist/bin.js claude-init --remove 2>/dev/null; node apps/cli/dist/bin.js claude-init --store sqlite
 ```
 
 This writes both PreToolUse (governance enforcement for all tools) and PostToolUse (Bash error monitoring) hooks into `.claude/settings.json`, configured to persist governance data to SQLite (`~/.agentguard/agentguard.db`). The `--remove` ensures any existing hooks without SQLite are replaced.
@@ -64,5 +74,5 @@ Policy: <filename or "none (fail-open)">
 
 - This skill MUST be the first skill invoked in any autonomous workflow
 - If hook installation fails, STOP — do not proceed with development work without governance
-- Never modify `.claude/settings.json` manually — always use `npx agentguard claude-init`
+- Never modify `.claude/settings.json` manually — always use `node apps/cli/dist/bin.js claude-init`
 - Never modify `agentguard.yaml` — this is the governance policy and is protected

@@ -47,7 +47,7 @@ Parse the policy to extract:
 Run automated policy validation with strict best-practice checks:
 
 ```bash
-npx agentguard policy validate --strict --json 2>/dev/null
+node apps/cli/dist/bin.js policy validate --strict --json 2>/dev/null
 ```
 
 Parse the validation output for:
@@ -60,7 +60,7 @@ If the validate command is not available, skip this step and rely on manual anal
 ### 4. Read Invariant Definitions
 
 ```bash
-cat src/invariants/definitions.ts
+cat packages/invariants/src/definitions.ts
 ```
 
 Extract the 8 built-in invariant names and their trigger conditions:
@@ -119,9 +119,9 @@ Look for:
 Also run simulation against common risky patterns to detect coverage gaps:
 
 ```bash
-npx agentguard simulate --action file.write --target .env.production --policy agentguard.yaml --json 2>/dev/null
-npx agentguard simulate --action git.push --branch main --policy agentguard.yaml --json 2>/dev/null
-npx agentguard simulate --action shell.exec --command "rm -rf /" --policy agentguard.yaml --json 2>/dev/null
+node apps/cli/dist/bin.js simulate --action file.write --target .env.production --policy agentguard.yaml --json 2>/dev/null
+node apps/cli/dist/bin.js simulate --action git.push --branch main --policy agentguard.yaml --json 2>/dev/null
+node apps/cli/dist/bin.js simulate --action shell.exec --command "rm -rf /" --policy agentguard.yaml --json 2>/dev/null
 ```
 
 If any of these simulations show "allowed", flag as a policy gap.
@@ -153,10 +153,10 @@ Compare the active policy against available packs:
 
 Compare policy coverage against the architectural layers:
 
-- Does the policy cover all 7 `src/` layers? (kernel, events, policy, invariants, adapters, cli, core)
-- Are protected paths (`src/kernel/`, `src/invariants/`) reflected in policy rules?
+- Does the policy cover all workspace packages? (kernel, events, policy, invariants, adapters, cli, core)
+- Are protected paths (`packages/kernel/src/`, `packages/invariants/src/`) reflected in policy rules?
 - Does the blast radius invariant align with the actual module structure?
-- Are there action types in `src/core/actions.ts` with no corresponding policy rule?
+- Are there action types in `packages/core/src/actions.ts` with no corresponding policy rule?
 
 ### 10. Generate Effectiveness Report
 

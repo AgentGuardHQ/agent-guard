@@ -17,12 +17,12 @@ Invoke the `start-governance-runtime` skill to ensure the AgentGuard kernel is a
 Search source files for patterns that indicate hardcoded credentials:
 
 ```bash
-grep -rn "password\s*=\s*['\"]" src/ --include="*.ts" || true
-grep -rn "secret\s*=\s*['\"]" src/ --include="*.ts" || true
-grep -rn "api[_-]?key\s*=\s*['\"]" src/ --include="*.ts" || true
-grep -rn "token\s*=\s*['\"]" src/ --include="*.ts" || true
-grep -rn "Bearer\s" src/ --include="*.ts" || true
-grep -rn "-----BEGIN.*PRIVATE KEY" src/ --include="*.ts" || true
+grep -rn "password\s*=\s*['\"]" packages/ apps/ --include="*.ts" --exclude-dir=node_modules --exclude-dir=dist || true
+grep -rn "secret\s*=\s*['\"]" packages/ apps/ --include="*.ts" --exclude-dir=node_modules --exclude-dir=dist || true
+grep -rn "api[_-]?key\s*=\s*['\"]" packages/ apps/ --include="*.ts" --exclude-dir=node_modules --exclude-dir=dist || true
+grep -rn "token\s*=\s*['\"]" packages/ apps/ --include="*.ts" --exclude-dir=node_modules --exclude-dir=dist || true
+grep -rn "Bearer\s" packages/ apps/ --include="*.ts" --exclude-dir=node_modules --exclude-dir=dist || true
+grep -rn "-----BEGIN.*PRIVATE KEY" packages/ apps/ --include="*.ts" --exclude-dir=node_modules --exclude-dir=dist || true
 ```
 
 Also check configuration and example files:
@@ -39,17 +39,17 @@ Check for dangerous JavaScript/TypeScript patterns:
 
 ```bash
 # eval and Function constructor — arbitrary code execution
-grep -rn "eval(" src/ --include="*.ts" || true
-grep -rn "new Function(" src/ --include="*.ts" || true
+grep -rn "eval(" packages/ apps/ --include="*.ts" --exclude-dir=node_modules --exclude-dir=dist || true
+grep -rn "new Function(" packages/ apps/ --include="*.ts" --exclude-dir=node_modules --exclude-dir=dist || true
 
 # Dynamic require — potential code injection
-grep -rn "require(" src/ --include="*.ts" | grep -v "import" || true
+grep -rn "require(" packages/ apps/ --include="*.ts" --exclude-dir=node_modules --exclude-dir=dist | grep -v "import" || true
 
 # Shell command construction — command injection risk
-grep -rn "exec(\|execSync(\|spawn(\|spawnSync(" src/ --include="*.ts" || true
+grep -rn "exec(\|execSync(\|spawn(\|spawnSync(" packages/ apps/ --include="*.ts" --exclude-dir=node_modules --exclude-dir=dist || true
 
 # Template literals in shell commands — injection risk
-grep -rn "exec\`\|execSync\`" src/ --include="*.ts" || true
+grep -rn "exec\`\|execSync\`" packages/ apps/ --include="*.ts" --exclude-dir=node_modules --exclude-dir=dist || true
 ```
 
 For each shell execution found, verify:
@@ -62,7 +62,7 @@ For each shell execution found, verify:
 Check file adapter and filesystem operations for path traversal:
 
 ```bash
-grep -rn "path.join\|path.resolve\|readFile\|writeFile\|readdir\|mkdir\|unlink\|rmdir" src/ --include="*.ts" || true
+grep -rn "path.join\|path.resolve\|readFile\|writeFile\|readdir\|mkdir\|unlink\|rmdir" packages/ apps/ --include="*.ts" --exclude-dir=node_modules --exclude-dir=dist || true
 ```
 
 For each filesystem operation found, verify:
@@ -71,9 +71,9 @@ For each filesystem operation found, verify:
 - Is `path.normalize()` used before path comparison?
 
 Focus particularly on:
-- `src/adapters/file.ts` — file adapter handles file.read, file.write, file.delete
-- `src/kernel/aab.ts` — AAB normalizes paths from agent input
-- `src/cli/` — CLI commands accept user-provided paths
+- `packages/adapters/src/file.ts` — file adapter handles file.read, file.write, file.delete
+- `packages/kernel/src/aab.ts` — AAB normalizes paths from agent input
+- `apps/cli/src/` — CLI commands accept user-provided paths
 
 ### 5. Scan for Input Validation Gaps
 
@@ -81,13 +81,13 @@ Check system boundaries where external data enters:
 
 ```bash
 # JSON parsing without try/catch
-grep -rn "JSON.parse(" src/ --include="*.ts" || true
+grep -rn "JSON.parse(" packages/ apps/ --include="*.ts" --exclude-dir=node_modules --exclude-dir=dist || true
 
 # stdin/process.argv handling
-grep -rn "process.stdin\|process.argv" src/ --include="*.ts" || true
+grep -rn "process.stdin\|process.argv" packages/ apps/ --include="*.ts" --exclude-dir=node_modules --exclude-dir=dist || true
 
 # File content used without validation
-grep -rn "readFileSync\|readFile" src/ --include="*.ts" || true
+grep -rn "readFileSync\|readFile" packages/ apps/ --include="*.ts" --exclude-dir=node_modules --exclude-dir=dist || true
 ```
 
 For each entry point, verify:
@@ -99,10 +99,10 @@ For each entry point, verify:
 
 ```bash
 # Stack traces exposed to output
-grep -rn "console.error(.*err\|console.log(.*stack" src/ --include="*.ts" || true
+grep -rn "console.error(.*err\|console.log(.*stack" packages/ apps/ --include="*.ts" --exclude-dir=node_modules --exclude-dir=dist || true
 
 # Verbose error messages that could leak internals
-grep -rn "throw new Error(" src/ --include="*.ts" | head -20
+grep -rn "throw new Error(" packages/ apps/ --include="*.ts" --exclude-dir=node_modules --exclude-dir=dist | head -20
 ```
 
 ### 7. Generate Security Report
@@ -174,7 +174,7 @@ Report:
 - **Never modify source code** — only read and report.
 - **Never close existing security issues** — only create new ones or comment on existing.
 - Exclude false positives: type definitions, test fixtures with dummy values, documentation.
-- Focus on the `src/` directory — do not scan `node_modules/`, `dist/`, or `.git/`.
+- Focus on `packages/*/src/` and `apps/*/src/` directories — do not scan `node_modules/`, `dist/`, or `.git/`.
 - Cap detailed findings at 20 items per category to keep reports actionable.
 - If `gh` CLI is not authenticated, still generate the report to console but skip issue creation.
 - Differentiate from `dependency-security-audit` — this skill scans SOURCE CODE, not dependencies.

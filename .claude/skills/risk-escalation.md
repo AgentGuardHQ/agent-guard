@@ -59,7 +59,7 @@ Flag:
 #### 2c. Governance Denial Rate
 
 ```bash
-npx agentguard analytics --format json 2>/dev/null | head -100
+node apps/cli/dist/bin.js analytics --format json 2>/dev/null | head -100
 ```
 
 If analytics available, extract:

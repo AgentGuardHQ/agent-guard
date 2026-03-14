@@ -29,13 +29,13 @@ gh pr view <PR_NUMBER> --json files --jq '.files[].path'
 ```
 
 A PR needs architecture review if it modifies files in:
-- `src/kernel/` — core governance engine
-- `src/events/` — canonical event model
-- `src/policy/` — policy system
-- `src/invariants/` — invariant system
-- `src/adapters/` — execution adapters
-- `src/core/` — shared types and utilities
-- `src/cli/` — CLI entry points and commands
+- `packages/kernel/src/` — core governance engine
+- `packages/events/src/` — canonical event model
+- `packages/policy/src/` — policy system
+- `packages/invariants/src/` — invariant system
+- `packages/adapters/src/` — execution adapters
+- `packages/core/src/` — shared types and utilities
+- `apps/cli/src/` — CLI entry points and commands
 
 Skip PRs that already have an `**Architect Agent**` comment. Select up to **2 PRs** per run.
 
@@ -51,35 +51,35 @@ gh pr diff <PR_NUMBER>
 
 #### 4b. Analyze Module Boundaries
 
-The architecture defines 7 distinct layers with strict dependency rules:
+The architecture defines 7 distinct workspace packages with strict dependency rules:
 
 ```
-core/ ← (shared types, no imports from other layers)
+@red-codes/core ← (shared types, no imports from other packages)
   ↑
-events/ ← (may import from core/)
+@red-codes/events ← (may import from core)
   ↑
-policy/ ← (may import from core/)
+@red-codes/policy ← (may import from core)
   ↑
-invariants/ ← (may import from core/, events/)
+@red-codes/invariants ← (may import from core, events)
   ↑
-kernel/ ← (may import from core/, events/, policy/, invariants/)
+@red-codes/kernel ← (may import from core, events, policy, invariants)
   ↑
-adapters/ ← (may import from core/, events/, kernel/)
+@red-codes/adapters ← (may import from core, events, kernel)
   ↑
-cli/ ← (may import from anything)
+apps/cli ← (may import from anything)
 ```
 
 Check the diff for import statements that violate these dependency rules:
-- `kernel/` must NOT import from `adapters/` or `cli/`
-- `adapters/` must NOT import from `cli/`
-- `events/` must NOT import from `kernel/`, `policy/`, `invariants/`, `adapters/`, or `cli/`
-- `policy/` must NOT import from `kernel/`, `invariants/`, `adapters/`, or `cli/`
-- `core/` must NOT import from any other `src/` layer
+- `@red-codes/kernel` must NOT import from `@red-codes/adapters` or `apps/cli`
+- `@red-codes/adapters` must NOT import from `apps/cli`
+- `@red-codes/events` must NOT import from `kernel`, `policy`, `invariants`, `adapters`, or `cli`
+- `@red-codes/policy` must NOT import from `kernel`, `invariants`, `adapters`, or `cli`
+- `@red-codes/core` must NOT import from any other workspace package
 
 #### 4c. Check Event Model Consistency
 
 If the PR adds new event kinds:
-- New events must be defined in `src/events/schema.ts`
+- New events must be defined in `packages/events/src/schema.ts`
 - New events must follow the existing naming convention (PascalCase)
 - New events must have a factory function for creation
 - New events must be documented in the appropriate event category
@@ -87,9 +87,9 @@ If the PR adds new event kinds:
 #### 4d. Check Action Type Consistency
 
 If the PR adds new action types:
-- New actions must be registered in `src/core/actions.ts`
+- New actions must be registered in `packages/core/src/actions.ts`
 - New actions must follow the `class.verb` naming convention (e.g., `file.read`, `git.push`)
-- New action classes must have a corresponding adapter in `src/adapters/`
+- New action classes must have a corresponding adapter in `packages/adapters/src/`
 
 #### 4e. Check Public API Surface
 
