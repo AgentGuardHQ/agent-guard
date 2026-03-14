@@ -108,31 +108,31 @@ Use these colors:
 Run the build and test suite to verify the toolchain is healthy:
 
 ```bash
-npm run build:ts
+pnpm build
 ```
 
 Report build result (pass/fail).
 
 ```bash
-npm run ts:test
+ppnpm test
 ```
 
 Report test result (pass count, fail count).
 
 ```bash
-npm test
+pnpm test
 ```
 
 Report JS test result (pass count, fail count).
 
 ```bash
-npm run lint
+pnpm lint
 ```
 
 Report lint result (clean or error count).
 
 ```bash
-npm run format
+pnpm format
 ```
 
 Report format result (clean or issue count).

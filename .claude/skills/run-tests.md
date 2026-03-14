@@ -13,26 +13,26 @@ Run these in sequence. If any step fails, fix and retry before proceeding.
 ### 1. Build TypeScript
 
 ```bash
-npm run build:ts
+pnpm build
 ```
 
-Compiles TypeScript via tsc + esbuild to `dist/`. If the build fails, read the error output, fix the source files, and rebuild. Do not proceed until the build succeeds.
+Compiles all workspace packages via Turborepo. If the build fails, read the error output, fix the source files, and rebuild. Do not proceed until the build succeeds.
 
 ### 2. Run TypeScript Tests (vitest)
 
 ```bash
-npm run ts:test
+ppnpm test
 ```
 
 Report the pass/fail count. If any tests fail:
 - If the failure is in code you modified, fix it and re-run
 - If the failure is a pre-existing issue unrelated to your changes, note it but proceed
-- Re-run after any fix: `npm run ts:test`
+- Re-run after any fix: `ppnpm test`
 
 ### 3. Run JavaScript Tests
 
 ```bash
-npm test
+pnpm test
 ```
 
 Report the pass/fail count. Same fix-or-note approach as step 2.
@@ -40,14 +40,14 @@ Report the pass/fail count. Same fix-or-note approach as step 2.
 ### 4. Run ESLint
 
 ```bash
-npm run lint
+pnpm lint
 ```
 
 If lint errors exist in files you modified:
 
 ```bash
-npm run lint:fix
-npm run lint
+pnpm lint:fix
+pnpm lint
 ```
 
 If errors persist after auto-fix, fix manually.
@@ -55,14 +55,14 @@ If errors persist after auto-fix, fix manually.
 ### 5. Run Prettier Format Check
 
 ```bash
-npm run format
+pnpm format
 ```
 
 If formatting issues exist in files you modified:
 
 ```bash
-npm run format:fix
-npm run format
+pnpm format:fix
+pnpm format
 ```
 
 ### 6. Commit Fixes

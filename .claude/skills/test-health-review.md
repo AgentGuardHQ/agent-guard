@@ -28,7 +28,7 @@ Invoke the `start-governance-runtime` skill to ensure the AgentGuard kernel is a
 Build must succeed before tests can run:
 
 ```bash
-npm run build:ts
+pnpm build
 ```
 
 If the build fails, record the error output and skip to Step 9 (Generate Report) with build failure as the primary finding. Do NOT attempt to fix the build — that is the Coder Agent's job.
@@ -54,7 +54,7 @@ Parse the output to extract:
 Run the custom JS test harness:
 
 ```bash
-npm test 2>&1
+pnpm test 2>&1
 ```
 
 Parse the output for:
@@ -97,25 +97,25 @@ Calculate the ratio of test code to source code:
 Count source files and test files:
 
 ```bash
-find src/ -name "*.ts" -not -name "*.test.ts" | wc -l
-find tests/ -name "*.test.*" | wc -l
+find packages/ apps/ -name "*.ts" -not -name "*.test.ts" -not -path "*/node_modules/*" -not -path "*/dist/*" | wc -l
+find packages/ apps/ -name "*.test.*" -not -path "*/node_modules/*" | wc -l
 ```
 
 Count lines of source code vs. test code:
 
 ```bash
-find src/ -name "*.ts" -not -name "*.test.ts" -exec cat {} + | wc -l
-find tests/ -name "*.test.*" -exec cat {} + | wc -l
+find packages/ apps/ -name "*.ts" -not -name "*.test.ts" -not -path "*/node_modules/*" -not -path "*/dist/*" -exec cat {} + | wc -l
+find packages/ apps/ -name "*.test.*" -not -path "*/node_modules/*" -exec cat {} + | wc -l
 ```
 
 Calculate:
 - **Test-to-code ratio**: test lines / source lines
 - **Test file coverage**: % of source modules that have a corresponding test file
-- **Untested modules**: Source files in `src/` with no matching test file in `tests/`
+- **Untested modules**: Source files with no matching test file in their package's `tests/` directory
 
-For each source file in `src/`, check if a corresponding test exists:
-- `src/kernel/kernel.ts` → `tests/ts/kernel.test.ts` or similar
-- `src/events/bus.ts` → `tests/ts/event-bus.test.ts` or similar
+For each source file, check if a corresponding test exists in the same package:
+- `packages/kernel/src/kernel.ts` → `packages/kernel/tests/kernel.test.ts` or similar
+- `packages/events/src/bus.ts` → `packages/events/tests/event-bus.test.ts` or similar
 
 List all source files that have NO corresponding test file.
 
@@ -171,7 +171,7 @@ Source files with no corresponding test file, grouped by directory.
 
 **Test-to-Code Ratio**:
 - Overall ratio
-- Per-directory breakdown (kernel, events, policy, invariants, adapters, cli, core)
+- Per-package breakdown (kernel, events, policy, invariants, adapters, cli, core)
 - Comparison note (healthy ratio is typically 0.8-1.5)
 
 **CI Pipeline Health**:

@@ -9,15 +9,15 @@ Run these in sequence. If any step fails, stop and analyze before proceeding.
 ### 1. Build TypeScript
 
 ```bash
-npm run build:ts
+pnpm build
 ```
 
-Compiles TypeScript via tsc + esbuild to `dist/`. Report build success or failure with error details.
+Compiles all workspace packages via Turborepo. Report build success or failure with error details.
 
 ### 2. Type-Check
 
 ```bash
-npm run ts:check
+pnpm ts:check
 ```
 
 Runs `tsc --noEmit` for strict type verification. Report any type errors with file:line references.
@@ -25,7 +25,7 @@ Runs `tsc --noEmit` for strict type verification. Report any type errors with fi
 ### 3. Run TypeScript Tests (vitest)
 
 ```bash
-npm run ts:test
+ppnpm test
 ```
 
 Report pass/fail count. If tests fail, note the failing test names and error messages.
@@ -33,7 +33,7 @@ Report pass/fail count. If tests fail, note the failing test names and error mes
 ### 4. Run JavaScript Tests
 
 ```bash
-npm test
+pnpm test
 ```
 
 Report pass/fail count. These use the custom zero-dependency harness in `tests/run.js`.
@@ -41,7 +41,7 @@ Report pass/fail count. These use the custom zero-dependency harness in `tests/r
 ### 5. Run ESLint
 
 ```bash
-npm run lint
+pnpm lint
 ```
 
 Report any lint errors with file:line references.
@@ -49,7 +49,7 @@ Report any lint errors with file:line references.
 ### 6. Run Prettier Format Check
 
 ```bash
-npm run format
+pnpm format
 ```
 
 Report any formatting issues.
@@ -57,7 +57,7 @@ Report any formatting issues.
 ### 7. Run Coverage Check
 
 ```bash
-npm run test:coverage
+pnpm test:coverage
 ```
 
 Report line coverage percentage. The project threshold is 50% line coverage.
@@ -89,4 +89,4 @@ One-line verdict:
 - **Read-only** — do not fix, modify, or commit anything. This skill only reports.
 - Run all steps even if earlier steps fail — report the full picture.
 - If a command times out (>2 minutes), note the timeout and continue.
-- If `node_modules` is missing, run `npm install` first, then proceed.
+- If `node_modules` is missing, run `pnpm install` first, then proceed.

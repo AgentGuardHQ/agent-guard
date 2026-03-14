@@ -57,7 +57,7 @@ For every open issue and every PR merged in the last 14 days, determine which RO
 1. Issue body explicitly references a phase (e.g., "Phase 4", "Plugin Ecosystem")
 2. Issue title or body mentions a ROADMAP line item keyword (e.g., "policy pack", "VS Code extension", "replay")
 3. Issue labels contain a `phase:N` label
-4. Issue file scope paths map to a ROADMAP area (e.g., `src/events/` → Phase 1, `src/kernel/` → Phase 2, `src/cli/` → Phase 3)
+4. Issue file scope paths map to a ROADMAP area (e.g., `packages/events/src/` → Phase 1, `packages/kernel/src/` → Phase 2, `apps/cli/src/` → Phase 3)
 5. No mapping found → classify as **orphaned**
 
 Produce three lists:

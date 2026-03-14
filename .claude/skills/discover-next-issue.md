@@ -104,7 +104,7 @@ For the selected issue, estimate the governance risk:
 If the issue body contains a `## File Scope` section, count the listed files. Then simulate:
 
 ```bash
-npx agentguard simulate --action file.write --target <first-file-in-scope> --policy agentguard.yaml --json 2>/dev/null
+node apps/cli/dist/bin.js simulate --action file.write --target <first-file-in-scope> --policy agentguard.yaml --json 2>/dev/null
 ```
 
 Classify the estimated blast radius:

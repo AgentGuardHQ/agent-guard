@@ -44,7 +44,7 @@ Invoke the `full-test` skill. ALL 7 checks must pass. If any check fails, STOP â
 Run the analytics engine to assess governance health for the release period:
 
 ```bash
-npx agentguard analytics --format json 2>/dev/null | head -100
+node apps/cli/dist/bin.js analytics --format json 2>/dev/null | head -100
 ```
 
 Extract:
@@ -88,7 +88,7 @@ Group PRs by prefix: `feat` â†’ Features, `fix` â†’ Bug Fixes, everything else â
 ### 7. Bump Version
 
 ```bash
-npm version <patch|minor|major> --no-git-tag-version
+pnpm version <patch|minor|major> --no-git-tag-version
 ```
 
 Stage the version change:
@@ -103,7 +103,7 @@ git commit -m "chore: bump version to <new-version>"
 Record the governance decision for the version bump:
 
 ```bash
-npx agentguard inspect --last --decisions 2>/dev/null
+node apps/cli/dist/bin.js inspect --last --decisions 2>/dev/null
 ```
 
 ### 9. Create Release Branch

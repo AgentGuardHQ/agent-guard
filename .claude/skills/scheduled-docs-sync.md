@@ -39,22 +39,22 @@ Read the files that define the current state of the project:
 
 ```bash
 # Project structure
-find src/ -type f -name "*.ts" | sort
+find packages/ apps/ -type f -name "*.ts" -not -path "*/node_modules/*" -not -path "*/dist/*" | sort
 
 # Action types
-grep -c "actionType:" src/core/actions.ts
+grep -c "actionType:" packages/core/src/actions.ts
 
 # Event kinds
-grep "export type EventKind" src/events/schema.ts
+grep "export type EventKind" packages/events/src/schema.ts
 
 # Invariant definitions
-grep "id:" src/invariants/definitions.ts
+grep "id:" packages/invariants/src/definitions.ts
 
-# Package scripts
+# Package scripts (root turbo scripts)
 cat package.json | grep -A 50 '"scripts"'
 
 # CLI commands
-grep -r "\.command(" src/cli/ --include="*.ts" | head -20
+grep -r "\.command(" apps/cli/src/ --include="*.ts" | head -20
 ```
 
 ### 4. Read Documentation Files

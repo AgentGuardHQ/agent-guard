@@ -54,7 +54,7 @@ gh issue list --state open --limit 100 --json number,title,labels,body
 For each issue, determine its phase alignment:
 - Match by title keywords or explicit phase references in the body
 - Match by label (e.g., labels containing phase numbers or theme names)
-- Match by file scope references (e.g., issues touching `src/policy/` → Phase 8 Policy Ecosystem)
+- Match by file scope references (e.g., issues touching `packages/policy/src/` → Phase 8 Policy Ecosystem)
 
 Build a phase-issue map:
 ```

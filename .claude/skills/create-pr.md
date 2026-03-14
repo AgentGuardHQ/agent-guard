@@ -25,7 +25,7 @@ If no governance files exist yet, this is a no-op — proceed normally.
 Run impact simulation before pushing to assess blast radius and policy compliance:
 
 ```bash
-npx agentguard simulate --action git.push --branch $(git branch --show-current) --policy agentguard.yaml --json 2>/dev/null
+node apps/cli/dist/bin.js simulate --action git.push --branch $(git branch --show-current) --policy agentguard.yaml --json 2>/dev/null
 ```
 
 Parse the JSON output for:
@@ -94,7 +94,7 @@ Parse decision records to extract:
 Run the analytics engine for a per-session risk assessment:
 
 ```bash
-npx agentguard analytics --format json 2>/dev/null | head -50
+node apps/cli/dist/bin.js analytics --format json 2>/dev/null | head -50
 ```
 
 Extract:
@@ -121,11 +121,10 @@ Use this structure:
 - <list of files modified with brief description of each change>
 
 ## Test Plan
-- [ ] TypeScript build passes (`npm run build:ts`)
-- [ ] Vitest tests pass (`npm run ts:test`)
-- [ ] JS tests pass (`npm test`)
-- [ ] ESLint clean (`npm run lint`)
-- [ ] Prettier clean (`npm run format`)
+- [ ] TypeScript build passes (`pnpm build`)
+- [ ] Vitest tests pass (`pnpm test`)
+- [ ] ESLint clean (`pnpm lint`)
+- [ ] Prettier clean (`pnpm format`)
 
 ## Risk Assessment
 

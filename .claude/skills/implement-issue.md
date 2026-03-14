@@ -66,7 +66,7 @@ git diff --name-only HEAD
 For each modified file, run simulation:
 
 ```bash
-npx agentguard simulate --action file.write --target <file> --policy agentguard.yaml --json 2>/dev/null
+node apps/cli/dist/bin.js simulate --action file.write --target <file> --policy agentguard.yaml --json 2>/dev/null
 ```
 
 Check the simulation result:
@@ -82,7 +82,7 @@ If the simulate command is not available, skip this step and proceed.
 ### 5. Type-Check
 
 ```bash
-npm run ts:check
+pnpm ts:check
 ```
 
 If type errors exist in files you modified, fix them before proceeding. Do not skip type errors.
@@ -90,13 +90,13 @@ If type errors exist in files you modified, fix them before proceeding. Do not s
 ### 6. Lint
 
 ```bash
-npm run lint
+pnpm lint
 ```
 
 If lint errors exist in files you modified:
 
 ```bash
-npm run lint:fix
+pnpm lint:fix
 ```
 
 If errors remain after auto-fix, fix them manually.
@@ -104,13 +104,13 @@ If errors remain after auto-fix, fix them manually.
 ### 7. Format Check
 
 ```bash
-npm run format
+pnpm format
 ```
 
 If formatting issues exist in files you modified:
 
 ```bash
-npm run format:fix
+pnpm format:fix
 ```
 
 ### 8. Commit Changes
@@ -140,14 +140,14 @@ If the task requires multiple logical units of work, make separate commits for e
 After commit, capture the governance decision record for audit trail:
 
 ```bash
-npx agentguard inspect --last 2>/dev/null
+node apps/cli/dist/bin.js inspect --last 2>/dev/null
 ```
 
 This records the governance decisions made during implementation, which will be included in the PR body by the `create-pr` skill.
 
 ## Rules
 
-- Do NOT modify files in `src/kernel/**`, `src/policy/**`, or `src/invariants/**` unless the issue explicitly authorizes it
+- Do NOT modify files in `packages/kernel/src/**`, `packages/policy/src/**`, or `packages/invariants/src/**` unless the issue explicitly authorizes it
 - Do NOT modify `agentguard.yaml` or `.claude/settings.json`
 - Do NOT use `git add .` or `git add -A` — stage specific files only
 - If pre-commit simulation denies a file, do NOT commit it — report the denial

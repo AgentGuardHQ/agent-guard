@@ -29,7 +29,7 @@ Invoke the `start-governance-runtime` skill to ensure the AgentGuard kernel is a
 Use the AgentGuard analytics engine for aggregated cross-session data:
 
 ```bash
-npx agentguard analytics --format json 2>/dev/null | head -200
+node apps/cli/dist/bin.js analytics --format json 2>/dev/null | head -200
 ```
 
 Extract:
@@ -164,19 +164,19 @@ Identify:
 Check the current build output:
 
 ```bash
-ls -la dist/cli/bin.js 2>/dev/null
-ls -la dist/cli/bin.js.map 2>/dev/null
+ls -la apps/cli/dist/bin.js 2>/dev/null
+ls -la apps/cli/dist/bin.js.map 2>/dev/null
 ```
 
 Record:
-- **CLI bundle size**: File size of `dist/cli/bin.js`
-- **Source map size**: File size of `dist/cli/bin.js.map`
+- **CLI bundle size**: File size of `apps/cli/dist/bin.js`
+- **Source map size**: File size of `apps/cli/dist/bin.js.map`
 
 Check dependency health:
 
 ```bash
-npm audit --json 2>/dev/null | head -100
-npm outdated --json 2>/dev/null | head -50
+pnpm audit --json 2>/dev/null | head -100
+pnpm outdated --json 2>/dev/null | head -50
 ```
 
 Record:

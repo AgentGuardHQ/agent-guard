@@ -28,7 +28,7 @@ Invoke the `start-governance-runtime` skill to ensure the AgentGuard kernel is a
 Read cross-session governance data to inform prioritization:
 
 ```bash
-npx agentguard analytics --format json 2>/dev/null | head -100
+node apps/cli/dist/bin.js analytics --format json 2>/dev/null | head -100
 ```
 
 Extract:

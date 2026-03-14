@@ -118,9 +118,9 @@ gh pr view <PR_NUMBER> --json files --jq '[.files[].path]'
 ```
 
 Check if any changed files are in protected paths:
-- `src/kernel/**` — core governance kernel
-- `src/policy/**` — policy evaluation engine
-- `src/invariants/**` — invariant system
+- `packages/kernel/src/**` — core governance kernel
+- `packages/policy/src/**` — policy evaluation engine
+- `packages/invariants/src/**` — invariant system
 - `agentguard.yaml` — default policy
 - `.claude/settings.json` — hook configuration
 

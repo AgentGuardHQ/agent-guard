@@ -51,7 +51,7 @@ Verify the branch exists and the latest commit is the version bump.
 Run the full test suite one more time on the release branch:
 
 ```bash
-npm run build:ts && npm run ts:test && npm test
+pnpm build && pnpm test
 ```
 
 If any test fails, STOP — do not publish a broken release.

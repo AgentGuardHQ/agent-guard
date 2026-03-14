@@ -56,7 +56,7 @@ gh issue view <N> --json state --jq '.state'
 Scan the codebase for undiscovered work items:
 
 ```bash
-grep -rn "TODO\|FIXME\|HACK\|XXX\|WORKAROUND" src/ --include="*.ts" | head -50
+grep -rn "TODO\|FIXME\|HACK\|XXX\|WORKAROUND" packages/ apps/ --include="*.ts" --exclude-dir=node_modules --exclude-dir=dist | head -50
 ```
 
 Cross-reference each annotation against open issues:
@@ -78,11 +78,11 @@ cat ROADMAP.md 2>/dev/null
 List source files without corresponding test files:
 
 ```bash
-ls src/**/*.ts 2>/dev/null
-ls tests/ts/*.test.ts 2>/dev/null
+find packages/ apps/ -name "*.ts" -not -name "*.test.ts" -not -path "*/node_modules/*" -not -path "*/dist/*" 2>/dev/null
+find packages/ apps/ -name "*.test.ts" -not -path "*/node_modules/*" 2>/dev/null
 ```
 
-For each source file in `src/`, check if a corresponding test file exists in `tests/ts/`. Flag source files with no test coverage as gaps.
+For each source file in `packages/*/src/` or `apps/*/src/`, check if a corresponding test file exists in the same package's `tests/` directory. Flag source files with no test coverage as gaps.
 
 ### 6. Generate Hygiene Report
 

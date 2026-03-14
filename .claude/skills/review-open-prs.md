@@ -79,13 +79,13 @@ Check the diff against these criteria:
 - Single quotes, trailing commas (es5), semicolons
 
 **Architecture Boundaries:**
-- Files in `src/kernel/**`, `src/policy/**`, `src/invariants/**` should only be modified if the linked issue explicitly authorizes it
+- Files in `packages/kernel/src/**`, `packages/policy/src/**`, `packages/invariants/src/**` should only be modified if the linked issue explicitly authorizes it
 - `agentguard.yaml` and `.claude/settings.json` should not be modified
 - Cross-layer imports follow dependency rules (adapters should not import from cli, kernel should not import from adapters)
-- Module boundaries respected: kernel/, events/, policy/, invariants/, adapters/, cli/, core/ are distinct layers
+- Module boundaries respected: each workspace package (kernel, events, policy, invariants, adapters, cli, core) is a distinct layer
 
 **Test Coverage:**
-- New source files in `src/` should have corresponding test files
+- New source files in `packages/*/src/` or `apps/*/src/` should have corresponding test files
 - Bug fixes should include regression tests
 
 **Governance Compliance:**
