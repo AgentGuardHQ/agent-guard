@@ -7,6 +7,7 @@ import {
   CREDENTIAL_BASENAME_PATTERNS,
   isCredentialPath,
   isContainerConfigPath,
+  isShellProfilePath,
 } from '@red-codes/invariants';
 import type { SystemState } from '@red-codes/invariants';
 import { checkAllInvariants, buildSystemState } from '@red-codes/invariants';
@@ -1826,6 +1827,373 @@ describe('recursive-operation-guard', () => {
     });
     expect(result.holds).toBe(false);
     expect(result.actual).toContain('find -exec sh -c (shred)');
+  });
+});
+
+// ─── isShellProfilePath helper ─────────────────────────────────────────────
+
+describe('isShellProfilePath', () => {
+  it('detects .bashrc', () => {
+    expect(isShellProfilePath('/home/user/.bashrc')).toBe(true);
+  });
+
+  it('detects .zshrc', () => {
+    expect(isShellProfilePath('/home/user/.zshrc')).toBe(true);
+  });
+
+  it('detects .bash_profile', () => {
+    expect(isShellProfilePath('/home/user/.bash_profile')).toBe(true);
+  });
+
+  it('detects .profile', () => {
+    expect(isShellProfilePath('/home/user/.profile')).toBe(true);
+  });
+
+  it('detects .zshenv', () => {
+    expect(isShellProfilePath('~/.zshenv')).toBe(true);
+  });
+
+  it('detects .zprofile', () => {
+    expect(isShellProfilePath('/Users/dev/.zprofile')).toBe(true);
+  });
+
+  it('detects /etc/profile', () => {
+    expect(isShellProfilePath('/etc/profile')).toBe(true);
+  });
+
+  it('detects /etc/environment', () => {
+    expect(isShellProfilePath('/etc/environment')).toBe(true);
+  });
+
+  it('detects /etc/profile.d/ scripts', () => {
+    expect(isShellProfilePath('/etc/profile.d/custom.sh')).toBe(true);
+  });
+
+  it('rejects normal source files', () => {
+    expect(isShellProfilePath('src/index.ts')).toBe(false);
+  });
+
+  it('rejects package.json', () => {
+    expect(isShellProfilePath('package.json')).toBe(false);
+  });
+
+  it('handles Windows-style paths', () => {
+    expect(isShellProfilePath('C:\\Users\\dev\\.bashrc')).toBe(true);
+  });
+
+  it('detects .cshrc (csh profile)', () => {
+    expect(isShellProfilePath('/home/user/.cshrc')).toBe(true);
+  });
+
+  it('detects .login', () => {
+    expect(isShellProfilePath('/home/user/.login')).toBe(true);
+  });
+});
+
+// ─── no-env-var-modification invariant ─────────────────────────────────────
+
+describe('no-env-var-modification', () => {
+  const inv = findInvariant('no-env-var-modification');
+
+  // --- Shell command detection (export) ---
+
+  it('holds for benign export commands', () => {
+    const result = inv.check({
+      currentCommand: 'export NODE_ENV=production',
+      currentActionType: 'shell.exec',
+    });
+    expect(result.holds).toBe(true);
+  });
+
+  it('holds for export PATH', () => {
+    const result = inv.check({
+      currentCommand: 'export PATH=$PATH:/usr/local/bin',
+      currentActionType: 'shell.exec',
+    });
+    expect(result.holds).toBe(true);
+  });
+
+  it('detects export of SECRET variable', () => {
+    const result = inv.check({
+      currentCommand: 'export AWS_SECRET_ACCESS_KEY=abc123',
+      currentActionType: 'shell.exec',
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('sensitive export');
+    expect(result.actual).toContain('AWS_SECRET_ACCESS_KEY');
+  });
+
+  it('detects export of PASSWORD variable', () => {
+    const result = inv.check({
+      currentCommand: 'export DB_PASSWORD=hunter2',
+      currentActionType: 'shell.exec',
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('sensitive export');
+  });
+
+  it('detects export of API_KEY variable', () => {
+    const result = inv.check({
+      currentCommand: 'export STRIPE_API_KEY=sk_live_abc',
+      currentActionType: 'shell.exec',
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('sensitive export');
+  });
+
+  it('detects export of TOKEN variable', () => {
+    const result = inv.check({
+      currentCommand: 'export GITHUB_TOKEN=ghp_abc123',
+      currentActionType: 'shell.exec',
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('sensitive export');
+  });
+
+  it('detects export of AUTH variable', () => {
+    const result = inv.check({
+      currentCommand: 'export AUTH_BEARER=xyz',
+      currentActionType: 'shell.exec',
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('sensitive export');
+  });
+
+  it('detects export of CREDENTIAL variable', () => {
+    const result = inv.check({
+      currentCommand: 'export SERVICE_CREDENTIAL=abc',
+      currentActionType: 'shell.exec',
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('sensitive export');
+  });
+
+  it('detects export of DATABASE_URL', () => {
+    const result = inv.check({
+      currentCommand: 'export DATABASE_URL=postgres://user:pass@host/db',
+      currentActionType: 'shell.exec',
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('sensitive export');
+  });
+
+  it('detects export of PRIVATE_KEY', () => {
+    const result = inv.check({
+      currentCommand: 'export PRIVATE_KEY=-----BEGIN RSA PRIVATE KEY-----',
+      currentActionType: 'shell.exec',
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('sensitive export');
+  });
+
+  it('detects case-insensitive sensitive exports', () => {
+    const result = inv.check({
+      currentCommand: 'export my_Secret_Value=abc',
+      currentActionType: 'shell.exec',
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('sensitive export');
+  });
+
+  it('detects multiple sensitive exports in one command', () => {
+    const result = inv.check({
+      currentCommand: 'export DB_PASSWORD=abc && export API_KEY=xyz',
+      currentActionType: 'shell.exec',
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('DB_PASSWORD');
+    expect(result.actual).toContain('API_KEY');
+  });
+
+  // --- Shell command detection (setenv) ---
+
+  it('detects setenv of sensitive variable', () => {
+    const result = inv.check({
+      currentCommand: 'setenv AWS_SECRET_ACCESS_KEY abc123',
+      currentActionType: 'shell.exec',
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('sensitive setenv');
+  });
+
+  it('holds for benign setenv', () => {
+    const result = inv.check({
+      currentCommand: 'setenv EDITOR vim',
+      currentActionType: 'shell.exec',
+    });
+    expect(result.holds).toBe(true);
+  });
+
+  // --- File write detection (shell profiles) ---
+
+  it('detects write to .bashrc', () => {
+    const result = inv.check({
+      currentTarget: '/home/user/.bashrc',
+      currentActionType: 'file.write',
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('shell profile write');
+  });
+
+  it('detects write to .zshrc', () => {
+    const result = inv.check({
+      currentTarget: '/home/user/.zshrc',
+      currentActionType: 'file.write',
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('shell profile write');
+  });
+
+  it('detects write to .bash_profile', () => {
+    const result = inv.check({
+      currentTarget: '/Users/dev/.bash_profile',
+      currentActionType: 'file.write',
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('shell profile write');
+  });
+
+  it('detects write to /etc/profile', () => {
+    const result = inv.check({
+      currentTarget: '/etc/profile',
+      currentActionType: 'file.write',
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('shell profile write');
+  });
+
+  it('detects write to /etc/environment', () => {
+    const result = inv.check({
+      currentTarget: '/etc/environment',
+      currentActionType: 'file.write',
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('shell profile write');
+  });
+
+  it('detects write to /etc/profile.d/ scripts', () => {
+    const result = inv.check({
+      currentTarget: '/etc/profile.d/custom.sh',
+      currentActionType: 'file.write',
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('shell profile write');
+  });
+
+  it('detects file.move to shell profile', () => {
+    const result = inv.check({
+      currentTarget: '/home/user/.zshrc',
+      currentActionType: 'file.move',
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('shell profile write');
+  });
+
+  it('allows reading shell profiles', () => {
+    const result = inv.check({
+      currentTarget: '/home/user/.bashrc',
+      currentActionType: 'file.read',
+    });
+    expect(result.holds).toBe(true);
+  });
+
+  // --- modifiedFiles detection ---
+
+  it('detects shell profiles in modifiedFiles', () => {
+    const result = inv.check({
+      modifiedFiles: ['src/index.ts', '/home/user/.bashrc', 'README.md'],
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('shell profile modified');
+  });
+
+  it('detects multiple profile files in modifiedFiles', () => {
+    const result = inv.check({
+      modifiedFiles: ['.zshrc', '.bash_profile'],
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('.zshrc');
+    expect(result.actual).toContain('.bash_profile');
+  });
+
+  // --- Combined detection ---
+
+  it('detects both export and profile write together', () => {
+    const result = inv.check({
+      currentCommand: 'export DB_PASSWORD=abc',
+      currentTarget: '/home/user/.bashrc',
+      currentActionType: 'shell.exec',
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('sensitive export');
+    // shell profile write only flags for file.write/file.move, not shell.exec
+  });
+
+  // --- Safe operations ---
+
+  it('holds when no command or target', () => {
+    const result = inv.check({});
+    expect(result.holds).toBe(true);
+  });
+
+  it('holds for normal file writes', () => {
+    const result = inv.check({
+      currentTarget: 'src/app.ts',
+      currentActionType: 'file.write',
+    });
+    expect(result.holds).toBe(true);
+  });
+
+  it('holds for git operations', () => {
+    const result = inv.check({
+      currentActionType: 'git.push',
+      currentCommand: '',
+    });
+    expect(result.holds).toBe(true);
+  });
+
+  it('is conservative when actionType is not set (export)', () => {
+    const result = inv.check({
+      currentCommand: 'export SECRET_KEY=abc',
+    });
+    expect(result.holds).toBe(false);
+  });
+
+  it('is conservative when actionType is not set (file write to profile)', () => {
+    const result = inv.check({
+      currentTarget: '/home/user/.bashrc',
+    });
+    expect(result.holds).toBe(false);
+  });
+
+  it('has severity 3', () => {
+    expect(inv.severity).toBe(3);
+  });
+
+  it('detects export of CONNECTION_STRING', () => {
+    const result = inv.check({
+      currentCommand: 'export CONNECTION_STRING=Server=myserver;Database=mydb',
+      currentActionType: 'shell.exec',
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('sensitive export');
+  });
+
+  it('detects export of DB_PASS variable', () => {
+    const result = inv.check({
+      currentCommand: 'export DB_PASS=mypassword',
+      currentActionType: 'shell.exec',
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('sensitive export');
+  });
+
+  it('allows export of APIVERSION (no underscore match for apikey)', () => {
+    const result = inv.check({
+      currentCommand: 'export APIVERSION=v2',
+      currentActionType: 'shell.exec',
+    });
+    expect(result.holds).toBe(true);
   });
 });
 

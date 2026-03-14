@@ -67,6 +67,68 @@ export const CREDENTIAL_BASENAME_PATTERNS: string[] = INVARIANT_CREDENTIAL_BASEN
 /** Matches .env files: .env, .env.local, .env.production, etc. */
 const ENV_FILE_REGEX = new RegExp(INVARIANT_ENV_FILE_REGEX_SOURCE, 'i');
 
+/** Shell profile file basenames (case-insensitive) that establish persistent environment changes. */
+const SHELL_PROFILE_BASENAMES = [
+  '.bashrc',
+  '.bash_profile',
+  '.bash_login',
+  '.profile',
+  '.zshrc',
+  '.zshenv',
+  '.zprofile',
+  '.zlogin',
+  '.cshrc',
+  '.tcshrc',
+  '.login',
+];
+
+/** System-wide profile paths (substring match, case-insensitive). */
+const SYSTEM_PROFILE_PATTERNS = [
+  '/etc/profile',
+  '/etc/environment',
+  '/etc/profile.d/',
+  '\\etc\\profile',
+  '\\etc\\environment',
+  '\\etc\\profile.d\\',
+];
+
+/** Returns true if the given path targets a shell profile file. */
+export function isShellProfilePath(filePath: string): boolean {
+  const lower = filePath.toLowerCase();
+
+  // Check system-wide profile paths (substring)
+  if (SYSTEM_PROFILE_PATTERNS.some((p) => lower.includes(p.toLowerCase()))) {
+    return true;
+  }
+
+  // Check user-level shell profile basenames
+  const basename = filePath.split(/[\\/]/).pop() || '';
+  const lowerBase = basename.toLowerCase();
+  if (SHELL_PROFILE_BASENAMES.some((p) => lowerBase === p)) {
+    return true;
+  }
+
+  return false;
+}
+
+/** Sensitive environment variable name patterns (case-insensitive substrings).
+ * Variables whose names contain these patterns are flagged when exported. */
+const SENSITIVE_ENV_VAR_PATTERNS = [
+  'secret',
+  'password',
+  'passwd',
+  'token',
+  'api_key',
+  'apikey',
+  'private_key',
+  'access_key',
+  'auth',
+  'credential',
+  'connection_string',
+  'database_url',
+  'db_pass',
+];
+
 /** Container configuration file basenames (case-insensitive). */
 const CONTAINER_CONFIG_BASENAMES: string[] = INVARIANT_CONTAINER_CONFIG_BASENAMES;
 
@@ -759,6 +821,80 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
         holds: true,
         expected: 'No modifications to container configuration files',
         actual: 'No container config files affected',
+      };
+    },
+  },
+
+  {
+    id: 'no-env-var-modification',
+    name: 'No Environment Variable Modification',
+    description:
+      'Detects attempts to modify environment variables or shell profile files — environment variables often contain secrets and profile modifications can establish persistent backdoors',
+    severity: 3,
+    check(state) {
+      const violations: string[] = [];
+
+      // --- Shell command detection ---
+      const command = state.currentCommand || '';
+      if (command !== '') {
+        const actionType = state.currentActionType || '';
+        // Only inspect shell.exec commands (or unset actionType for conservative checking)
+        if (actionType === '' || actionType === 'shell.exec') {
+          // Detect export of sensitive env vars
+          const exportMatches = command.matchAll(
+            /\bexport\s+([A-Za-z_][A-Za-z0-9_]*)=/gi
+          );
+          for (const match of exportMatches) {
+            const varName = match[1].toLowerCase();
+            if (SENSITIVE_ENV_VAR_PATTERNS.some((p) => varName.includes(p))) {
+              violations.push(`sensitive export: ${match[1]}`);
+            }
+          }
+
+          // Detect setenv (csh/tcsh style)
+          const setenvMatches = command.matchAll(
+            /\bsetenv\s+([A-Za-z_][A-Za-z0-9_]*)\s/gi
+          );
+          for (const match of setenvMatches) {
+            const varName = match[1].toLowerCase();
+            if (SENSITIVE_ENV_VAR_PATTERNS.some((p) => varName.includes(p))) {
+              violations.push(`sensitive setenv: ${match[1]}`);
+            }
+          }
+        }
+      }
+
+      // --- File write detection (shell profile files) ---
+      const target = state.currentTarget || '';
+      const actionType = state.currentActionType || '';
+      const writingActions = ['file.write', 'file.move'];
+
+      if (target !== '') {
+        // Only flag writes — reading profiles is fine
+        if (actionType === '' || writingActions.includes(actionType)) {
+          if (isShellProfilePath(target)) {
+            violations.push(`shell profile write: ${target}`);
+          }
+        }
+      }
+
+      // Check modifiedFiles for bulk operations
+      const profileFiles = (state.modifiedFiles || []).filter((f) => isShellProfilePath(f));
+      for (const f of profileFiles) {
+        const msg = `shell profile modified: ${f}`;
+        if (!violations.includes(msg)) {
+          violations.push(msg);
+        }
+      }
+
+      const holds = violations.length === 0;
+
+      return {
+        holds,
+        expected: 'No environment variable modification or shell profile writes',
+        actual: holds
+          ? 'No environment variable modifications detected'
+          : `Environment variable modification detected (${violations.join('; ')})`,
       };
     },
   },

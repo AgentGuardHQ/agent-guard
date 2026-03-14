@@ -40,6 +40,7 @@
     { "id": "no-permission-escalation", "name": "No Permission Escalation", "description": "Agents must not escalate filesystem permissions (world-writable, setuid/setgid, ownership changes, sudoers)", "severity": 4 },
     { "id": "no-governance-self-modification", "name": "No Governance Self-Modification", "description": "Agents must not modify governance configuration (policy files, governance data, policy packs)", "severity": 5 },
     { "id": "lockfile-integrity", "name": "Lockfile Integrity", "description": "Package lockfiles must stay in sync with manifests", "severity": 2 },
-    { "id": "no-container-config-modification", "name": "No Container Config Modification", "description": "Container configuration files (Dockerfile, docker-compose, .dockerignore, Containerfile) must not be modified without authorization", "severity": 3 }
+    { "id": "no-container-config-modification", "name": "No Container Config Modification", "description": "Container configuration files (Dockerfile, docker-compose, .dockerignore, Containerfile) must not be modified without authorization", "severity": 3 },
+    { "id": "no-env-var-modification", "name": "No Environment Variable Modification", "description": "Detects attempts to modify environment variables or shell profile files — environment variables often contain secrets and profile modifications can establish persistent backdoors", "severity": 3 }
   ]
 }
