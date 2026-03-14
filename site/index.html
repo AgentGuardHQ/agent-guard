@@ -8,7 +8,7 @@
 
   <!-- OpenGraph -->
   <meta property="og:title" content="AgentGuard — Governed Action Runtime for AI Coding Agents">
-  <meta property="og:description" content="Deterministic governance layer between AI agent proposals and execution. Policy enforcement, 8 safety invariants, full audit trail.">
+  <meta property="og:description" content="Deterministic governance layer between AI agent proposals and execution. Policy enforcement, 10 safety invariants, 87 destructive patterns, full audit trail.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://jpleva91.github.io/agent-guard/">
   <meta property="og:image" content="https://jpleva91.github.io/agent-guard/og-image.png">
@@ -109,7 +109,7 @@
       border-color: #22C55E;
     }
 
-    /* Pipeline connector arrows */
+    /* Pipeline connector arrows — horizontal on desktop */
     .pipeline-arrow {
       position: relative;
     }
@@ -127,6 +127,21 @@
     }
     .pipeline-arrow.last::after {
       display: none;
+    }
+
+    /* Pipeline — vertical on mobile */
+    @media (max-width: 767px) {
+      .pipeline-arrow::after {
+        right: auto;
+        top: auto;
+        bottom: -20px;
+        left: 50%;
+        transform: translateX(-50%);
+        border-top: 12px solid #22C55E;
+        border-bottom: none;
+        border-left: 8px solid transparent;
+        border-right: 8px solid transparent;
+      }
     }
 
     /* Copy button flash */
@@ -239,7 +254,7 @@
         <a href="#architecture" class="text-muted hover:text-text transition-colors text-sm font-medium cursor-pointer">Architecture</a>
         <a href="#invariants" class="text-muted hover:text-text transition-colors text-sm font-medium cursor-pointer">Invariants</a>
         <a href="#cli" class="text-muted hover:text-text transition-colors text-sm font-medium cursor-pointer">CLI</a>
-        <a href="https://github.com/jpleva91/agent-guard" target="_blank" rel="noopener noreferrer" class="text-muted hover:text-text transition-colors text-sm font-medium cursor-pointer">GitHub</a>
+        <a href="https://github.com/AgentGuardHQ/agent-guard" target="_blank" rel="noopener noreferrer" class="text-muted hover:text-text transition-colors text-sm font-medium cursor-pointer">GitHub</a>
         <a href="#quickstart" class="bg-cta hover:bg-cta-dark text-bg font-semibold text-sm px-4 py-2 rounded-lg transition-colors cursor-pointer">Get Started</a>
       </div>
 
@@ -258,7 +273,7 @@
         <a href="#architecture" class="text-muted hover:text-text transition-colors text-sm font-medium cursor-pointer">Architecture</a>
         <a href="#invariants" class="text-muted hover:text-text transition-colors text-sm font-medium cursor-pointer">Invariants</a>
         <a href="#cli" class="text-muted hover:text-text transition-colors text-sm font-medium cursor-pointer">CLI</a>
-        <a href="https://github.com/jpleva91/agent-guard" target="_blank" rel="noopener noreferrer" class="text-muted hover:text-text transition-colors text-sm font-medium cursor-pointer">GitHub</a>
+        <a href="https://github.com/AgentGuardHQ/agent-guard" target="_blank" rel="noopener noreferrer" class="text-muted hover:text-text transition-colors text-sm font-medium cursor-pointer">GitHub</a>
         <a href="#quickstart" class="bg-cta hover:bg-cta-dark text-bg font-semibold text-sm px-4 py-2 rounded-lg transition-colors text-center cursor-pointer">Get Started</a>
       </div>
     </div>
@@ -276,25 +291,30 @@
       <div class="max-w-7xl mx-auto px-6 py-16 grid lg:grid-cols-2 gap-12 lg:gap-16 items-center relative z-10">
         <!-- Left column -->
         <div class="reveal">
-          <div class="flex items-center gap-3 mb-4">
+          <div class="flex items-center gap-3 mb-4 flex-wrap">
             <span class="font-mono text-cta text-sm font-semibold tracking-wider uppercase">Open Source</span>
             <span class="text-surface-light">&middot;</span>
             <span class="font-mono text-muted text-sm">Apache 2.0</span>
             <span class="text-surface-light">&middot;</span>
-            <a href="https://www.npmjs.com/package/@red-codes/agentguard" target="_blank" rel="noopener noreferrer" class="font-mono text-muted text-sm hover:text-text transition-colors cursor-pointer">npm</a>
+            <a href="https://github.com/AgentGuardHQ/agent-guard" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 hover:opacity-80 transition-opacity cursor-pointer">
+              <img src="https://img.shields.io/github/stars/AgentGuardHQ/agent-guard?style=flat&logo=github&color=22C55E&labelColor=1E293B" alt="GitHub stars" height="20">
+            </a>
+            <a href="https://www.npmjs.com/package/@red-codes/agentguard" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 hover:opacity-80 transition-opacity cursor-pointer">
+              <img src="https://img.shields.io/npm/dm/@red-codes/agentguard?style=flat&logo=npm&color=22C55E&labelColor=1E293B" alt="npm downloads" height="20">
+            </a>
           </div>
           <h1 class="font-mono font-bold text-4xl sm:text-5xl lg:text-6xl leading-tight mb-6">
             Governed Action Runtime for <span class="text-cta">AI Coding Agents</span>
           </h1>
           <p class="text-muted text-lg leading-relaxed mb-8 max-w-xl">
-            Deterministic governance layer between what an AI agent proposes and what actually executes. Policy enforcement, 8 safety invariants, pre-execution simulation, and a full audit trail for every action.
+            Every tool call your AI agent makes &mdash; file writes, shell commands, git operations &mdash; passes through a deterministic governance kernel. 10 safety invariants. 87 destructive patterns. Full audit trail.
           </p>
           <div class="flex flex-wrap gap-4">
             <a href="#quickstart" class="bg-cta hover:bg-cta-dark text-bg font-semibold px-6 py-3 rounded-lg transition-colors text-sm inline-flex items-center gap-2 cursor-pointer">
               <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>
               Get Started
             </a>
-            <a href="https://github.com/jpleva91/agent-guard" target="_blank" rel="noopener noreferrer" class="border border-surface-light hover:border-muted text-text font-semibold px-6 py-3 rounded-lg transition-colors text-sm inline-flex items-center gap-2 cursor-pointer">
+            <a href="https://github.com/AgentGuardHQ/agent-guard" target="_blank" rel="noopener noreferrer" class="border border-surface-light hover:border-muted text-text font-semibold px-6 py-3 rounded-lg transition-colors text-sm inline-flex items-center gap-2 cursor-pointer">
               <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
               View on GitHub
             </a>
@@ -315,6 +335,126 @@
             <div class="p-5 font-mono text-sm leading-relaxed min-h-[280px]">
               <div id="terminal-output" aria-live="polite"></div>
               <span class="cursor" aria-hidden="true"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================ -->
+    <!-- STATS BAR                                    -->
+    <!-- ============================================ -->
+    <section class="py-16 border-y border-surface-light" aria-label="Project statistics">
+      <div class="max-w-7xl mx-auto px-6">
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-8 text-center reveal-stagger">
+          <div class="reveal">
+            <div class="font-mono font-bold text-3xl sm:text-4xl text-text counter" data-target="1523">0</div>
+            <div class="text-muted text-sm mt-1">Tests</div>
+          </div>
+          <div class="reveal">
+            <div class="font-mono font-bold text-3xl sm:text-4xl text-text counter" data-target="87">0</div>
+            <div class="text-muted text-sm mt-1">Destructive Patterns</div>
+          </div>
+          <div class="reveal">
+            <div class="font-mono font-bold text-3xl sm:text-4xl text-text counter" data-target="49">0</div>
+            <div class="text-muted text-sm mt-1">Event Kinds</div>
+          </div>
+          <div class="reveal">
+            <div class="font-mono font-bold text-3xl sm:text-4xl text-text counter" data-target="23">0</div>
+            <div class="text-muted text-sm mt-1">Action Types</div>
+          </div>
+          <div class="reveal">
+            <div class="font-mono font-bold text-3xl sm:text-4xl text-text counter" data-target="10">0</div>
+            <div class="text-muted text-sm mt-1">Invariants</div>
+          </div>
+          <div class="reveal">
+            <div class="font-mono font-bold text-3xl sm:text-4xl text-text counter" data-target="16">0</div>
+            <div class="text-muted text-sm mt-1">CLI Commands</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================ -->
+    <!-- WHAT IT PREVENTS                             -->
+    <!-- ============================================ -->
+    <section class="py-24" aria-labelledby="prevents-heading">
+      <div class="max-w-7xl mx-auto px-6">
+        <div class="text-center mb-16 reveal">
+          <h2 id="prevents-heading" class="font-mono font-bold text-3xl sm:text-4xl mb-4">What AgentGuard Prevents</h2>
+          <p class="text-muted text-lg max-w-2xl mx-auto">Real scenarios blocked by the governance kernel. No configuration required.</p>
+        </div>
+
+        <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 reveal-stagger">
+          <!-- Scenario 1: Secret Leakage -->
+          <div class="reveal bg-surface border border-surface-light rounded-xl overflow-hidden">
+            <div class="px-5 py-4 border-b border-surface-light bg-surface-light/30">
+              <div class="flex items-center gap-2">
+                <svg class="w-4 h-4 text-danger" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                <span class="font-mono font-semibold text-text text-sm">Secret Leakage</span>
+              </div>
+            </div>
+            <div class="p-5 font-mono text-xs leading-relaxed space-y-2">
+              <div class="text-muted">Agent writes API keys to .env</div>
+              <div class="text-danger">&times; DENIED</div>
+              <div class="text-muted text-[11px] mt-3 pt-3 border-t border-surface-light/50">
+                <span class="sev-critical px-1.5 py-0.5 rounded text-[10px] font-semibold">CRITICAL</span>
+                <span class="ml-1">no-secret-exposure</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Scenario 2: Destructive Command -->
+          <div class="reveal bg-surface border border-surface-light rounded-xl overflow-hidden">
+            <div class="px-5 py-4 border-b border-surface-light bg-surface-light/30">
+              <div class="flex items-center gap-2">
+                <svg class="w-4 h-4 text-danger" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                <span class="font-mono font-semibold text-text text-sm">Destructive Command</span>
+              </div>
+            </div>
+            <div class="p-5 font-mono text-xs leading-relaxed space-y-2">
+              <div class="text-muted">Agent runs rm -rf node_modules/</div>
+              <div class="text-danger">&times; DENIED</div>
+              <div class="text-muted text-[11px] mt-3 pt-3 border-t border-surface-light/50">
+                <span class="sev-high px-1.5 py-0.5 rounded text-[10px] font-semibold">HIGH</span>
+                <span class="ml-1">destructive pattern #14</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Scenario 3: Unreviewed Push -->
+          <div class="reveal bg-surface border border-surface-light rounded-xl overflow-hidden">
+            <div class="px-5 py-4 border-b border-surface-light bg-surface-light/30">
+              <div class="flex items-center gap-2">
+                <svg class="w-4 h-4 text-warning" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <span class="font-mono font-semibold text-text text-sm">Untested Push</span>
+              </div>
+            </div>
+            <div class="p-5 font-mono text-xs leading-relaxed space-y-2">
+              <div class="text-muted">Agent pushes to main without tests</div>
+              <div class="text-danger">&times; DENIED</div>
+              <div class="text-muted text-[11px] mt-3 pt-3 border-t border-surface-light/50">
+                <span class="sev-high px-1.5 py-0.5 rounded text-[10px] font-semibold">HIGH</span>
+                <span class="ml-1">protected-branch + test-before-push</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Scenario 4: Script Injection -->
+          <div class="reveal bg-surface border border-surface-light rounded-xl overflow-hidden">
+            <div class="px-5 py-4 border-b border-surface-light bg-surface-light/30">
+              <div class="flex items-center gap-2">
+                <svg class="w-4 h-4 text-danger" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                <span class="font-mono font-semibold text-text text-sm">Script Injection</span>
+              </div>
+            </div>
+            <div class="p-5 font-mono text-xs leading-relaxed space-y-2">
+              <div class="text-muted">Agent alters package.json scripts</div>
+              <div class="text-danger">&times; DENIED</div>
+              <div class="text-muted text-[11px] mt-3 pt-3 border-t border-surface-light/50">
+                <span class="sev-high px-1.5 py-0.5 rounded text-[10px] font-semibold">HIGH</span>
+                <span class="ml-1">no-package-script-injection</span>
+              </div>
             </div>
           </div>
         </div>
@@ -373,7 +513,7 @@
             </li>
             <li class="flex items-start gap-3">
               <svg class="w-5 h-5 text-cta mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
-              <span>8 built-in invariants + 87 destructive patterns detected <strong class="text-text">automatically</strong></span>
+              <span>10 built-in invariants + 87 destructive patterns detected <strong class="text-text">automatically</strong></span>
             </li>
             <li class="flex items-start gap-3">
               <svg class="w-5 h-5 text-cta mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
@@ -400,8 +540,8 @@
             <div class="w-10 h-10 rounded-lg bg-cta/10 flex items-center justify-center mb-4">
               <svg class="w-5 h-5 text-cta" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
             </div>
-            <h3 class="font-mono font-semibold text-text mb-2">8 Safety Invariants</h3>
-            <p class="text-muted text-sm leading-relaxed">Secret detection, branch protection, blast radius limits, lockfile integrity, skill and task protection. Always on.</p>
+            <h3 class="font-mono font-semibold text-text mb-2">10 Safety Invariants</h3>
+            <p class="text-muted text-sm leading-relaxed">Secret detection, credential file protection, branch protection, blast radius limits, lockfile integrity, package script injection, skill and task protection. Always on.</p>
           </div>
 
           <!-- Card 2: 87 Destructive Patterns -->
@@ -481,8 +621,8 @@
         </div>
 
         <!-- Pipeline visualization -->
-        <div class="reveal overflow-x-auto pb-4">
-          <div class="flex items-center justify-center gap-2 min-w-[900px] px-4">
+        <div class="reveal overflow-x-auto md:overflow-visible pb-4">
+          <div class="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-2 px-4 md:min-w-[900px]">
             <!-- Stage 1: Propose -->
             <div class="pipeline-arrow flex-shrink-0">
               <div class="bg-surface border-2 border-surface-light rounded-lg px-4 py-4 text-center w-[110px]">
@@ -511,7 +651,7 @@
             <div class="pipeline-arrow flex-shrink-0">
               <div class="bg-surface border-2 border-warning rounded-lg px-4 py-4 text-center w-[110px]">
                 <div class="font-mono font-bold text-warning text-sm">Invariants</div>
-                <div class="text-muted text-xs mt-1">8 safety checks</div>
+                <div class="text-muted text-xs mt-1">10 safety checks</div>
               </div>
             </div>
 
@@ -569,7 +709,7 @@
     <section id="invariants" class="py-24" aria-labelledby="inv-heading">
       <div class="max-w-7xl mx-auto px-6">
         <div class="text-center mb-16 reveal">
-          <h2 id="inv-heading" class="font-mono font-bold text-3xl sm:text-4xl mb-4">8 Built-in Invariants</h2>
+          <h2 id="inv-heading" class="font-mono font-bold text-3xl sm:text-4xl mb-4">10 Built-in Invariants</h2>
           <p class="text-muted text-lg max-w-2xl mx-auto">Safety checks that run on every action. Zero configuration. Always on.</p>
         </div>
 
@@ -587,6 +727,11 @@
                 <td class="py-3 px-4 font-mono text-text">no-secret-exposure</td>
                 <td class="py-3 px-4"><span class="sev-critical text-xs font-mono font-semibold px-2 py-0.5 rounded">CRITICAL</span></td>
                 <td class="py-3 px-4 text-muted">Blocks access to .env, credentials, .pem, .key files</td>
+              </tr>
+              <tr>
+                <td class="py-3 px-4 font-mono text-text">no-credential-file-creation</td>
+                <td class="py-3 px-4"><span class="sev-critical text-xs font-mono font-semibold px-2 py-0.5 rounded">CRITICAL</span></td>
+                <td class="py-3 px-4 text-muted">Blocks creation of SSH keys, .netrc, cloud credentials, Docker config</td>
               </tr>
               <tr>
                 <td class="py-3 px-4 font-mono text-text">protected-branch</td>
@@ -607,6 +752,11 @@
                 <td class="py-3 px-4 font-mono text-text">no-scheduled-task-mod</td>
                 <td class="py-3 px-4"><span class="sev-high text-xs font-mono font-semibold px-2 py-0.5 rounded">HIGH</span></td>
                 <td class="py-3 px-4 text-muted">Prevents modification of scheduled task files</td>
+              </tr>
+              <tr>
+                <td class="py-3 px-4 font-mono text-text">no-package-script-injection</td>
+                <td class="py-3 px-4"><span class="sev-high text-xs font-mono font-semibold px-2 py-0.5 rounded">HIGH</span></td>
+                <td class="py-3 px-4 text-muted">Blocks package.json modifications that alter lifecycle script entries</td>
               </tr>
               <tr>
                 <td class="py-3 px-4 font-mono text-text">blast-radius-limit</td>
@@ -686,9 +836,60 @@
     </section>
 
     <!-- ============================================ -->
+    <!-- NOT LIKE OTHER TOOLS                         -->
+    <!-- ============================================ -->
+    <section class="py-24" aria-labelledby="diff-heading">
+      <div class="max-w-5xl mx-auto px-6">
+        <div class="text-center mb-16 reveal">
+          <h2 id="diff-heading" class="font-mono font-bold text-3xl sm:text-4xl mb-4">Not Like Other Tools</h2>
+          <p class="text-muted text-lg max-w-2xl mx-auto">AgentGuard operates at the execution layer &mdash; after the model decides what to do, before the action touches your system.</p>
+        </div>
+
+        <div class="reveal overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-surface-light">
+                <th class="text-left font-mono font-semibold text-text py-3 px-4">Category</th>
+                <th class="text-left font-mono font-semibold text-text py-3 px-4">What they do</th>
+                <th class="text-left font-mono font-semibold text-text py-3 px-4">What AgentGuard does</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-surface-light/50">
+              <tr>
+                <td class="py-3 px-4 font-mono text-text text-xs">LLM Guardrails</td>
+                <td class="py-3 px-4 text-muted">Filter model output text</td>
+                <td class="py-3 px-4 text-cta">Governs actual tool execution</td>
+              </tr>
+              <tr>
+                <td class="py-3 px-4 font-mono text-text text-xs">Prompt Filters</td>
+                <td class="py-3 px-4 text-muted">Block unsafe prompts</td>
+                <td class="py-3 px-4 text-cta">Operates after the prompt, at execution time</td>
+              </tr>
+              <tr>
+                <td class="py-3 px-4 font-mono text-text text-xs">Static Analysis</td>
+                <td class="py-3 px-4 text-muted">Scan code at rest</td>
+                <td class="py-3 px-4 text-cta">Intercepts actions in real-time</td>
+              </tr>
+              <tr>
+                <td class="py-3 px-4 font-mono text-text text-xs">Git Hooks</td>
+                <td class="py-3 px-4 text-muted">Pre-commit / pre-push checks</td>
+                <td class="py-3 px-4 text-cta">Governs all agent actions, not just git</td>
+              </tr>
+              <tr>
+                <td class="py-3 px-4 font-mono text-text text-xs">Policy-as-Code</td>
+                <td class="py-3 px-4 text-muted">Infrastructure policy (OPA, Sentinel)</td>
+                <td class="py-3 px-4 text-cta">Agent action policy with simulation</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================ -->
     <!-- POLICY EXAMPLE                               -->
     <!-- ============================================ -->
-    <section class="py-24" aria-labelledby="policy-heading">
+    <section class="py-24 bg-surface/30" aria-labelledby="policy-heading">
       <div class="max-w-7xl mx-auto px-6">
         <div class="text-center mb-16 reveal">
           <h2 id="policy-heading" class="font-mono font-bold text-3xl sm:text-4xl mb-4">Policy as Code</h2>
@@ -800,7 +1001,7 @@ rules:
     <!-- ============================================ -->
     <!-- CLI COMMANDS                                 -->
     <!-- ============================================ -->
-    <section id="cli" class="py-24 bg-surface/30" aria-labelledby="cli-heading">
+    <section id="cli" class="py-24" aria-labelledby="cli-heading">
       <div class="max-w-7xl mx-auto px-6">
         <div class="text-center mb-16 reveal">
           <h2 id="cli-heading" class="font-mono font-bold text-3xl sm:text-4xl mb-4">16 CLI Commands</h2>
@@ -876,43 +1077,9 @@ rules:
     </section>
 
     <!-- ============================================ -->
-    <!-- STATS BAR                                    -->
-    <!-- ============================================ -->
-    <section class="py-20 border-y border-surface-light" aria-label="Project statistics">
-      <div class="max-w-7xl mx-auto px-6">
-        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-8 text-center reveal-stagger">
-          <div class="reveal">
-            <div class="font-mono font-bold text-3xl sm:text-4xl text-text counter" data-target="1523">0</div>
-            <div class="text-muted text-sm mt-1">Tests</div>
-          </div>
-          <div class="reveal">
-            <div class="font-mono font-bold text-3xl sm:text-4xl text-text counter" data-target="87">0</div>
-            <div class="text-muted text-sm mt-1">Destructive Patterns</div>
-          </div>
-          <div class="reveal">
-            <div class="font-mono font-bold text-3xl sm:text-4xl text-text counter" data-target="49">0</div>
-            <div class="text-muted text-sm mt-1">Event Kinds</div>
-          </div>
-          <div class="reveal">
-            <div class="font-mono font-bold text-3xl sm:text-4xl text-text counter" data-target="23">0</div>
-            <div class="text-muted text-sm mt-1">Action Types</div>
-          </div>
-          <div class="reveal">
-            <div class="font-mono font-bold text-3xl sm:text-4xl text-text counter" data-target="8">0</div>
-            <div class="text-muted text-sm mt-1">Invariants</div>
-          </div>
-          <div class="reveal">
-            <div class="font-mono font-bold text-3xl sm:text-4xl text-text counter" data-target="16">0</div>
-            <div class="text-muted text-sm mt-1">CLI Commands</div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ============================================ -->
     <!-- INTEGRATIONS                                 -->
     <!-- ============================================ -->
-    <section class="py-24" aria-labelledby="integrations-heading">
+    <section class="py-24 bg-surface/30" aria-labelledby="integrations-heading">
       <div class="max-w-7xl mx-auto px-6">
         <div class="text-center mb-16 reveal">
           <h2 id="integrations-heading" class="font-mono font-bold text-3xl sm:text-4xl mb-4">Integrations</h2>
@@ -964,9 +1131,153 @@ rules:
     </section>
 
     <!-- ============================================ -->
+    <!-- ENTERPRISE SIGNALS                           -->
+    <!-- ============================================ -->
+    <section class="py-24" aria-labelledby="enterprise-heading">
+      <div class="max-w-5xl mx-auto px-6">
+        <div class="text-center mb-16 reveal">
+          <h2 id="enterprise-heading" class="font-mono font-bold text-3xl sm:text-4xl mb-4">Audit-Ready by Design</h2>
+          <p class="text-muted text-lg max-w-2xl mx-auto">Deterministic governance produces verifiable evidence. Every decision is recorded, queryable, and exportable.</p>
+        </div>
+
+        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 reveal-stagger">
+          <div class="reveal flex items-start gap-3">
+            <svg class="w-5 h-5 text-cta mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <div>
+              <h3 class="font-mono font-semibold text-text text-sm">JSONL + SQLite + Firestore</h3>
+              <p class="text-muted text-sm mt-1">Three storage backends. Append-only audit trail with indexed queries at scale.</p>
+            </div>
+          </div>
+          <div class="reveal flex items-start gap-3">
+            <svg class="w-5 h-5 text-cta mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+            <div>
+              <h3 class="font-mono font-semibold text-text text-sm">Deterministic Decisions</h3>
+              <p class="text-muted text-sm mt-1">Same action + same policy = same decision. No probabilistic evaluation. Reproducible outcomes.</p>
+            </div>
+          </div>
+          <div class="reveal flex items-start gap-3">
+            <svg class="w-5 h-5 text-cta mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            <div>
+              <h3 class="font-mono font-semibold text-text text-sm">Evidence Packs on PRs</h3>
+              <p class="text-muted text-sm mt-1">Attach governance evidence summaries to pull requests. Provable compliance in code review.</p>
+            </div>
+          </div>
+          <div class="reveal flex items-start gap-3">
+            <svg class="w-5 h-5 text-cta mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+            <div>
+              <h3 class="font-mono font-semibold text-text text-sm">Policy Composition</h3>
+              <p class="text-muted text-sm mt-1">Org-wide base + team overrides. 4 built-in packs: ci-safe, enterprise, open-source, strict.</p>
+            </div>
+          </div>
+          <div class="reveal flex items-start gap-3">
+            <svg class="w-5 h-5 text-cta mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/><path d="M9 12l2 2 4-4"/></svg>
+            <div>
+              <h3 class="font-mono font-semibold text-text text-sm">Session Replay &amp; Diff</h3>
+              <p class="text-muted text-sm mt-1">Replay any governance session. Compare runs side-by-side. Forensic analysis built in.</p>
+            </div>
+          </div>
+          <div class="reveal flex items-start gap-3">
+            <svg class="w-5 h-5 text-cta mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+            <div>
+              <h3 class="font-mono font-semibold text-text text-sm">Export &amp; Portability</h3>
+              <p class="text-muted text-sm mt-1">Export sessions as portable JSONL. Import across environments. CI-ready verification.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================ -->
+    <!-- ROADMAP                                      -->
+    <!-- ============================================ -->
+    <section class="py-24 bg-surface/30" aria-labelledby="roadmap-heading">
+      <div class="max-w-5xl mx-auto px-6">
+        <div class="text-center mb-16 reveal">
+          <h2 id="roadmap-heading" class="font-mono font-bold text-3xl sm:text-4xl mb-4">What&rsquo;s Next</h2>
+          <p class="text-muted text-lg max-w-2xl mx-auto">AgentGuard is evolving from advisory interception to mandatory execution control. Here&rsquo;s the trajectory.</p>
+        </div>
+
+        <div class="space-y-4 reveal-stagger">
+          <!-- Phase 6 -->
+          <div class="reveal flex items-start gap-4 bg-surface border border-surface-light rounded-xl p-5">
+            <div class="shrink-0 mt-0.5">
+              <span class="font-mono text-xs font-semibold px-2 py-1 rounded bg-warning/10 text-warning">NEXT</span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <h3 class="font-mono font-semibold text-text text-sm">Phase 6 &mdash; Reference Monitor Hardening</h3>
+              <p class="text-muted text-sm mt-1">Default-deny unknown actions. Enforce PAUSE and ROLLBACK intervention types. Close all bypass vectors.</p>
+            </div>
+          </div>
+
+          <!-- Phase 7 -->
+          <div class="reveal flex items-start gap-4 bg-surface border border-surface-light rounded-xl p-5">
+            <div class="shrink-0 mt-0.5">
+              <span class="font-mono text-xs font-semibold px-2 py-1 rounded bg-info/10 text-info">PLANNED</span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <h3 class="font-mono font-semibold text-text text-sm">Phase 7 &mdash; Capability-Scoped Sessions</h3>
+              <p class="text-muted text-sm mt-1">Each governance run gets a bounded authority set via RunManifest. No capability, no effect.</p>
+            </div>
+          </div>
+
+          <!-- Phase 9 -->
+          <div class="reveal flex items-start gap-4 bg-surface border border-surface-light rounded-xl p-5">
+            <div class="shrink-0 mt-0.5">
+              <span class="font-mono text-xs font-semibold px-2 py-1 rounded bg-info/10 text-info">PLANNED</span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <h3 class="font-mono font-semibold text-text text-sm">Phase 9 &mdash; Multi-Agent Integrations</h3>
+              <p class="text-muted text-sm mt-1">Framework adapters for LangGraph, CrewAI, AutoGen, OpenAI Agents SDK. Generic MCP adapter. Cursor integration.</p>
+            </div>
+          </div>
+
+          <!-- Phase 13 -->
+          <div class="reveal flex items-start gap-4 bg-surface border border-surface-light rounded-xl p-5">
+            <div class="shrink-0 mt-0.5">
+              <span class="font-mono text-xs font-semibold px-2 py-1 rounded bg-info/10 text-info">PLANNED</span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <h3 class="font-mono font-semibold text-text text-sm">Phase 13 &mdash; Environmental Enforcement</h3>
+              <p class="text-muted text-sm mt-1">OS-level sandboxing via Bubblewrap and Seatbelt. Read-only mounts, network deny-by-default, credential stripping.</p>
+            </div>
+          </div>
+
+          <!-- Phase 14 -->
+          <div class="reveal flex items-start gap-4 bg-surface border border-surface-light rounded-xl p-5">
+            <div class="shrink-0 mt-0.5">
+              <span class="font-mono text-xs font-semibold px-2 py-1 rounded bg-info/10 text-info">PLANNED</span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <h3 class="font-mono font-semibold text-text text-sm">Phase 14 &mdash; Multi-Agent Governance</h3>
+              <p class="text-muted text-sm mt-1">Agent identity verification, PID-bound capability tokens, cross-agent policy, fleet orchestration.</p>
+            </div>
+          </div>
+
+          <!-- Phase 18 -->
+          <div class="reveal flex items-start gap-4 bg-surface border border-surface-light rounded-xl p-5">
+            <div class="shrink-0 mt-0.5">
+              <span class="font-mono text-xs font-semibold px-2 py-1 rounded bg-info/10 text-info">PLANNED</span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <h3 class="font-mono font-semibold text-text text-sm">Phase 18 &mdash; Remote Governance Runtime</h3>
+              <p class="text-muted text-sm mt-1">Server mode, centralized event ingestion, remote policy distribution, multi-repo governance, team dashboard.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="text-center mt-10 reveal">
+          <a href="https://github.com/AgentGuardHQ/agent-guard/blob/main/ROADMAP.md" target="_blank" rel="noopener noreferrer" class="text-cta hover:text-cta-dark transition-colors text-sm font-mono font-semibold inline-flex items-center gap-2 cursor-pointer">
+            Full roadmap (18 phases)
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================ -->
     <!-- CONTRIBUTING CTA                             -->
     <!-- ============================================ -->
-    <section class="py-24 bg-surface/30" aria-labelledby="contribute-heading">
+    <section class="py-24" aria-labelledby="contribute-heading">
       <div class="max-w-3xl mx-auto px-6">
         <div class="reveal bg-surface border border-cta/30 rounded-2xl p-10 sm:p-14 text-center relative overflow-hidden">
           <!-- Green gradient glow -->
@@ -977,11 +1288,11 @@ rules:
             <h2 id="contribute-heading" class="font-mono font-bold text-3xl sm:text-4xl mb-4">Apache 2.0 Licensed</h2>
             <p class="text-muted text-lg mb-8 max-w-lg mx-auto">AgentGuard is built in the open. Write invariants, create policy packs, build adapters, or contribute a renderer.</p>
             <div class="flex flex-wrap justify-center gap-4">
-              <a href="https://github.com/jpleva91/agent-guard/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener noreferrer" class="bg-cta hover:bg-cta-dark text-bg font-semibold px-6 py-3 rounded-lg transition-colors text-sm inline-flex items-center gap-2 cursor-pointer">
+              <a href="https://github.com/AgentGuardHQ/agent-guard/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener noreferrer" class="bg-cta hover:bg-cta-dark text-bg font-semibold px-6 py-3 rounded-lg transition-colors text-sm inline-flex items-center gap-2 cursor-pointer">
                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                 Contributing Guide
               </a>
-              <a href="https://github.com/jpleva91/agent-guard" target="_blank" rel="noopener noreferrer" class="border border-surface-light hover:border-muted text-text font-semibold px-6 py-3 rounded-lg transition-colors text-sm inline-flex items-center gap-2 cursor-pointer">
+              <a href="https://github.com/AgentGuardHQ/agent-guard" target="_blank" rel="noopener noreferrer" class="border border-surface-light hover:border-muted text-text font-semibold px-6 py-3 rounded-lg transition-colors text-sm inline-flex items-center gap-2 cursor-pointer">
                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
                 Star on GitHub
               </a>
@@ -1027,11 +1338,11 @@ rules:
         <div>
           <h3 class="font-mono font-semibold text-text text-sm mb-4">Resources</h3>
           <ul class="space-y-2">
-            <li><a href="https://github.com/jpleva91/agent-guard/blob/main/docs/unified-architecture.md" target="_blank" rel="noopener noreferrer" class="text-muted hover:text-text transition-colors text-sm cursor-pointer">Architecture Docs</a></li>
-            <li><a href="https://github.com/jpleva91/agent-guard/blob/main/docs/event-model.md" target="_blank" rel="noopener noreferrer" class="text-muted hover:text-text transition-colors text-sm cursor-pointer">Event Model</a></li>
-            <li><a href="https://github.com/jpleva91/agent-guard/blob/main/docs/plugin-api.md" target="_blank" rel="noopener noreferrer" class="text-muted hover:text-text transition-colors text-sm cursor-pointer">Plugin API</a></li>
-            <li><a href="https://github.com/jpleva91/agent-guard/blob/main/ROADMAP.md" target="_blank" rel="noopener noreferrer" class="text-muted hover:text-text transition-colors text-sm cursor-pointer">Roadmap</a></li>
-            <li><a href="https://github.com/jpleva91/agent-guard/blob/main/CHANGELOG.md" target="_blank" rel="noopener noreferrer" class="text-muted hover:text-text transition-colors text-sm cursor-pointer">Changelog</a></li>
+            <li><a href="https://github.com/AgentGuardHQ/agent-guard/blob/main/docs/unified-architecture.md" target="_blank" rel="noopener noreferrer" class="text-muted hover:text-text transition-colors text-sm cursor-pointer">Architecture Docs</a></li>
+            <li><a href="https://github.com/AgentGuardHQ/agent-guard/blob/main/docs/event-model.md" target="_blank" rel="noopener noreferrer" class="text-muted hover:text-text transition-colors text-sm cursor-pointer">Event Model</a></li>
+            <li><a href="https://github.com/AgentGuardHQ/agent-guard/blob/main/docs/plugin-api.md" target="_blank" rel="noopener noreferrer" class="text-muted hover:text-text transition-colors text-sm cursor-pointer">Plugin API</a></li>
+            <li><a href="https://github.com/AgentGuardHQ/agent-guard/blob/main/ROADMAP.md" target="_blank" rel="noopener noreferrer" class="text-muted hover:text-text transition-colors text-sm cursor-pointer">Roadmap</a></li>
+            <li><a href="https://github.com/AgentGuardHQ/agent-guard/blob/main/CHANGELOG.md" target="_blank" rel="noopener noreferrer" class="text-muted hover:text-text transition-colors text-sm cursor-pointer">Changelog</a></li>
           </ul>
         </div>
 
@@ -1039,10 +1350,10 @@ rules:
         <div>
           <h3 class="font-mono font-semibold text-text text-sm mb-4">Community</h3>
           <ul class="space-y-2">
-            <li><a href="https://github.com/jpleva91/agent-guard" target="_blank" rel="noopener noreferrer" class="text-muted hover:text-text transition-colors text-sm cursor-pointer">GitHub</a></li>
-            <li><a href="https://github.com/jpleva91/agent-guard/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener noreferrer" class="text-muted hover:text-text transition-colors text-sm cursor-pointer">Contributing</a></li>
-            <li><a href="https://github.com/jpleva91/agent-guard/issues" target="_blank" rel="noopener noreferrer" class="text-muted hover:text-text transition-colors text-sm cursor-pointer">Issues</a></li>
-            <li><a href="https://github.com/jpleva91/agent-guard/discussions" target="_blank" rel="noopener noreferrer" class="text-muted hover:text-text transition-colors text-sm cursor-pointer">Discussions</a></li>
+            <li><a href="https://github.com/AgentGuardHQ/agent-guard" target="_blank" rel="noopener noreferrer" class="text-muted hover:text-text transition-colors text-sm cursor-pointer">GitHub</a></li>
+            <li><a href="https://github.com/AgentGuardHQ/agent-guard/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener noreferrer" class="text-muted hover:text-text transition-colors text-sm cursor-pointer">Contributing</a></li>
+            <li><a href="https://github.com/AgentGuardHQ/agent-guard/issues" target="_blank" rel="noopener noreferrer" class="text-muted hover:text-text transition-colors text-sm cursor-pointer">Issues</a></li>
+            <li><a href="https://github.com/AgentGuardHQ/agent-guard/discussions" target="_blank" rel="noopener noreferrer" class="text-muted hover:text-text transition-colors text-sm cursor-pointer">Discussions</a></li>
           </ul>
         </div>
       </div>
@@ -1179,7 +1490,7 @@ rules:
       // ---- Terminal Typing Animation ----
       var terminalLines = [
         { text: '  AgentGuard Runtime Active', cls: 'text-cta', delay: 0 },
-        { text: '  policy: agentguard.yaml | invariants: 8 | patterns: 87', cls: 'text-muted', delay: 0 },
+        { text: '  policy: agentguard.yaml | invariants: 10 | patterns: 87', cls: 'text-muted', delay: 0 },
         { text: '', cls: '', delay: 300 },
         { text: '  \u2713 file.write  src/auth/service.ts', cls: 'text-cta', delay: 0 },
         { text: '  \u2713 shell.exec  npm test', cls: 'text-cta', delay: 0 },
