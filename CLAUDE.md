@@ -314,3 +314,4 @@ npm run test:coverage      # Run with coverage (c8, 50% line threshold)
 | `publish.yml` | GitHub Release published | Validates version, runs tests, publishes npm package with provenance |
 | `agentguard-governance.yml` | Reusable workflow (called from other repos) | CI governance verification for sessions |
 | `codeql.yml` | PR to `main`/`master` + weekly schedule | CodeQL security analysis |
+| `deploy-pages.yml` | Push to `main` (paths: `site/**`) | Deploys site directory to GitHub Pages |
