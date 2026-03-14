@@ -33,7 +33,7 @@ npx agentguard events --last                    # Show raw event stream
 
 TypeScript in `src/` is the **single source of truth**. It compiles to `dist/` via `tsc` (individual modules) + `esbuild` (CLI bundle).
 
-**Top-level documentation**: `README.md`, `CLAUDE.md`, `ARCHITECTURE.md`, `agentguard.yaml` (default policy)
+**Top-level documentation**: `README.md`, `CLAUDE.md`, `ARCHITECTURE.md`, `ROADMAP.md`, `agentguard.yaml` (default policy)
 
 ```
 src/
@@ -157,8 +157,12 @@ policies/                   # Policy packs (YAML: ci-safe, enterprise, open-sour
 docs/                       # System documentation (architecture, event model, specs)
 hooks/                      # Git hooks (post-commit, post-merge)
 examples/                   # Example governance scenarios and error demos
+logs/                       # Runtime telemetry logs (runtime-events.jsonl)
+paper/                      # White paper (agentguard-whitepaper.md, diagrams, references)
 scripts/                    # Build and utility scripts
+site/                       # GitHub Pages static site
 spec/                       # Feature specifications and templates
+templates/                  # Policy templates (ci-only, development, permissive, strict)
 ```
 
 ## Development Commands
