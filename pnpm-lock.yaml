@@ -74,6 +74,9 @@ importers:
       '@red-codes/telemetry':
         specifier: workspace:*
         version: link:../../packages/telemetry
+      '@red-codes/telemetry-client':
+        specifier: workspace:*
+        version: link:../../packages/telemetry-client
       chokidar:
         specifier: ^5.0.0
         version: 5.0.0
@@ -103,6 +106,9 @@ importers:
       '@red-codes/telemetry':
         specifier: workspace:*
         version: link:../../packages/telemetry
+      '@red-codes/telemetry-client':
+        specifier: workspace:*
+        version: link:../../packages/telemetry-client
       hono:
         specifier: ^4.7.0
         version: 4.12.8
