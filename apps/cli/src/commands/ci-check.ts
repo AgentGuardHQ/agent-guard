@@ -9,11 +9,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { execSync } from 'node:child_process';
 import { parseArgs } from '../args.js';
-import {
-  loadReplaySession,
-  getLatestRunId,
-  buildReplaySession,
-} from '@red-codes/kernel';
+import { loadReplaySession, getLatestRunId, buildReplaySession } from '@red-codes/kernel';
 import type { ReplaySession } from '@red-codes/kernel';
 import type { DomainEvent } from '@red-codes/core';
 import type { GovernanceExportHeader } from './export.js';

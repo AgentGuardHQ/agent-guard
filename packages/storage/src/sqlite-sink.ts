@@ -2,7 +2,12 @@
 // Mirrors the JSONL sink pattern: swallows write errors, never crashes the kernel.
 
 import type Database from 'better-sqlite3';
-import type { DomainEvent, EventSink, GovernanceDecisionRecord, DecisionSink } from '@red-codes/core';
+import type {
+  DomainEvent,
+  EventSink,
+  GovernanceDecisionRecord,
+  DecisionSink,
+} from '@red-codes/core';
 
 /** Create an EventSink that writes events to the SQLite events table */
 export function createSqliteEventSink(
