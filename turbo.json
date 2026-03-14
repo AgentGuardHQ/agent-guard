@@ -16,6 +16,10 @@
       "dependsOn": ["build"],
       "outputs": ["coverage/**"]
     },
+    "bench": {
+      "dependsOn": ["build"],
+      "cache": false
+    },
     "lint": {},
     "format": {},
     "ts:check": {
