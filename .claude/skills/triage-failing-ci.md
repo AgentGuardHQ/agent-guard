@@ -19,6 +19,16 @@ Run `start-governance-runtime` first. All scheduled skills must operate under go
 
 ## Steps
 
+### 0. Skip-if-Green Guard (execute FIRST)
+
+Before any other step, check if there are recent CI failures:
+
+```bash
+gh run list --status failure --limit 5 --json databaseId --jq length
+```
+
+If the result is 0: output "All CI runs green. No triage needed." and **STOP immediately**. Do not start governance runtime or perform any further work.
+
 ### 1. Start Governance Runtime
 
 Invoke the `start-governance-runtime` skill to ensure the AgentGuard kernel is active and intercepting all tool calls. If governance cannot be activated, STOP — do not proceed without governance.

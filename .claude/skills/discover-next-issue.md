@@ -19,6 +19,22 @@ Run `start-governance-runtime` first.
 
 ## Steps
 
+### 0. Read Swarm State (if available)
+
+Check for shared swarm state to inform issue selection:
+
+```bash
+cat .agentguard/swarm-state.json 2>/dev/null
+```
+
+If the file exists and is valid JSON, extract:
+- **mode**: if `safe`, output "System in SAFE MODE — skipping issue discovery" and STOP immediately. If `conservative`, reduce to smallest-scope issues only (< 5 files in scope)
+- **prQueueHealthy**: if `false`, output "PR queue unhealthy — skipping issue discovery" and STOP
+- **currentPhase**: prefer issues aligned with this ROADMAP phase
+- **priorities**: if present, prefer issues listed in the priorities array
+
+If the file does not exist or is invalid, proceed with standard discovery.
+
 ### 1. Query Pending Issues
 
 ```bash

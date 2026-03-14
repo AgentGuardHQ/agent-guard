@@ -335,7 +335,109 @@ gh issue create \
 
 Cap at **1 alert issue per run**.
 
-### 14. Summary
+### 14. Swarm Health Check
+
+Analyze control plane health and include a "## Swarm Health" section in the report.
+
+#### 14a. PR Queue Depth
+
+```bash
+gh pr list --author @me --state open --json number --jq length
+```
+
+- If count > 10: flag as "PR queue overloaded" (CRITICAL)
+- If count > 5: flag as "PR queue elevated" (WARNING)
+
+#### 14b. Issue Creation Rate
+
+```bash
+gh issue list --label "source:backlog-steward" --state open --json createdAt --jq '[.[] | select(.createdAt > "'$(date -u -d '24 hours ago' +%Y-%m-%dT%H:%M:%SZ)'")] | length' 2>/dev/null
+```
+
+- If count > 10: flag as "Issue flood detected" (WARNING)
+
+#### 14c. Merge Conflict Count
+
+```bash
+gh pr list --state open --json mergeable --jq '[.[] | select(.mergeable == "CONFLICTING")] | length'
+```
+
+- If count > 3: flag as "Merge conflict cascade" (WARNING)
+
+#### 14d. Sprint Plan Freshness
+
+```bash
+gh issue list --label "source:planning-agent" --limit 1 --state open --json createdAt --jq '.[0].createdAt'
+```
+
+- If older than 48h: flag as "Sprint plan stale" (WARNING)
+
+#### 14e. Update Swarm State
+
+Read `.agentguard/swarm-state.json` if it exists. Update with:
+- `openAgentPRs`: PR count from 14a
+- `prQueueHealthy`: true if count < 8
+- `mergeConflicts`: count from 14c
+- `lastObservabilityRun`: current ISO timestamp
+
+Write the updated file back. If the file doesn't exist, create it with these fields.
+
+#### 14f. Deadlock & Livelock Detection
+
+Check for swarm-level deadlocks and livelocks:
+
+**Deadlock patterns** (agents waiting on each other, no progress possible):
+
+```bash
+# All PRs blocked by the same failing test
+gh pr list --state open --json number,statusCheckRollup --jq '[.[] | select(.statusCheckRollup != null) | select([.statusCheckRollup[] | select(.conclusion == "FAILURE")] | length > 0)] | length'
+```
+
+- If ALL open PRs fail the same CI check: flag as "Deadlock: all PRs blocked by same CI failure" (CRITICAL)
+- If all PRs are CONFLICTING and the Merge Conflict Resolver hasn't produced output in 24h: flag as "Deadlock: conflict cascade with stalled resolver" (CRITICAL)
+
+**Livelock patterns** (agents active but no forward progress):
+
+```bash
+# PRs opened and closed repeatedly on same issue
+gh pr list --state closed --limit 30 --json number,title,headRefName,closedAt,mergedAt --jq '[.[] | select(.mergedAt == null)]'
+```
+
+- If 3+ PRs were closed-without-merge on the same issue in 7 days: flag as "Livelock: repeated failed attempts on same issue" (WARNING)
+- If the same PR has been rebased 5+ times without merging: flag as "Livelock: rebase loop" (WARNING)
+
+```bash
+# Check for circular dependency blocking
+gh issue list --state open --label "status:blocked" --json number,body --limit 20
+```
+
+- If issue A is blocked by issue B AND issue B references issue A: flag as "Deadlock: circular dependency" (WARNING)
+
+**Starvation patterns** (some work never gets done):
+
+```bash
+# Issues older than 30 days with no PR activity
+gh issue list --state open --json number,title,createdAt,labels --jq '[.[] | select(.createdAt < "'$(date -u -d '30 days ago' +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -v-30d +%Y-%m-%dT%H:%M:%SZ)'")]' 2>/dev/null
+```
+
+- If 5+ issues are older than 30 days with no linked PR: flag as "Starvation: old issues never picked up" (WARNING)
+
+#### 14g. Include in Report
+
+Add a "## Swarm Health" section to the observability report with a table:
+
+| Metric | Value | Status |
+|--------|-------|--------|
+| Open agent PRs | N | HEALTHY/WARNING/CRITICAL |
+| Issues created (24h) | N | HEALTHY/WARNING |
+| Merge conflicts | N | HEALTHY/WARNING |
+| Sprint plan age | Nh | HEALTHY/WARNING |
+| Swarm state age | Nh | HEALTHY/WARNING |
+| Deadlocks detected | N | HEALTHY/WARNING/CRITICAL |
+| Livelocks detected | N | HEALTHY/WARNING |
+| Starved issues (30d+) | N | HEALTHY/WARNING |
+
+### 15. Summary
 
 Report:
 - **Governance events (24h)**: N total, N% denial rate, N% invariant failure rate

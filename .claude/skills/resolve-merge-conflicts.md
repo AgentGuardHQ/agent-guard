@@ -25,6 +25,15 @@ Run `start-governance-runtime` first. All scheduled skills must operate under go
 
 Invoke the `start-governance-runtime` skill to ensure the AgentGuard kernel is active and intercepting all tool calls. If governance cannot be activated, STOP — do not proceed without governance.
 
+### 1b. Check System Mode
+
+```bash
+cat .agentguard/swarm-state.json 2>/dev/null | grep -o '"mode":"[^"]*"' 2>/dev/null
+```
+
+- If mode is `safe`: output "System in SAFE MODE — skipping merge conflict resolution" and **STOP immediately**
+- If mode is `conservative`: proceed normally (conflict resolution is safe even in conservative mode)
+
 ### 2. Ensure Labels Exist
 
 ```bash
@@ -52,7 +61,7 @@ Filter results:
 - **Exclude**: PRs with a `do-not-rebase` label
 - **Exclude**: PRs already labeled `conflict:needs-human` (already diagnosed — waiting on human)
 
-Select up to **3 conflicting PRs** for this run.
+Select only **1 conflicting PR** for this run (the OLDEST by creation date). Processing one at a time prevents cascade conflicts where rebasing PR A invalidates PR B.
 
 If no conflicting PRs found, report "No merge conflicts to resolve" and STOP.
 
@@ -258,7 +267,7 @@ Report:
 
 ## Rules
 
-- Resolve a maximum of **3 PRs per run**
+- Resolve a maximum of **1 PR per run** (serialized to prevent cascade conflicts)
 - **Only use `--force-with-lease`** — never use `--force` (force-with-lease prevents overwriting concurrent pushes)
 - **Never rebase `main` or `master`** — only PR branches
 - **If ANY conflict in a PR is complex, abort the ENTIRE rebase for that PR** — do not partially resolve. Either all conflicts are trivially resolvable or none are attempted.

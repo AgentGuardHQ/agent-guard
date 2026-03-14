@@ -1,5 +1,18 @@
 # Strategic Roadmap — AgentGuard
 
+> **Relationship to ROADMAP.md:** This document describes the *business strategy* (market phases, monetization, positioning). The technical implementation roadmap lives in [`ROADMAP.md`](../ROADMAP.md) (18 phases with checkboxes). Current implementation priorities are in [`docs/current-priorities.md`](current-priorities.md).
+>
+> **Phase cross-reference:**
+> | Strategic Phase (this doc) | ROADMAP.md Phases | Status |
+> |---------------------------|-------------------|--------|
+> | Phase 0: Category Definition | Phases 5–6.5 (Editor Integration, Ref Monitor Hardening, Invariant Expansion) | IN PROGRESS |
+> | Phase 1: Developer Platform | Phases 7–8 (Capability Sessions, Policy Ecosystem) | PLANNED |
+> | Phase 2: Enterprise Enforcement | Phases 9, 12–14 (Agent Integrations, CI/CD, Environmental, Multi-Agent) | PLANNED |
+> | Phase 3: Platform Lock-In | Phases 15–17 (AI-Assisted, Predictive, Formal Verification) | PLANNED |
+> | Phase 4–5: Kernel Hardening | Phase 18 (Remote Governance) + Rust migration | PLANNED |
+>
+> Last reconciled: 2026-03-14
+
 AgentGuard aims to evolve from a single-framework developer tool into a mission-critical enterprise Control Plane for autonomous agents — and ultimately, for any autonomous system including physical/embodied ones.
 
 ## Core Thesis
@@ -13,7 +26,9 @@ Software side effects and physical side effects belong to the same problem class
 
 ## Current State
 
-AgentGuard has a mature governance kernel (propose → evaluate → execute → emit), 10 built-in invariants, event-sourced JSONL audit trails, pre-execution simulation (filesystem/git/package), escalation state machine (NORMAL → LOCKDOWN), pluggable tracing, cross-session analytics (clustering, trends, risk scoring), a plugin ecosystem, and a VS Code extension. The only framework adapter is Claude Code.
+AgentGuard has a mature governance kernel (propose → evaluate → execute → emit), 10 built-in invariants, event-sourced JSONL audit trails, pre-execution simulation (filesystem/git/package), escalation state machine (NORMAL → LOCKDOWN), pluggable tracing, cross-session analytics (clustering, trends, risk scoring), a plugin ecosystem, a VS Code extension, SQLite and Firestore storage backends, and a fully autonomous SDLC control plane with 22+ coordinated agents. The only framework adapter is Claude Code.
+
+Completed technical phases: Architecture Clarity, Canonical Event Model, Governance Runtime, Event Persistence + Replay, Plugin Ecosystem (Phases 0–4 STABLE). Currently working on: Editor Integrations (Phase 5), Reference Monitor Hardening (Phase 6), Structured Storage (Phase 10).
 
 ## Target Architectural Layers
 
@@ -161,23 +176,26 @@ Multi-node kernel cluster with leader election and state sync. Policy consensus 
 
 ## Implementation Priority & Sequencing
 
-### Immediate (Current Sprint — Phase 0 Foundation)
+> See [ROADMAP.md](../ROADMAP.md) for granular technical items with checkboxes.
 
-- `FrameworkAdapter` interface + MCP adapter
-- Default-deny policy option
-- Programmatic API exports
+### Immediate (Current Sprint)
 
-### Near-term (Months 1–3 — Phase 0 Completion)
+- Default-deny unknown actions in policy evaluator (ROADMAP Phase 6)
+- PAUSE/ROLLBACK enforcement in kernel (ROADMAP Phase 6)
+- Governance self-modification invariant (ROADMAP Phase 6)
+- CI/CD config and network egress invariants (ROADMAP Phase 6.5)
 
-- LangChain adapter
-- OpenAI Agents SDK adapter
+### Near-term (Months 1–3)
+
+- `FrameworkAdapter` interface + MCP adapter (ROADMAP Phase 9)
+- RunManifest capability-scoped sessions (ROADMAP Phase 7)
+- SQLite migration v2 + SQL-native analytics (ROADMAP Phase 10)
 - Threat model document
-- Security benchmark suite
 
 ### Mid-term (Months 3–9 — Phase 1)
 
-- Policy versioning
-- Remote policy sync
+- LangChain + OpenAI Agents SDK adapters
+- Policy versioning and remote sync
 - Content-aware secret scanner
 - Egress monitoring
 - OTel trace backend
