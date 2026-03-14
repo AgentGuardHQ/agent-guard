@@ -5,7 +5,7 @@
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 [![npm](https://img.shields.io/npm/v/@red-codes/agentguard.svg)](https://www.npmjs.com/package/@red-codes/agentguard)
-[![Website](https://img.shields.io/badge/Website-jpleva91.github.io/agent--guard-22C55E?style=flat&logo=github)](https://jpleva91.github.io/agent-guard/)
+[![Website](https://img.shields.io/badge/Website-AgentGuardHQ.github.io/agent--guard-22C55E?style=flat&logo=github)](https://agentguardhq.github.io/agent-guard/)
 
 ---
 
@@ -20,7 +20,7 @@ agent proposes action  →  policy evaluated  →  invariants checked  →  allo
 **30 seconds to see it work:**
 
 ```bash
-git clone https://github.com/jpleva91/agent-guard.git
+git clone https://github.com/AgentGuardHQ/agent-guard.git
 cd agent-guard
 npm install && npm run build:ts
 
@@ -312,7 +312,7 @@ policies/                      # Policy packs (YAML: ci-safe, enterprise, open-s
 ## Run Locally
 
 ```bash
-git clone https://github.com/jpleva91/agent-guard.git
+git clone https://github.com/AgentGuardHQ/agent-guard.git
 cd agent-guard
 npm install
 npm run build:ts        # Compile TypeScript → dist/
