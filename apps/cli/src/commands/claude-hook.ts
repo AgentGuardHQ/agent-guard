@@ -41,8 +41,7 @@ export async function claudeHook(hookType?: string, extraArgs: string[] = []): P
 }
 
 async function handlePreToolUse(payload: ClaudeCodeHookPayload, cliArgs: string[]): Promise<void> {
-  const { processClaudeCodeHook, formatHookResponse } =
-    await import('@red-codes/adapters');
+  const { processClaudeCodeHook, formatHookResponse } = await import('@red-codes/adapters');
   const { createKernel } = await import('@red-codes/kernel');
   const { createTelemetryDecisionSink } = await import('@red-codes/telemetry');
   const { loadPolicyDefs } = await import('../policy-resolver.js');

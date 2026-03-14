@@ -2,7 +2,12 @@
 // Follows the fire-and-forget pattern: never crashes the kernel, errors reported via callback.
 // Uses Node.js built-in fetch (Node 18+).
 
-import type { DomainEvent, EventSink, GovernanceDecisionRecord, DecisionSink } from '@red-codes/core';
+import type {
+  DomainEvent,
+  EventSink,
+  GovernanceDecisionRecord,
+  DecisionSink,
+} from '@red-codes/core';
 import type { TraceBackend, TraceSpan } from '@red-codes/telemetry';
 
 // ---------------------------------------------------------------------------
@@ -125,10 +130,7 @@ export function createWebhookEventSink(config: WebhookConfig, runId: string): We
 // ---------------------------------------------------------------------------
 
 /** Create a DecisionSink that batches and POSTs governance decisions to a webhook endpoint. */
-export function createWebhookDecisionSink(
-  config: WebhookConfig,
-  runId: string
-): DecisionSink {
+export function createWebhookDecisionSink(config: WebhookConfig, runId: string): DecisionSink {
   const sender = createBatchedSender<GovernanceDecisionRecord>(config, 'decisions', runId);
 
   return {

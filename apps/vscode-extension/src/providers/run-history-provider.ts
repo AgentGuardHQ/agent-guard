@@ -14,11 +14,12 @@ class RunItem extends vscode.TreeItem {
     this.description = formatTimestamp(summary.startedAt);
     this.tooltip = `${summary.runId}\nStarted: ${new Date(summary.startedAt).toLocaleString()}\nEvents: ${summary.totalEvents}`;
 
-    this.iconPath = summary.status === 'active'
-      ? new vscode.ThemeIcon('sync~spin')
-      : summary.actionsDenied > 0 || summary.violations > 0
-        ? new vscode.ThemeIcon('warning')
-        : new vscode.ThemeIcon('pass');
+    this.iconPath =
+      summary.status === 'active'
+        ? new vscode.ThemeIcon('sync~spin')
+        : summary.actionsDenied > 0 || summary.violations > 0
+          ? new vscode.ThemeIcon('warning')
+          : new vscode.ThemeIcon('pass');
   }
 }
 
@@ -78,52 +79,56 @@ export class RunHistoryProvider implements vscode.TreeDataProvider<HistoryTreeIt
 function buildRunDetails(run: RunSummary): RunDetailItem[] {
   const details: RunDetailItem[] = [];
 
-  details.push(new RunDetailItem(
-    `Status: ${run.status}`,
-    run.status === 'active' ? new vscode.ThemeIcon('sync~spin') : new vscode.ThemeIcon('check'),
-  ));
+  details.push(
+    new RunDetailItem(
+      `Status: ${run.status}`,
+      run.status === 'active' ? new vscode.ThemeIcon('sync~spin') : new vscode.ThemeIcon('check')
+    )
+  );
 
   const levelLabel = ESCALATION_LABELS[run.escalationLevel] ?? 'UNKNOWN';
-  details.push(new RunDetailItem(
-    `Escalation: ${levelLabel}`,
-    run.escalationLevel >= 2 ? new vscode.ThemeIcon('warning') : new vscode.ThemeIcon('shield'),
-  ));
+  details.push(
+    new RunDetailItem(
+      `Escalation: ${levelLabel}`,
+      run.escalationLevel >= 2 ? new vscode.ThemeIcon('warning') : new vscode.ThemeIcon('shield')
+    )
+  );
 
-  details.push(new RunDetailItem(
-    `Allowed: ${run.actionsAllowed}`,
-    new vscode.ThemeIcon('pass'),
-  ));
+  details.push(new RunDetailItem(`Allowed: ${run.actionsAllowed}`, new vscode.ThemeIcon('pass')));
 
-  details.push(new RunDetailItem(
-    `Denied: ${run.actionsDenied}`,
-    run.actionsDenied > 0 ? new vscode.ThemeIcon('error') : new vscode.ThemeIcon('circle-slash'),
-  ));
+  details.push(
+    new RunDetailItem(
+      `Denied: ${run.actionsDenied}`,
+      run.actionsDenied > 0 ? new vscode.ThemeIcon('error') : new vscode.ThemeIcon('circle-slash')
+    )
+  );
 
-  details.push(new RunDetailItem(
-    `Violations: ${run.violations}`,
-    run.violations > 0 ? new vscode.ThemeIcon('alert') : new vscode.ThemeIcon('check-all'),
-  ));
+  details.push(
+    new RunDetailItem(
+      `Violations: ${run.violations}`,
+      run.violations > 0 ? new vscode.ThemeIcon('alert') : new vscode.ThemeIcon('check-all')
+    )
+  );
 
-  details.push(new RunDetailItem(
-    `Total events: ${run.totalEvents}`,
-    new vscode.ThemeIcon('list-flat'),
-  ));
+  details.push(
+    new RunDetailItem(`Total events: ${run.totalEvents}`, new vscode.ThemeIcon('list-flat'))
+  );
 
   if (run.endedAt) {
     const durationMs = run.endedAt - run.startedAt;
-    details.push(new RunDetailItem(
-      `Duration: ${formatDurationLong(durationMs)}`,
-      new vscode.ThemeIcon('clock'),
-    ));
+    details.push(
+      new RunDetailItem(
+        `Duration: ${formatDurationLong(durationMs)}`,
+        new vscode.ThemeIcon('clock')
+      )
+    );
   }
 
   return details;
 }
 
 function formatRunLabel(summary: RunSummary): string {
-  const shortId = summary.runId.length > 20
-    ? summary.runId.slice(0, 20) + '...'
-    : summary.runId;
+  const shortId = summary.runId.length > 20 ? summary.runId.slice(0, 20) + '...' : summary.runId;
 
   if (summary.actionsDenied > 0) {
     return `${shortId} (${summary.actionsDenied} denied)`;

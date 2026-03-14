@@ -3,11 +3,26 @@
 // Emits full action lifecycle events: REQUESTED → ALLOWED/DENIED → EXECUTED/FAILED.
 // Builds GovernanceDecisionRecords and sinks them for audit.
 
-import type { DomainEvent, CanonicalAction, AdapterRegistry, ExecutionResult, DecisionRecord, SeededRng, EventSink } from '@red-codes/core';
+import type {
+  DomainEvent,
+  CanonicalAction,
+  AdapterRegistry,
+  ExecutionResult,
+  DecisionRecord,
+  SeededRng,
+  EventSink,
+} from '@red-codes/core';
 import { createMonitor } from './monitor.js';
 import type { MonitorConfig, MonitorDecision } from './monitor.js';
 import type { RawAgentAction } from './aab.js';
-import { createAction, getActionClass, createAdapterRegistry, simpleHash, generateSeed, createSeededRng } from '@red-codes/core';
+import {
+  createAction,
+  getActionClass,
+  createAdapterRegistry,
+  simpleHash,
+  generateSeed,
+  createSeededRng,
+} from '@red-codes/core';
 import {
   createEvent,
   ACTION_REQUESTED,
@@ -122,7 +137,8 @@ export function createKernel(config: KernelConfig = {}): Kernel {
 
   return {
     propose: async (rawAction, systemContext = {}) => {
-      const span = tracer?.startSpan('kernel.propose', `propose:${rawAction.tool || 'unknown'}`) ?? null;
+      const span =
+        tracer?.startSpan('kernel.propose', `propose:${rawAction.tool || 'unknown'}`) ?? null;
       const proposalBody = async (): Promise<KernelResult> => {
         const allEvents: DomainEvent[] = [];
 

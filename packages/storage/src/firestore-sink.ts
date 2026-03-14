@@ -1,7 +1,12 @@
 // Firestore event and decision sinks — write-only, append-only.
 // Mirrors the SQLite sink pattern: swallows write errors, never crashes the kernel.
 
-import type { DomainEvent, EventSink, GovernanceDecisionRecord, DecisionSink } from '@red-codes/core';
+import type {
+  DomainEvent,
+  EventSink,
+  GovernanceDecisionRecord,
+  DecisionSink,
+} from '@red-codes/core';
 
 /** Minimal Firestore interface — avoids hard dependency on @google-cloud/firestore types */
 export interface FirestoreClient {
