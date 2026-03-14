@@ -155,6 +155,84 @@ export function isContainerConfigPath(filePath: string): boolean {
 const LIFECYCLE_SCRIPTS: string[] = INVARIANT_LIFECYCLE_SCRIPTS;
 
 /** Returns true if the given path targets a well-known credential file location. */
+/** File extensions commonly used for executable scripts. */
+const SCRIPT_EXTENSIONS = [
+  '.sh',
+  '.bash',
+  '.zsh',
+  '.fish',
+  '.py',
+  '.rb',
+  '.pl',
+  '.pm',
+  '.js',
+  '.mjs',
+  '.ts',
+  '.ps1',
+  '.bat',
+  '.cmd',
+];
+
+/** Returns true if the file path has a known script extension. */
+export function isScriptFilePath(filePath: string): boolean {
+  if (filePath === '') return false;
+  const lower = filePath.toLowerCase();
+  return SCRIPT_EXTENSIONS.some((ext) => lower.endsWith(ext));
+}
+
+/** Returns true if the content starts with a shebang line. */
+export function hasShebang(content: string): boolean {
+  return content.startsWith('#!');
+}
+
+/** Config file basenames that can define lifecycle hooks with auto-execution. */
+const LIFECYCLE_CONFIG_BASENAMES = ['package.json', 'makefile'];
+
+/** Config file extensions that can define lifecycle hooks. */
+const LIFECYCLE_CONFIG_EXTENSIONS = ['.mk'];
+
+/** Returns true if the file path targets a config file that can define lifecycle hooks. */
+export function isLifecycleConfigPath(filePath: string): boolean {
+  if (filePath === '') return false;
+  const basename = filePath.split(/[\\/]/).pop() || '';
+  const lowerBase = basename.toLowerCase();
+  if (LIFECYCLE_CONFIG_BASENAMES.includes(lowerBase)) return true;
+  const lower = filePath.toLowerCase();
+  return LIFECYCLE_CONFIG_EXTENSIONS.some((ext) => lower.endsWith(ext));
+}
+
+/**
+ * Patterns that detect transitive policy violations in written file content.
+ * Each entry has a regex pattern and a label for the violation message.
+ */
+const TRANSITIVE_SCRIPT_PATTERNS: { pattern: RegExp; label: string }[] = [
+  {
+    pattern: /\brm\s+(-[a-zA-Z]*[rf][a-zA-Z]*\s+|.*--recursive|.*--force)/,
+    label: 'destructive deletion (rm -rf/rm -r)',
+  },
+  { pattern: /\bcurl\b/, label: 'network access (curl)' },
+  { pattern: /\bwget\b/, label: 'network access (wget)' },
+  { pattern: /\b(?:nc|netcat|ncat)\b/, label: 'raw network socket (netcat)' },
+  { pattern: /\/dev\/tcp\//, label: 'network exfiltration (/dev/tcp)' },
+  { pattern: /(?:cat|source|\.)\s+[^\n]*\.env\b/, label: 'secret file read (.env)' },
+  {
+    pattern: /open\s*\(\s*['"][^'"]*(?:\.env|credentials|secret|\.key|\.pem|id_rsa)[^'"]*['"]\s*\)/,
+    label: 'secret file read via open()',
+  },
+  {
+    pattern: /\bsubprocess\s*\.(?:call|run|Popen|check_output|check_call)\b/,
+    label: 'subprocess execution (Python)',
+  },
+  {
+    pattern: /\bos\s*\.(?:system|popen)\b/,
+    label: 'os command execution (Python)',
+  },
+  { pattern: /\bshutil\s*\.rmtree\b/, label: 'recursive deletion (shutil.rmtree)' },
+  { pattern: /\bchild_process\b/, label: 'child process spawning (Node.js)' },
+  { pattern: /\bexecSync\s*\(/, label: 'synchronous command execution (execSync)' },
+  { pattern: /\beval\s*\(/, label: 'dynamic code execution (eval)' },
+];
+
 export function isCredentialPath(filePath: string): boolean {
   const lower = filePath.toLowerCase();
 
@@ -890,6 +968,90 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
         actual: holds
           ? 'No environment variable modifications detected'
           : `Environment variable modification detected (${violations.join('; ')})`,
+      };
+    },
+  },
+
+  {
+    id: 'transitive-effect-analysis',
+    name: 'Transitive Effect Analysis',
+    description:
+      'Detects when an agent writes a script or config file whose contents would produce effects that would be denied if executed directly — closes the creative circumvention gap',
+    severity: 4,
+    check(state) {
+      const actionType = state.currentActionType || '';
+
+      // Only applies to file.write actions
+      if (actionType !== '' && actionType !== 'file.write') {
+        return {
+          holds: true,
+          expected: 'N/A',
+          actual: `Action type ${actionType} is not file.write`,
+        };
+      }
+
+      const content = state.fileContentDiff || '';
+      if (content === '') {
+        return { holds: true, expected: 'N/A', actual: 'No file content available' };
+      }
+
+      const target = state.currentTarget || '';
+      const violations: string[] = [];
+
+      // Determine if the target is a script file (by extension or shebang)
+      const scriptFile = isScriptFilePath(target) || hasShebang(content);
+
+      // Determine if the target is a config file with lifecycle potential
+      const configFile = isLifecycleConfigPath(target);
+
+      // --- Script content analysis ---
+      if (scriptFile) {
+        for (const entry of TRANSITIVE_SCRIPT_PATTERNS) {
+          if (entry.pattern.test(content)) {
+            violations.push(entry.label);
+          }
+        }
+      }
+
+      // --- Config lifecycle hook analysis ---
+      if (configFile) {
+        const basename = target.split(/[\\/]/).pop() || '';
+        const lowerBase = basename.toLowerCase();
+        const lowerTarget = target.toLowerCase();
+
+        // package.json lifecycle scripts with dangerous commands
+        if (lowerBase === 'package.json') {
+          for (const script of LIFECYCLE_SCRIPTS) {
+            const scriptPattern = new RegExp(`["']${script}["']\\s*:\\s*["']([^"']+)["']`);
+            const match = content.match(scriptPattern);
+            if (match) {
+              const cmd = match[1];
+              if (/\bcurl\b|\bwget\b|\bnc\b|\brm\s+-rf\b/.test(cmd)) {
+                violations.push(`dangerous lifecycle hook: ${script} (${cmd})`);
+              }
+            }
+          }
+        }
+
+        // Makefile with dangerous targets
+        if (lowerBase === 'makefile' || lowerTarget.endsWith('.mk')) {
+          if (/\bcurl\b/.test(content) || /\bwget\b/.test(content)) {
+            violations.push('Makefile with network commands');
+          }
+          if (/\brm\s+-rf\s+\//.test(content)) {
+            violations.push('Makefile with destructive root deletion');
+          }
+        }
+      }
+
+      const holds = violations.length === 0;
+
+      return {
+        holds,
+        expected: 'Written file content must not contain transitive policy violations',
+        actual: holds
+          ? 'No transitive effects detected'
+          : `Transitive policy violations detected: ${violations.join('; ')}`,
       };
     },
   },

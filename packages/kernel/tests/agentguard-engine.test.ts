@@ -15,17 +15,19 @@ describe('agentguard/core/engine', () => {
     it('creates an engine with defaults', () => {
       const engine = createEngine();
       expect(engine.getPolicyCount()).toBe(0);
-expect(engine.getInvariantCount()).toBe(17); // DEFAULT_INVARIANTS
+      expect(engine.getInvariantCount()).toBe(18); // DEFAULT_INVARIANTS
       expect(engine.getPolicyErrors()).toEqual([]);
     });
 
     it('loads policies', () => {
       const engine = createEngine({
-        policyDefs: [{
-          id: 'test-policy',
-          name: 'Test',
-          rules: [{ action: 'file.write', effect: 'deny', reason: 'No writes' }],
-        }],
+        policyDefs: [
+          {
+            id: 'test-policy',
+            name: 'Test',
+            rules: [{ action: 'file.write', effect: 'deny', reason: 'No writes' }],
+          },
+        ],
       });
       expect(engine.getPolicyCount()).toBe(1);
     });
@@ -46,12 +48,14 @@ expect(engine.getInvariantCount()).toBe(17); // DEFAULT_INVARIANTS
 
     it('evaluates denied actions', () => {
       const engine = createEngine({
-        policyDefs: [{
-          id: 'no-shell',
-          name: 'No Shell',
-          rules: [{ action: 'shell.exec', effect: 'deny', reason: 'No shell' }],
-          severity: 4,
-        }],
+        policyDefs: [
+          {
+            id: 'no-shell',
+            name: 'No Shell',
+            rules: [{ action: 'shell.exec', effect: 'deny', reason: 'No shell' }],
+            severity: 4,
+          },
+        ],
       });
       const result = engine.evaluate({ tool: 'Bash', command: 'echo hello' });
       expect(result.allowed).toBe(false);
@@ -62,21 +66,20 @@ expect(engine.getInvariantCount()).toBe(17); // DEFAULT_INVARIANTS
     it('detects invariant violations', () => {
       const engine = createEngine();
       // Force push should trigger no-force-push invariant
-      const result = engine.evaluate(
-        { tool: 'Bash', command: 'git push --force origin main' },
-        {},
-      );
+      const result = engine.evaluate({ tool: 'Bash', command: 'git push --force origin main' }, {});
       expect(result.violations.length).toBeGreaterThan(0);
     });
 
     it('emits events through onEvent callback', () => {
       const events: unknown[] = [];
       const engine = createEngine({
-        policyDefs: [{
-          id: 'deny-all',
-          name: 'Deny All',
-          rules: [{ action: '*', effect: 'deny', reason: 'blocked' }],
-        }],
+        policyDefs: [
+          {
+            id: 'deny-all',
+            name: 'Deny All',
+            rules: [{ action: '*', effect: 'deny', reason: 'blocked' }],
+          },
+        ],
         onEvent: (e) => events.push(e),
       });
       engine.evaluate({ tool: 'Write', file: 'src/a.ts' });
