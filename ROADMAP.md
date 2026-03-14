@@ -249,6 +249,7 @@ This is the architectural hinge. These changes transform the AAB from advisory i
 - [x] Expand destructive command patterns in `src/kernel/aab.ts` (expanded from 10 to 87 patterns covering sudo, pkill, docker, systemctl, database commands, and more)
 - [ ] Enforce intervention types beyond DENY (implement PAUSE and ROLLBACK behaviors in kernel execution)
 - [ ] Governance self-modification invariant — agents must not modify `agentguard.yaml`, `.agentguard/`, or `policies/` (prerequisite for tamper-resistance claim)
+- [ ] Performance benchmark suite — formal latency measurement (p50/p95/p99) per action type for policy evaluation, invariant checking, and simulation overhead. Publish results as a marketing asset and regression gate in CI
 
 ### Phase 6.5 — Invariant Expansion `NEXT`
 
@@ -266,12 +267,19 @@ The `SystemState` interface in `src/invariants/definitions.ts` is the bottleneck
 - [ ] Permission escalation invariant (severity 4) — catch `chmod` to world-writable, `setuid`, ownership changes at invariant level (not just AAB pattern)
 - [ ] Environment variable modification invariant (severity 3) — scan for `export`, `setenv`, writes to shell profile files
 - [ ] Recursive operation guard (severity 2) — flag `find -exec`, `xargs` combined with write/delete operations
+- [ ] Transitive effect analysis (severity 4) — when an agent writes a script or config file, analyze content for downstream effects that would violate policy (e.g., a Python script containing `open('.env').read()` or a shell script with `curl` exfiltration). Closes the creative circumvention gap where agents bypass direct restrictions via indirect file creation
 
-### Phase 7 — Capability-Scoped Sessions `PLANNED`
+### Phase 7 — Capability-Scoped Sessions & Intent Contracts `PLANNED`
 
-> **Theme:** Each governance run gets a bounded authority set. No capability, no effect.
+> **Theme:** Each governance run gets a bounded authority set. No capability, no effect. Declared intent becomes auditable against observed behavior.
+
+The `RunManifest` defines the session's authority boundary. The `IntentSpec` (a declarative contract of what the agent *should* do) enables a dual-ledger audit: compare declared plan vs. actual execution. This separation — declaration layer above, enforcement layer below — makes the audit trail meaningful beyond just allow/deny logs.
+
+Prior art: Kubernetes Capability Primitives (KCP), OS capability-based security models.
 
 - [ ] `RunManifest` type with role and capability grants (extend existing `Capability` type in `src/core/types.ts`)
+- [ ] `IntentSpec` format — machine-readable contract of expected agent behavior (planned action types, target files/branches, expected scope). Declared independently of the agent, loaded at session start
+- [ ] Intent-vs-execution comparison in audit trail — flag actions that fall outside declared intent even if policy allows them (advisory initially, enforceable later)
 - [ ] Validate every adapter call against session capabilities in `src/kernel/kernel.ts`
 - [ ] Shell adapter privilege profiles (allowlist/denylist patterns per profile) in `src/adapters/shell.ts`
 - [ ] Wire existing `AgentRole` and `RoleDefinition` types to enforcement layer
@@ -328,8 +336,9 @@ The JSONL persistence layer was the right starting point — append-only, human-
 
 ### Phase 11 — Runtime Tracing & Observability `PLANNED`
 
-> **Theme:** Close the trust gap between application-level logging and actual system behavior
+> **Theme:** Close the trust gap between application-level logging and actual system behavior. Governance cost should scale with risk, not activity.
 
+- [ ] Adaptive governance depth — tiered evaluation pipeline where known-safe patterns get cached fast-path allow (sub-ms), normal actions get full policy evaluation (~1ms), and high-risk actions get simulation + deep invariant checks (~10-50ms). Reduces throughput impact for typical workflows while maintaining deep analysis where it matters
 - [ ] Enhanced telemetry beyond current flat event logging
 - [x] Run comparison and diff (`agentguard diff <run1> <run2>`) (`src/cli/commands/diff.ts`)
 - [x] Risk scoring per agent run
@@ -388,7 +397,7 @@ The JSONL persistence layer was the right starting point — append-only, human-
 
 - [x] Structured impact forecasts (predicted files changed, dependencies affected, test risk, blast radius score)
 - [ ] Predictive policy rules (`deny if predicted_test_failures > 0`)
-- [ ] Plan-level simulation — simulate a sequence of actions as a batch
+- [ ] Plan-level simulation — simulate a sequence of actions as a batch, including plan-level threat assessment that analyzes the full action sequence for threat vectors (data exfiltration paths, privilege escalation chains, blast radius amplification) before any action executes
 - [ ] Simulator plugin interface — community-contributed simulators
 - [ ] Dependency graph simulation (transitive impact of package changes)
 
@@ -435,6 +444,21 @@ The pre-execution simulation system is the most mature advanced feature and a ke
 - Impact forecast builder: predicted changes, downstream modules, test risk score (0-100), blast radius score, risk level
 - Simulation-triggered re-evaluation: high blast radius can flip ALLOW → DENY at execution time
 - Replay engine with outcome comparison for policy validation against historical sessions
+
+---
+
+## Competitive Landscape
+
+The agent governance space is emerging. Several projects address overlapping problem areas:
+
+| Project | Approach | Differentiator vs. AgentGuard |
+|---------|----------|-------------------------------|
+| **Edictum** ([github](https://github.com/edictum-ai/edictum)) | Agent governance framework | Early stage; confirms market demand for execution governance |
+| **ctrldot** ([github](https://github.com/ctrldot-dev/ctrldot)) | Agent control layer | Different architecture; worth studying for UX patterns |
+| **GitHub Agentic Workflows** | Platform-level governance | Platform-native; AgentGuard is platform-agnostic and governs actions outside git |
+| **Pre-commit/CI hooks** | Git-stage controls | Only govern code changes; AgentGuard governs all agent behavior including non-git actions |
+
+**AgentGuard's key differentiators:** deterministic kernel (not prompt-based), pre-execution simulation engine, full event-sourced audit trail with replay, reference monitor architecture with academic lineage, platform-agnostic design.
 
 ---
 
