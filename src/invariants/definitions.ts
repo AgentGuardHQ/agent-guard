@@ -506,7 +506,6 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
     },
   },
 
-
   {
     id: 'large-file-write',
     name: 'Large File Write Limit',
@@ -516,7 +515,7 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
     check(state) {
       const actionType = state.currentActionType || '';
 
-      // Only applies to file.write actions — other action types are not constrained.
+      // Only applies to file.write actions ï¿½ other action types are not constrained.
       // When actionType is unset (''), apply the check conservatively rather than skipping.
       // This ensures writes from unknown action sources are still size-constrained.
       if (actionType !== '' && actionType !== 'file.write') {
@@ -596,7 +595,6 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
       };
     },
   },
-
 
   {
     id: 'no-permission-escalation',
@@ -684,7 +682,6 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
       };
     },
   },
-
 
   {
     id: 'lockfile-integrity',
