@@ -1056,9 +1056,7 @@ async function initSwarm(parsed: ReturnType<typeof parseArgs>): Promise<number> 
     const swarmModule = await import('@red-codes/swarm');
     scaffoldFn = swarmModule.scaffold;
   } catch {
-    console.error(
-      `\n  ${color('Error', 'red')}: @red-codes/swarm package not found.`,
-    );
+    console.error(`\n  ${color('Error', 'red')}: @red-codes/swarm package not found.`);
     console.error(`  Install it with: pnpm add @red-codes/swarm\n`);
     return 1;
   }
@@ -1066,19 +1064,23 @@ async function initSwarm(parsed: ReturnType<typeof parseArgs>): Promise<number> 
   const result = scaffoldFn({ projectRoot, force, tiers });
 
   console.log(
-    `\n  ${color('✓', 'green')} Swarm initialized (${bold(String(result.agents.length))} agents, ${bold(String(result.skillsWritten + result.skillsSkipped))} skills)\n`,
+    `\n  ${color('✓', 'green')} Swarm initialized (${bold(String(result.agents.length))} agents, ${bold(String(result.skillsWritten + result.skillsSkipped))} skills)\n`
   );
 
   if (result.configWritten) {
-    console.log(`  ${dim('Created')} agentguard-swarm.yaml ${dim('(customize schedules, paths, labels)')}`);
+    console.log(
+      `  ${dim('Created')} agentguard-swarm.yaml ${dim('(customize schedules, paths, labels)')}`
+    );
   }
 
   console.log(
-    `  ${dim('Skills written:')} ${result.skillsWritten}  ${dim('Skipped (existing):')} ${result.skillsSkipped}\n`,
+    `  ${dim('Skills written:')} ${result.skillsWritten}  ${dim('Skipped (existing):')} ${result.skillsSkipped}\n`
   );
 
   // Print agent table
-  console.log(`  ${bold('Agent')}${' '.repeat(28)}${bold('Tier')}${' '.repeat(8)}${bold('Schedule')}`);
+  console.log(
+    `  ${bold('Agent')}${' '.repeat(28)}${bold('Tier')}${' '.repeat(8)}${bold('Schedule')}`
+  );
   console.log(`  ${'─'.repeat(65)}`);
   for (const agent of result.agents) {
     const name = agent.name.padEnd(33);
@@ -1088,8 +1090,12 @@ async function initSwarm(parsed: ReturnType<typeof parseArgs>): Promise<number> 
 
   console.log(`\n  ${bold('Next steps:')}`);
   console.log(`    ${dim('# Register scheduled tasks (run inside Claude Code):')}`);
-  console.log(`    ${dim('# The agent prompts are in .claude/skills/ — use them with the scheduled tasks API')}`);
-  console.log(`    ${dim('# Or use the register-swarm-tasks skill to auto-register all agents')}\n`);
+  console.log(
+    `    ${dim('# The agent prompts are in .claude/skills/ — use them with the scheduled tasks API')}`
+  );
+  console.log(
+    `    ${dim('# Or use the register-swarm-tasks skill to auto-register all agents')}\n`
+  );
 
   // Write a register-swarm-tasks skill
   const registerSkillPath = join(projectRoot, '.claude', 'skills', 'register-swarm-tasks.md');
@@ -1103,9 +1109,16 @@ async function initSwarm(parsed: ReturnType<typeof parseArgs>): Promise<number> 
   return 0;
 }
 
-function buildRegisterSkill(
-  result: { agents: ReadonlyArray<{ id: string; name: string; tier: string; cron: string; description: string; prompt: string }> },
-): string {
+function buildRegisterSkill(result: {
+  agents: ReadonlyArray<{
+    id: string;
+    name: string;
+    tier: string;
+    cron: string;
+    description: string;
+    prompt: string;
+  }>;
+}): string {
   const lines = [
     '# Skill: Register Swarm Tasks',
     '',
@@ -1135,7 +1148,9 @@ function buildRegisterSkill(
 
   lines.push('### 2. Verify');
   lines.push('');
-  lines.push('After creating all tasks, use `mcp__scheduled-tasks__list_scheduled_tasks` to verify they are registered.');
+  lines.push(
+    'After creating all tasks, use `mcp__scheduled-tasks__list_scheduled_tasks` to verify they are registered.'
+  );
   lines.push('');
 
   return lines.join('\n');

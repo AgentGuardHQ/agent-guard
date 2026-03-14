@@ -14,7 +14,7 @@ export function loadManifest(): SwarmManifest {
 
 export function filterAgentsByTier(
   agents: readonly SwarmAgent[],
-  enabledTiers: readonly SwarmTier[],
+  enabledTiers: readonly SwarmTier[]
 ): SwarmAgent[] {
   return agents.filter((a) => enabledTiers.includes(a.tier));
 }

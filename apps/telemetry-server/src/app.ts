@@ -25,7 +25,8 @@ app.route('/api', healthRoutes);
 // Rate limiting on telemetry endpoints (before auth)
 const ipLimiter = createRateLimiter(
   { windowMs: 60_000, maxRequests: config.rateLimitPerIp },
-  (c) => c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ?? c.req.header('x-real-ip') ?? 'unknown'
+  (c) =>
+    c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ?? c.req.header('x-real-ip') ?? 'unknown'
 );
 const installLimiter = createRateLimiter(
   { windowMs: 60_000, maxRequests: config.rateLimitPerInstall },

@@ -108,7 +108,6 @@ async function createFirestoreBundle(config: StorageConfig): Promise<StorageBund
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let Firestore: any;
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const mod = await (Function('return import("@google-cloud/firestore")')() as Promise<
       Record<string, unknown>
     >);

@@ -53,8 +53,7 @@ export interface BlastRadiusFactor {
   reason: string;
 }
 
-const DEFAULT_WEIGHTS: BlastRadiusWeights =
-  BLAST_RADIUS_DEFAULT_WEIGHTS as BlastRadiusWeights;
+const DEFAULT_WEIGHTS: BlastRadiusWeights = BLAST_RADIUS_DEFAULT_WEIGHTS as BlastRadiusWeights;
 
 const SENSITIVE_PATTERNS: string[] = BLAST_RADIUS_SENSITIVE_PATTERNS;
 

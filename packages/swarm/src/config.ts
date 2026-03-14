@@ -10,7 +10,7 @@ const DEFAULT_CONFIG_PATH = join(
   PACKAGE_ROOT,
   'templates',
   'config',
-  'agentguard-swarm.default.yaml',
+  'agentguard-swarm.default.yaml'
 );
 
 export function loadDefaultConfig(): SwarmConfig {
