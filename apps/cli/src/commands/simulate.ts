@@ -3,14 +3,16 @@
 // without executing the action. Optionally evaluates the action against policy
 // rules and invariants, returning non-zero exit codes for denials.
 
+import { readFileSync } from 'node:fs';
 import {
   normalizeIntent,
   createSimulatorRegistry,
   createGitSimulator,
   createFilesystemSimulator,
   createPackageSimulator,
+  simulatePlan,
 } from '@red-codes/kernel';
-import type { RawAgentAction, SimulationResult } from '@red-codes/kernel';
+import type { RawAgentAction, SimulationResult, PlanSimulationResult } from '@red-codes/kernel';
 import { evaluate, loadPolicies } from '@red-codes/policy';
 import type { NormalizedIntent, EvalResult } from '@red-codes/policy';
 import { loadPolicyDefs } from '../policy-resolver.js';
@@ -21,6 +23,7 @@ import { bold, color, dim } from '../colors.js';
 export interface SimulateOptions {
   json?: boolean;
   policy?: string;
+  plan?: string;
 }
 
 /** Exit codes — 0 = allowed, 1 = input error, 2 = policy denied, 3 = invariant violated */
@@ -209,10 +212,58 @@ function renderGovernanceOutput(gov: GovernanceResult): void {
   process.stderr.write(`  ${bold('Verdict:')}     ${verdict}\n\n`);
 }
 
+function renderPlanTextOutput(planResult: PlanSimulationResult): void {
+  const cf = planResult.compositeForecast;
+  const riskColor = RISK_COLORS[cf.riskLevel] || 'white';
+
+  process.stderr.write(`\n  ${bold('Plan Simulation Result')}\n`);
+  process.stderr.write(`  ${dim('─'.repeat(50))}\n\n`);
+
+  process.stderr.write(`  ${dim('Total steps:')}     ${cf.totalSteps}\n`);
+  process.stderr.write(`  ${dim('Simulated:')}       ${cf.simulatedSteps}\n`);
+  process.stderr.write(
+    `  ${dim('Risk level:')}      ${color(cf.riskLevel.toUpperCase(), riskColor)}\n`
+  );
+  process.stderr.write(`  ${dim('Blast radius:')}    ${cf.blastRadiusScore}\n`);
+  process.stderr.write(`  ${dim('Test risk:')}       ${cf.testRiskScore}/100\n`);
+  process.stderr.write(`  ${dim('Duration:')}        ${planResult.durationMs}ms\n\n`);
+
+  // Per-step summary
+  process.stderr.write(`  ${bold('Steps')}\n`);
+  for (const step of planResult.steps) {
+    const label = step.label || step.intent.action;
+    const icon = step.result ? color('●', RISK_COLORS[step.result.riskLevel] || 'white') : dim('○');
+    const risk = step.result ? ` (${step.result.riskLevel})` : ' (no simulator)';
+    process.stderr.write(`    ${icon} ${dim(`[${step.index}]`)} ${label}${dim(risk)}\n`);
+  }
+  process.stderr.write('\n');
+
+  // Interactions
+  if (planResult.interactions.length > 0) {
+    process.stderr.write(`  ${bold('Interactions')}\n`);
+    for (const interaction of planResult.interactions) {
+      const icon =
+        interaction.type === 'cumulative-risk' ? color('⚠', 'red') : color('↔', 'yellow');
+      process.stderr.write(`    ${icon} ${interaction.description}\n`);
+    }
+    process.stderr.write('\n');
+  }
+
+  // Predicted files
+  if (cf.predictedFiles.length > 0) {
+    process.stderr.write(`  ${bold('Predicted Files')}\n`);
+    for (const file of cf.predictedFiles) {
+      process.stderr.write(`    ${color('•', riskColor)} ${file}\n`);
+    }
+    process.stderr.write('\n');
+  }
+}
+
 function printUsage(): void {
   process.stderr.write(`
   ${bold('Usage:')} agentguard simulate <action-json> [flags]
          agentguard simulate --action <type> --target <path> [flags]
+         agentguard simulate --plan <actions.json>
          echo '{"tool":"Bash","command":"..."}' | agentguard simulate --policy policy.yaml
 
   ${bold('Examples:')}
@@ -222,12 +273,15 @@ function printUsage(): void {
     agentguard simulate --action shell.exec --command "npm install express"
     agentguard simulate --action file.delete --target package-lock.json --json
     agentguard simulate --action file.write --target .env --policy agentguard.yaml
+    agentguard simulate --plan plan.json
+    agentguard simulate --plan plan.json --policy agentguard.yaml --json
 
   ${bold('Flags:')}
     --action <type>     Action type (e.g., file.write, git.push, shell.exec)
     --target <path>     Target file or resource path
     --command <cmd>     Shell command (for shell.exec actions)
     --branch <name>     Git branch name
+    --plan <file>       JSON file containing an action plan (array of actions)
     --policy <file>     Policy file (YAML/JSON) to evaluate against
     --json              Output raw result as JSON
 
@@ -242,6 +296,13 @@ function printUsage(): void {
     git.push, git.merge,          → Git simulator
     git.force-push, git.branch.delete
     shell.exec (npm/yarn/pnpm)    → Package simulator
+
+  ${bold('Plan file format:')}
+    [
+      { "tool": "Write", "file": "src/config.ts", "label": "Write config" },
+      { "tool": "Bash", "command": "npm test", "label": "Run tests" },
+      { "tool": "Bash", "command": "git push origin main", "label": "Push" }
+    ]
 `);
 }
 
@@ -298,10 +359,63 @@ async function readStdin(): Promise<string | null> {
   });
 }
 
+/** Load and parse a plan file, returning normalized steps */
+function loadPlanFile(
+  planPath: string,
+  jsonOutput: boolean
+): { steps: Array<{ intent: NormalizedIntent; label?: string }> } | null {
+  try {
+    const raw = readFileSync(planPath, 'utf8');
+    const parsed = JSON.parse(raw) as Array<Record<string, unknown>>;
+
+    if (!Array.isArray(parsed) || parsed.length === 0) {
+      if (jsonOutput) {
+        process.stdout.write(
+          JSON.stringify({ error: 'Plan file must contain a non-empty JSON array' }) + '\n'
+        );
+      } else {
+        process.stderr.write(
+          `  ${color('Error:', 'red')} Plan file must contain a non-empty JSON array.\n`
+        );
+      }
+      return null;
+    }
+
+    const steps = parsed.map((entry) => {
+      const label = typeof entry.label === 'string' ? entry.label : undefined;
+      const intent = normalizeIntent(entry as RawAgentAction);
+      return { intent, label };
+    });
+
+    return { steps };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    if (jsonOutput) {
+      process.stdout.write(JSON.stringify({ error: `Failed to load plan: ${message}` }) + '\n');
+    } else {
+      process.stderr.write(`  ${color('Error:', 'red')} Failed to load plan: ${message}\n`);
+    }
+    return null;
+  }
+}
+
 export async function simulate(args: string[], options: SimulateOptions = {}): Promise<number> {
   const jsonOutput = options.json || args.includes('--json');
   const policyPath = options.policy || flagValue(args, '--policy');
+  const planPath = options.plan || flagValue(args, '--plan');
 
+  // Build simulator registry with all built-in simulators
+  const simulators = createSimulatorRegistry();
+  simulators.register(createGitSimulator());
+  simulators.register(createFilesystemSimulator());
+  simulators.register(createPackageSimulator());
+
+  // Plan mode: simulate a batch of actions
+  if (planPath) {
+    return simulatePlanCommand(planPath, simulators, policyPath, jsonOutput);
+  }
+
+  // Single-action mode (existing behavior)
   // Try to build intent from args first, fall back to stdin
   let intent = buildIntent(args);
 
@@ -346,12 +460,6 @@ export async function simulate(args: string[], options: SimulateOptions = {}): P
     }
     return EXIT_INPUT_ERROR;
   }
-
-  // Build simulator registry with all built-in simulators
-  const simulators = createSimulatorRegistry();
-  simulators.register(createGitSimulator());
-  simulators.register(createFilesystemSimulator());
-  simulators.register(createPackageSimulator());
 
   // Find a simulator that supports this intent
   const simulator = simulators.find(intent);
@@ -410,4 +518,91 @@ export async function simulate(args: string[], options: SimulateOptions = {}): P
   }
 
   return EXIT_OK;
+}
+
+/** Handle plan-level simulation via --plan flag */
+async function simulatePlanCommand(
+  planPath: string,
+  simulators: ReturnType<typeof createSimulatorRegistry>,
+  policyPath: string | undefined,
+  jsonOutput: boolean
+): Promise<number> {
+  const plan = loadPlanFile(planPath, jsonOutput);
+  if (!plan) return EXIT_INPUT_ERROR;
+
+  const planResult = await simulatePlan(plan.steps, simulators);
+
+  // Evaluate governance for each step that produced a result
+  let worstExit = EXIT_OK;
+  const stepGovernance: Array<GovernanceResult | null> = [];
+
+  if (policyPath) {
+    let hasPolicyDenial = false;
+    let hasInvariantViolation = false;
+
+    for (const step of planResult.steps) {
+      if (step.result) {
+        const gov = evaluateGovernance(step.intent, step.result, policyPath);
+        stepGovernance.push(gov);
+        if (gov.policyResult && !gov.policyResult.allowed) hasPolicyDenial = true;
+        if (gov.invariantViolations.length > 0) hasInvariantViolation = true;
+      } else {
+        stepGovernance.push(null);
+      }
+    }
+
+    // Policy denial takes priority over invariant violation (matching single-action behavior)
+    if (hasPolicyDenial) worstExit = EXIT_POLICY_DENIED;
+    else if (hasInvariantViolation) worstExit = EXIT_INVARIANT_VIOLATION;
+  }
+
+  if (jsonOutput) {
+    const output: Record<string, unknown> = {
+      steps: planResult.steps,
+      interactions: planResult.interactions,
+      compositeForecast: planResult.compositeForecast,
+      durationMs: planResult.durationMs,
+    };
+    if (policyPath) {
+      output.governance = {
+        allowed: worstExit === EXIT_OK,
+        steps: stepGovernance.map((gov) =>
+          gov
+            ? {
+                allowed: gov.allowed,
+                policy: gov.policyResult
+                  ? {
+                      decision: gov.policyResult.decision,
+                      reason: gov.policyResult.reason,
+                    }
+                  : null,
+                invariantViolations: gov.invariantViolations,
+              }
+            : null
+        ),
+      };
+    }
+    process.stdout.write(JSON.stringify(output) + '\n');
+  } else {
+    renderPlanTextOutput(planResult);
+    if (policyPath && stepGovernance.some((g) => g !== null)) {
+      process.stderr.write(`  ${bold('Governance Evaluation')}\n`);
+      process.stderr.write(`  ${dim('─'.repeat(50))}\n\n`);
+      for (let i = 0; i < stepGovernance.length; i++) {
+        const gov = stepGovernance[i];
+        if (!gov) continue;
+        const step = planResult.steps[i];
+        const label = step.label || step.intent.action;
+        const govColor = gov.allowed ? 'green' : 'red';
+        const verdict = gov.allowed ? 'ALLOW' : 'DENY';
+        process.stderr.write(`    ${dim(`[${i}]`)} ${label}: ${color(verdict, govColor)}\n`);
+      }
+      process.stderr.write('\n');
+      const overallVerdict =
+        worstExit === EXIT_OK ? color('ALLOWED', 'green') : color('DENIED', 'red');
+      process.stderr.write(`  ${bold('Verdict:')}     ${overallVerdict}\n\n`);
+    }
+  }
+
+  return worstExit;
 }
