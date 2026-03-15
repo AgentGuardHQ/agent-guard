@@ -35,6 +35,11 @@
     "type": "git",
     "url": "git+https://github.com/AgentGuardHQ/agent-guard.git"
   },
+  "pnpm": {
+    "overrides": {
+      "flatted": ">=3.4.1"
+    }
+  },
   "author": "jpleva91",
   "license": "Apache-2.0"
 }

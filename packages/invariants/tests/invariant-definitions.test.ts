@@ -277,6 +277,49 @@ describe('no-skill-modification', () => {
     const result = inv.check({ currentTarget: '.claude/settings.json' });
     expect(result.holds).toBe(true);
   });
+
+  it('holds when currentActionType is file.read on skill path', () => {
+    const result = inv.check({
+      currentActionType: 'file.read',
+      currentTarget: '.claude/skills/my-skill/SKILL.md',
+    });
+    expect(result.holds).toBe(true);
+    expect(result.actual).toContain('read-only');
+  });
+
+  it('holds when currentActionType is git.diff on skill path', () => {
+    const result = inv.check({
+      currentActionType: 'git.diff',
+      currentTarget: '.claude/skills/my-skill/SKILL.md',
+    });
+    expect(result.holds).toBe(true);
+    expect(result.actual).toContain('read-only');
+  });
+
+  it('holds when shell.exec command is ls on skill path', () => {
+    const result = inv.check({
+      currentActionType: 'shell.exec',
+      currentCommand: 'ls .claude/skills/',
+    });
+    expect(result.holds).toBe(true);
+    expect(result.actual).toContain('Read-only shell command');
+  });
+
+  it('still fails when shell.exec rm targets skill path', () => {
+    const result = inv.check({
+      currentActionType: 'shell.exec',
+      currentCommand: 'rm -rf .claude/skills/old-skill',
+    });
+    expect(result.holds).toBe(false);
+  });
+
+  it('still fails when file.write targets skill path', () => {
+    const result = inv.check({
+      currentActionType: 'file.write',
+      currentTarget: '.claude/skills/my-skill/SKILL.md',
+    });
+    expect(result.holds).toBe(false);
+  });
 });
 
 describe('no-scheduled-task-modification', () => {
@@ -333,6 +376,49 @@ describe('no-scheduled-task-modification', () => {
   it('holds when .claude path does not include scheduled-tasks', () => {
     const result = inv.check({ currentTarget: '.claude/settings.json' });
     expect(result.holds).toBe(true);
+  });
+
+  it('holds when currentActionType is file.read on scheduled task path', () => {
+    const result = inv.check({
+      currentActionType: 'file.read',
+      currentTarget: '.claude/scheduled-tasks/daily-sync/SKILL.md',
+    });
+    expect(result.holds).toBe(true);
+    expect(result.actual).toContain('read-only');
+  });
+
+  it('holds when currentActionType is git.diff on scheduled task path', () => {
+    const result = inv.check({
+      currentActionType: 'git.diff',
+      currentTarget: '.claude/scheduled-tasks/daily-sync/SKILL.md',
+    });
+    expect(result.holds).toBe(true);
+    expect(result.actual).toContain('read-only');
+  });
+
+  it('holds when shell.exec command is ls on scheduled task path', () => {
+    const result = inv.check({
+      currentActionType: 'shell.exec',
+      currentCommand: 'ls .claude/scheduled-tasks/',
+    });
+    expect(result.holds).toBe(true);
+    expect(result.actual).toContain('Read-only shell command');
+  });
+
+  it('still fails when shell.exec rm targets scheduled task path', () => {
+    const result = inv.check({
+      currentActionType: 'shell.exec',
+      currentCommand: 'rm -rf .claude/scheduled-tasks/old-task',
+    });
+    expect(result.holds).toBe(false);
+  });
+
+  it('still fails when file.write targets scheduled task path', () => {
+    const result = inv.check({
+      currentActionType: 'file.write',
+      currentTarget: '.claude/scheduled-tasks/daily-sync/SKILL.md',
+    });
+    expect(result.holds).toBe(false);
   });
 
   it('holds when path contains "scheduled" but not "scheduled-tasks/"', () => {

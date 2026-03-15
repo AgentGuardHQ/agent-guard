@@ -404,6 +404,37 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
     description: 'Agent skill files (.claude/skills/) must not be modified by governed actions',
     severity: 4,
     check(state) {
+      const actionType = state.currentActionType || '';
+      const READ_ONLY_ACTIONS = ['file.read', 'git.diff'];
+
+      // Skip read-only action types (Read, Glob, Grep tools all map to file.read)
+      if (READ_ONLY_ACTIONS.includes(actionType)) {
+        return { holds: true, expected: 'N/A', actual: `Action type ${actionType} is read-only` };
+      }
+
+      // For shell.exec, skip read-only commands (ls, cat, find, etc.)
+      if (actionType === 'shell.exec') {
+        const command = (state.currentCommand || '').trim();
+        const baseCmd = command.split(/\s+/)[0]?.replace(/^.*\//, '') || '';
+        const READ_ONLY_CMDS = [
+          'ls',
+          'cat',
+          'head',
+          'tail',
+          'find',
+          'grep',
+          'rg',
+          'tree',
+          'stat',
+          'file',
+          'wc',
+          'diff',
+        ];
+        if (READ_ONLY_CMDS.includes(baseCmd) && !command.includes('>')) {
+          return { holds: true, expected: 'N/A', actual: 'Read-only shell command' };
+        }
+      }
+
       const SKILL_PATTERNS = ['.claude/skills/', '.claude\\skills\\'];
       const matchesSkillPath = (path: string) => SKILL_PATTERNS.some((p) => path.includes(p));
 
@@ -439,6 +470,37 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
       'Agents must not modify scheduled task definitions (.claude/scheduled-tasks/) directly',
     severity: 5,
     check(state) {
+      const actionType = state.currentActionType || '';
+      const READ_ONLY_ACTIONS = ['file.read', 'git.diff'];
+
+      // Skip read-only action types (Read, Glob, Grep tools all map to file.read)
+      if (READ_ONLY_ACTIONS.includes(actionType)) {
+        return { holds: true, expected: 'N/A', actual: `Action type ${actionType} is read-only` };
+      }
+
+      // For shell.exec, skip read-only commands (ls, cat, find, etc.)
+      if (actionType === 'shell.exec') {
+        const command = (state.currentCommand || '').trim();
+        const baseCmd = command.split(/\s+/)[0]?.replace(/^.*\//, '') || '';
+        const READ_ONLY_CMDS = [
+          'ls',
+          'cat',
+          'head',
+          'tail',
+          'find',
+          'grep',
+          'rg',
+          'tree',
+          'stat',
+          'file',
+          'wc',
+          'diff',
+        ];
+        if (READ_ONLY_CMDS.includes(baseCmd) && !command.includes('>')) {
+          return { holds: true, expected: 'N/A', actual: 'Read-only shell command' };
+        }
+      }
+
       const SCHEDULED_TASK_PATTERNS = ['.claude/scheduled-tasks/', '.claude\\scheduled-tasks\\'];
       const matchesScheduledPath = (path: string) =>
         SCHEDULED_TASK_PATTERNS.some((p) => path.includes(p));
