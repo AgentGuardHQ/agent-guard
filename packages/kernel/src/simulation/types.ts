@@ -17,6 +17,10 @@ export interface ImpactForecast {
   riskLevel: 'low' | 'medium' | 'high';
   /** Factors that contributed to the blast radius score */
   blastRadiusFactors: Array<{ name: string; multiplier: number; reason: string }>;
+  /** Packages with known vulnerabilities (populated for package.json changes) */
+  vulnerablePackages?: Array<{ name: string; severity: string; advisory: string }>;
+  /** Packages that are deprecated (populated for package.json changes) */
+  deprecatedPackages?: string[];
 }
 
 /** Result of simulating an action before execution */

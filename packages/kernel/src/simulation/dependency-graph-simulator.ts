@@ -4,6 +4,7 @@
 
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { join, dirname, basename } from 'node:path';
+import { get, request as httpsRequest } from 'node:https';
 import type { NormalizedIntent } from '@red-codes/policy';
 import type { ActionSimulator, SimulationResult } from './types.js';
 
@@ -26,6 +27,16 @@ export interface WorkspaceNode {
   workspaceDeps: string[];
 }
 
+/** A package flagged as having a known vulnerability */
+export interface VulnerablePackage {
+  /** Package name */
+  name: string;
+  /** Severity level from the advisory */
+  severity: string;
+  /** Advisory URL or identifier */
+  advisory: string;
+}
+
 /** Result of the dependency graph analysis */
 export interface DependencyGraphAnalysis {
   /** The package being modified */
@@ -40,6 +51,10 @@ export interface DependencyGraphAnalysis {
   totalWorkspacePackages: number;
   /** Whether the target is the monorepo root */
   isRoot: boolean;
+  /** Packages in the dependency chain with known vulnerabilities */
+  vulnerablePackages?: VulnerablePackage[];
+  /** Packages in the dependency chain that are deprecated */
+  deprecatedPackages?: string[];
 }
 
 /** Check if the intent is a write to a package.json file */
@@ -58,6 +73,172 @@ function readJsonSafe<T>(filePath: string): T | null {
   } catch {
     return null;
   }
+}
+
+/** Whether network-based vulnerability/deprecation checks are enabled */
+function isNetworkEnabled(): boolean {
+  return process.env.AGENTGUARD_NO_NETWORK !== '1';
+}
+
+/** Fetch JSON from a URL using node:https with a timeout */
+function fetchJson(url: string, timeoutMs = 5000): Promise<Record<string, unknown> | null> {
+  return new Promise((resolve) => {
+    try {
+      const req = get(url, { headers: { Accept: 'application/json' } }, (res) => {
+        if (res.statusCode !== 200) {
+          res.resume();
+          resolve(null);
+          return;
+        }
+        const chunks: Buffer[] = [];
+        res.on('data', (chunk: Buffer) => chunks.push(chunk));
+        res.on('end', () => {
+          try {
+            resolve(JSON.parse(Buffer.concat(chunks).toString()) as Record<string, unknown>);
+          } catch {
+            resolve(null);
+          }
+        });
+        res.on('error', () => resolve(null));
+      });
+      req.on('error', () => resolve(null));
+      req.setTimeout(timeoutMs, () => {
+        req.destroy();
+        resolve(null);
+      });
+    } catch {
+      resolve(null);
+    }
+  });
+}
+
+/**
+ * Check a package for deprecation by querying the npm registry.
+ * Returns the deprecation message if deprecated, null otherwise.
+ */
+export async function checkDeprecation(packageName: string): Promise<string | null> {
+  const data = await fetchJson(`https://registry.npmjs.org/${encodeURIComponent(packageName)}`);
+  if (!data) return null;
+
+  // Check top-level deprecated field
+  if (typeof data.deprecated === 'string') return data.deprecated;
+
+  // Check the latest dist-tag version for deprecation
+  const distTags = data['dist-tags'] as Record<string, string> | undefined;
+  const versions = data.versions as Record<string, Record<string, unknown>> | undefined;
+  if (distTags?.latest && versions) {
+    const latestVersion = versions[distTags.latest];
+    if (latestVersion && typeof latestVersion.deprecated === 'string') {
+      return latestVersion.deprecated;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Check packages for known vulnerabilities using the npm bulk advisory API.
+ * Returns an array of vulnerable packages with severity and advisory info.
+ */
+export async function checkVulnerabilities(
+  packages: Record<string, string>
+): Promise<VulnerablePackage[]> {
+  const results: VulnerablePackage[] = [];
+  if (Object.keys(packages).length === 0) return results;
+
+  // Use the npm bulk advisory endpoint
+  const postData = JSON.stringify(packages);
+  const url = new URL('https://registry.npmjs.org/-/npm/v1/security/advisories/bulk');
+
+  return new Promise((resolve) => {
+    try {
+      const req = httpsRequest(
+        {
+          hostname: url.hostname,
+          path: url.pathname,
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(postData),
+          },
+          timeout: 10000,
+        },
+        (res) => {
+          if (res.statusCode !== 200) {
+            res.resume();
+            resolve(results);
+            return;
+          }
+          const chunks: Buffer[] = [];
+          res.on('data', (chunk: Buffer) => chunks.push(chunk));
+          res.on('end', () => {
+            try {
+              const data = JSON.parse(Buffer.concat(chunks).toString()) as Record<
+                string,
+                Array<{ severity: string; url: string; title: string }>
+              >;
+              for (const [pkgName, advisories] of Object.entries(data)) {
+                if (Array.isArray(advisories)) {
+                  for (const advisory of advisories) {
+                    results.push({
+                      name: pkgName,
+                      severity: advisory.severity || 'unknown',
+                      advisory: advisory.url || advisory.title || 'unknown',
+                    });
+                  }
+                }
+              }
+            } catch {
+              // Parse error — return what we have
+            }
+            resolve(results);
+          });
+          res.on('error', () => resolve(results));
+        }
+      );
+      req.on('error', () => resolve(results));
+      req.setTimeout(10000, () => {
+        req.destroy();
+        resolve(results);
+      });
+      req.write(postData);
+      req.end();
+    } catch {
+      resolve(results);
+    }
+  });
+}
+
+/**
+ * Check all declared dependencies for vulnerabilities and deprecations.
+ * Returns { vulnerablePackages, deprecatedPackages } or null if network is disabled.
+ */
+export async function checkDependencyHealth(
+  pkg: PackageManifest
+): Promise<{ vulnerablePackages: VulnerablePackage[]; deprecatedPackages: string[] } | null> {
+  if (!isNetworkEnabled()) return null;
+
+  const allDeps: Record<string, string> = {
+    ...pkg.dependencies,
+    ...pkg.devDependencies,
+    ...pkg.peerDependencies,
+  };
+
+  const depNames = Object.keys(allDeps);
+  if (depNames.length === 0) return { vulnerablePackages: [], deprecatedPackages: [] };
+
+  // Run vulnerability and deprecation checks concurrently
+  const [vulnerablePackages, ...deprecationResults] = await Promise.all([
+    checkVulnerabilities(allDeps),
+    ...depNames.map(async (name) => {
+      const msg = await checkDeprecation(name);
+      return msg ? name : null;
+    }),
+  ]);
+
+  const deprecatedPackages = deprecationResults.filter((name): name is string => name !== null);
+
+  return { vulnerablePackages, deprecatedPackages };
 }
 
 /** Find the monorepo root by searching up from the target path for pnpm-workspace.yaml or root package.json with workspaces */
@@ -287,6 +468,32 @@ export function createDependencyGraphSimulator(): ActionSimulator {
       const analysis = analyzeDependencyGraph(target, root);
 
       if (analysis) {
+        // Run vulnerability/deprecation checks if network is available
+        const pkg = readJsonSafe<PackageManifest>(target);
+        if (pkg) {
+          const health = await checkDependencyHealth(pkg);
+          if (health) {
+            analysis.vulnerablePackages = health.vulnerablePackages;
+            analysis.deprecatedPackages = health.deprecatedPackages;
+
+            if (health.vulnerablePackages.length > 0) {
+              const criticalCount = health.vulnerablePackages.filter(
+                (v) => v.severity === 'critical' || v.severity === 'high'
+              ).length;
+              predictedChanges.push(
+                `${health.vulnerablePackages.length} vulnerable package(s) detected` +
+                  (criticalCount > 0 ? ` (${criticalCount} critical/high)` : '')
+              );
+            }
+
+            if (health.deprecatedPackages.length > 0) {
+              predictedChanges.push(
+                `${health.deprecatedPackages.length} deprecated package(s): ${health.deprecatedPackages.join(', ')}`
+              );
+            }
+          }
+        }
+
         details.dependencyGraph = analysis;
 
         // Root package.json changes affect everything
@@ -322,10 +529,25 @@ export function createDependencyGraphSimulator(): ActionSimulator {
           }
         }
 
+        // Risk escalation for vulnerable/deprecated dependencies
+        const hasVulnerabilities = (analysis.vulnerablePackages?.length ?? 0) > 0;
+        const hasDeprecations = (analysis.deprecatedPackages?.length ?? 0) > 0;
+        const hasCritical = (analysis.vulnerablePackages ?? []).some(
+          (v) => v.severity === 'critical' || v.severity === 'high'
+        );
+
+        if (hasCritical) {
+          riskLevel = 'high';
+        } else if (hasVulnerabilities && riskLevel === 'low') {
+          riskLevel = 'medium';
+        } else if (hasDeprecations && riskLevel === 'low') {
+          riskLevel = 'medium';
+        }
+
         // Risk assessment based on downstream impact
         if (blastRadius > 10) {
           riskLevel = 'high';
-        } else if (blastRadius > 3) {
+        } else if (blastRadius > 3 && riskLevel === 'low') {
           riskLevel = 'medium';
         }
       }

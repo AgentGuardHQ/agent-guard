@@ -5,6 +5,7 @@
 import type { NormalizedIntent } from '@red-codes/policy';
 import { computeBlastRadius } from '../blast-radius.js';
 import type { ImpactForecast, SimulationResult } from './types.js';
+import type { DependencyGraphAnalysis, VulnerablePackage } from './dependency-graph-simulator.js';
 
 /** Known module directories and their downstream dependents */
 const MODULE_DEPENDENCY_MAP: Record<string, string[]> = {
@@ -156,16 +157,47 @@ export function buildImpactForecast(
       ? 'medium'
       : 'low';
 
-  return {
+  // 6. Extract vulnerability/deprecation data from dependency graph analysis
+  const depGraph = result.details.dependencyGraph as DependencyGraphAnalysis | undefined;
+  const vulnerablePackages = depGraph?.vulnerablePackages?.map((v: VulnerablePackage) => ({
+    name: v.name,
+    severity: v.severity,
+    advisory: v.advisory,
+  }));
+  const deprecatedPackages = depGraph?.deprecatedPackages;
+
+  // Escalate risk if vulnerable packages are present
+  const hasCriticalVuln = vulnerablePackages?.some(
+    (v) => v.severity === 'critical' || v.severity === 'high'
+  );
+
+  const finalRiskLevel = hasCriticalVuln
+    ? 'high'
+    : (vulnerablePackages?.length ?? 0) > 0 || (deprecatedPackages?.length ?? 0) > 0
+      ? riskLevel === 'low'
+        ? 'medium'
+        : riskLevel
+      : riskLevel;
+
+  const forecast: ImpactForecast = {
     predictedFiles,
     dependenciesAffected,
     testRiskScore,
     blastRadiusScore: brResult.weightedScore,
-    riskLevel,
+    riskLevel: finalRiskLevel,
     blastRadiusFactors: brResult.factors.map((f) => ({
       name: f.name,
       multiplier: f.multiplier,
       reason: f.reason,
     })),
   };
+
+  if (vulnerablePackages && vulnerablePackages.length > 0) {
+    forecast.vulnerablePackages = vulnerablePackages;
+  }
+  if (deprecatedPackages && deprecatedPackages.length > 0) {
+    forecast.deprecatedPackages = deprecatedPackages;
+  }
+
+  return forecast;
 }
