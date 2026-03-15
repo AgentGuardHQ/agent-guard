@@ -14,6 +14,7 @@ export default defineConfig({
     include: ['tests/**/*.test.ts'],
     benchmark: {
       include: ['tests/benchmarks/**/*.bench.ts'],
+      outputJson: 'bench-results.json',
     },
     environment: 'node',
     coverage: {
