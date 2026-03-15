@@ -1,0 +1,40 @@
+{
+  "name": "@red-codes/agentguard-mcp",
+  "version": "0.1.0",
+  "description": "AgentGuard MCP server — governance tools for AI coding agents",
+  "type": "module",
+  "license": "Apache-2.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "agentguard-mcp": "./dist/server.js"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b && tsx esbuild.config.ts",
+    "dev": "tsx src/server.ts",
+    "test": "vitest run",
+    "lint": "eslint src/",
+    "ts:check": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "@red-codes/analytics": "workspace:*",
+    "@red-codes/adapters": "workspace:*",
+    "@red-codes/core": "workspace:*",
+    "@red-codes/events": "workspace:*",
+    "@red-codes/invariants": "workspace:*",
+    "@red-codes/kernel": "workspace:*",
+    "@red-codes/policy": "workspace:*",
+    "@red-codes/storage": "workspace:*",
+    "@red-codes/telemetry": "workspace:*",
+    "zod": "^3.25.0"
+  }
+}

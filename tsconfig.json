@@ -21,6 +21,7 @@
     { "path": "packages/swarm" },
     { "path": "apps/cli" },
     { "path": "apps/telemetry-server" },
-    { "path": "apps/agentguardhq" }
+    { "path": "apps/agentguardhq" },
+    { "path": "apps/mcp-server" }
   ]
 }
