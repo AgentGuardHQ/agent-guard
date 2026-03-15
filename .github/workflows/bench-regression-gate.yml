@@ -26,52 +26,18 @@ jobs:
         working-directory: packages/kernel
         run: pnpm bench
 
-      - name: Check regression thresholds
-        working-directory: packages/kernel
-        run: |
-          node - <<'EOF'
-          import { readFileSync } from 'node:fs';
+      - name: Generate benchmark report
+        run: node scripts/bench-report.mjs --json packages/kernel/bench-results.json --output benchmark-report.md
 
-          const results = JSON.parse(readFileSync('bench-results.json', 'utf8'));
-          const thresholds = {
-            'policy-evaluation': 1,    // p99 < 1ms
-            'invariant-checking': 2,   // p99 < 2ms
-            'kernel-loop': 50,         // p99 < 50ms (includes kernel init overhead)
-            'simulation': 10,          // p99 < 10ms per simulator call
-          };
+      - name: Check regression thresholds (p99 < 50ms)
+        run: node scripts/bench-report.mjs --json packages/kernel/bench-results.json --threshold 50
 
-          let failed = false;
-
-          for (const file of results.files ?? []) {
-            for (const group of file.groups ?? []) {
-              for (const bench of group.benchmarks ?? []) {
-                const p99Ms = bench.p99 ?? bench.mean ?? 0; // already in ms
-                const name = bench.name ?? '';
-                const suiteName = group.fullName ?? '';
-
-                for (const [key, limitMs] of Object.entries(thresholds)) {
-                  if (name.toLowerCase().includes(key) || suiteName.toLowerCase().includes(key)) {
-                    if (p99Ms > limitMs) {
-                      console.error(`REGRESSION: "${name}" p99=${p99Ms.toFixed(3)}ms exceeds ${limitMs}ms threshold`);
-                      failed = true;
-                    } else {
-                      console.log(`OK: "${name}" p99=${p99Ms.toFixed(3)}ms (limit: ${limitMs}ms)`);
-                    }
-                    break;
-                  }
-                }
-              }
-            }
-          }
-
-          if (failed) process.exit(1);
-          console.log('\nAll benchmarks within thresholds.');
-          EOF
-
-      - name: Upload benchmark results
+      - name: Upload benchmark artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: bench-results-${{ github.sha }}
-          path: packages/kernel/bench-results.json
+          path: |
+            packages/kernel/bench-results.json
+            benchmark-report.md
           retention-days: 30

@@ -13,6 +13,7 @@
     "test": "turbo test",
     "test:coverage": "turbo test:coverage",
     "bench": "turbo bench",
+    "bench:report": "node scripts/bench-report.mjs",
     "lint": "turbo lint",
     "format": "prettier --check 'packages/*/src/**' 'apps/*/src/**'",
     "format:fix": "prettier --write 'packages/*/src/**' 'apps/*/src/**'",
