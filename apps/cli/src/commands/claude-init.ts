@@ -80,7 +80,7 @@ export async function claudeInit(args: string[] = []): Promise<void> {
     hooks: [
       {
         type: 'command',
-        command: `npx @red-codes/agentguard claude-hook pre${storeSuffix}${dbPathSuffix}`,
+        command: `agentguard claude-hook pre${storeSuffix}${dbPathSuffix}`,
       },
     ],
   });
@@ -92,7 +92,7 @@ export async function claudeInit(args: string[] = []): Promise<void> {
     hooks: [
       {
         type: 'command',
-        command: `npx @red-codes/agentguard claude-hook post${storeSuffix}${dbPathSuffix}`,
+        command: `agentguard claude-hook post${storeSuffix}${dbPathSuffix}`,
       },
     ],
   });
