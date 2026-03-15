@@ -107,6 +107,7 @@ async function handlePreToolUse(payload: ClaudeCodeHookPayload, cliArgs: string[
     runId,
     policyDefs,
     dryRun: true,
+    evaluateOptions: { defaultDeny: false },
     sinks: eventSink ? [eventSink] : [],
     decisionSinks: [decisionSink, telemetrySink].filter(
       Boolean

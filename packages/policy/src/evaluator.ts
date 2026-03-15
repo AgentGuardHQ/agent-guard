@@ -67,6 +67,15 @@ export interface EvalResult {
   trace?: PolicyEvaluationTrace;
 }
 
+/** Options for the policy evaluator */
+export interface EvaluateOptions {
+  /**
+   * When true (default), actions with no matching policy rule are denied.
+   * Set to false to opt into fail-open mode (legacy behavior) during migration.
+   */
+  defaultDeny?: boolean;
+}
+
 function matchAction(pattern: string, action: string): boolean {
   if (pattern === '*') return true;
   if (pattern === action) return true;
@@ -164,7 +173,11 @@ function createRuleEval(
   };
 }
 
-export function evaluate(intent: NormalizedIntent, policies: LoadedPolicy[]): EvalResult {
+export function evaluate(
+  intent: NormalizedIntent,
+  policies: LoadedPolicy[],
+  options?: EvaluateOptions
+): EvalResult {
   const startTime = performance.now();
   const rulesEvaluated: RuleEvaluation[] = [];
   const ruleIndexMap = new Map<string, number>();
@@ -295,12 +308,31 @@ export function evaluate(intent: NormalizedIntent, policies: LoadedPolicy[]): Ev
     }
   }
 
+  const defaultDeny = options?.defaultDeny ?? true;
+
+  if (defaultDeny) {
+    return {
+      allowed: false,
+      decision: 'deny',
+      matchedRule: null,
+      matchedPolicy: null,
+      reason: 'No matching policy rule — default deny (fail-closed)',
+      severity: 3,
+      trace: {
+        rulesEvaluated,
+        totalRulesChecked: rulesEvaluated.filter((r) => r.outcome !== 'skipped').length,
+        phaseThatMatched: 'default',
+        durationMs: performance.now() - startTime,
+      },
+    };
+  }
+
   return {
     allowed: true,
     decision: 'allow',
     matchedRule: null,
     matchedPolicy: null,
-    reason: 'No matching policy — default allow',
+    reason: 'No matching policy rule — default allow (fail-open)',
     severity: 0,
     trace: {
       rulesEvaluated,
