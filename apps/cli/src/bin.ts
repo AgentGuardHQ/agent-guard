@@ -326,6 +326,24 @@ const COMMANDS: Record<string, CommandHelp> = {
       'agentguard evidence-pr --run run_1234567890_abc',
     ],
   },
+  'audit-verify': {
+    name: 'agentguard audit-verify',
+    description: 'Verify tamper-resistant audit chain integrity and generate enforcement report',
+    usage: 'agentguard audit-verify [runId] [flags]',
+    flags: [
+      { flag: '--last', description: 'Verify the most recent chained audit trail' },
+      { flag: '--list', description: 'List all chained audit trails' },
+      { flag: '--report', description: 'Generate full enforcement audit report' },
+      { flag: '--json', description: 'Output as JSON' },
+    ],
+    examples: [
+      'agentguard audit-verify --last',
+      'agentguard audit-verify --list',
+      'agentguard audit-verify --last --report',
+      'agentguard audit-verify --last --report --json',
+      'agentguard audit-verify run_1234567890_abc',
+    ],
+  },
   'session-viewer': {
     name: 'agentguard session-viewer',
     description: 'Generate an interactive HTML visualization of a governance session',
@@ -567,6 +585,17 @@ async function main() {
       break;
     }
 
+    case 'audit-verify': {
+      if (wantsHelp) {
+        console.log(formatHelp(COMMANDS['audit-verify']));
+        break;
+      }
+      const { auditVerify } = await import('./commands/audit-verify.js');
+      const code = await auditVerify(args.slice(1));
+      process.exit(code);
+      break;
+    }
+
     case 'session-viewer': {
       if (wantsHelp) {
         console.log(formatHelp(COMMANDS['session-viewer']));
@@ -679,6 +708,12 @@ function printHelp(): void {
     agentguard session-viewer --last          Open session viewer in browser
     agentguard session-viewer <runId>         Visualize a specific run
     agentguard session-viewer --last -o f.html  Save to file without opening
+
+  \x1b[1mAudit:\x1b[0m
+    agentguard audit-verify --last            Verify audit chain integrity
+    agentguard audit-verify --list            List chained audit trails
+    agentguard audit-verify --last --report   Full enforcement audit report
+    agentguard audit-verify ... --json        Output as JSON
 
   \x1b[1mEvidence:\x1b[0m
     agentguard evidence-pr                    Attach governance evidence to a PR
