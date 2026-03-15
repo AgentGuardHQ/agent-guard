@@ -26,6 +26,11 @@ export type {
   ActionSimulator,
   SimulationResult,
   ImpactForecast,
+  PlanStep,
+  PlanStepResult,
+  PlanStepInteraction,
+  CompositeImpactForecast,
+  PlanSimulationResult,
 } from './simulation/types.js';
 export type { GovernanceDecisionRecord, DecisionSink } from './decisions/types.js';
 

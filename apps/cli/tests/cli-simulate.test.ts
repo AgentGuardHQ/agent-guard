@@ -340,6 +340,126 @@ rules:
     expect(result.governance).toBeUndefined();
   });
 
+  describe('plan simulation (--plan flag)', () => {
+    const planDir = join(tmpdir(), 'agentguard-plan-test-' + Date.now());
+
+    beforeEach(() => {
+      mkdirSync(planDir, { recursive: true });
+    });
+
+    afterAll(() => {
+      try {
+        rmSync(planDir, { recursive: true, force: true });
+      } catch {
+        // ignore cleanup errors
+      }
+    });
+
+    it('simulates a plan file with multiple actions', async () => {
+      const planFile = join(planDir, 'plan.json');
+      writeFileSync(
+        planFile,
+        JSON.stringify([
+          { tool: 'Write', file: 'src/config.ts', label: 'Write config' },
+          { tool: 'Write', file: 'src/utils.ts', label: 'Write utils' },
+        ])
+      );
+
+      const { simulate } = await import('../src/commands/simulate.js');
+      const code = await simulate([], { plan: planFile });
+      expect(code).toBe(0);
+      const output = stderrChunks.join('');
+      expect(output).toContain('Plan Simulation Result');
+      expect(output).toContain('Write config');
+      expect(output).toContain('Write utils');
+    });
+
+    it('outputs plan simulation as JSON', async () => {
+      const planFile = join(planDir, 'plan-json.json');
+      writeFileSync(
+        planFile,
+        JSON.stringify([
+          { tool: 'Write', file: 'src/a.ts', label: 'Step A' },
+          { tool: 'Write', file: 'src/b.ts', label: 'Step B' },
+        ])
+      );
+
+      const { simulate } = await import('../src/commands/simulate.js');
+      const code = await simulate(['--json'], { plan: planFile });
+      expect(code).toBe(0);
+      const output = stdoutChunks.join('');
+      const result = JSON.parse(output.trim());
+      expect(result.steps).toHaveLength(2);
+      expect(result.compositeForecast).toBeDefined();
+      expect(result.compositeForecast.totalSteps).toBe(2);
+      expect(result.interactions).toBeInstanceOf(Array);
+      expect(result.durationMs).toBeTypeOf('number');
+    });
+
+    it('returns error for invalid plan file', async () => {
+      const planFile = join(planDir, 'bad-plan.json');
+      writeFileSync(planFile, '{ not valid json }');
+
+      const { simulate } = await import('../src/commands/simulate.js');
+      const code = await simulate([], { plan: planFile });
+      expect(code).toBe(1);
+      const output = stderrChunks.join('');
+      expect(output).toContain('Failed to load plan');
+    });
+
+    it('returns error for empty plan array', async () => {
+      const planFile = join(planDir, 'empty-plan.json');
+      writeFileSync(planFile, '[]');
+
+      const { simulate } = await import('../src/commands/simulate.js');
+      const code = await simulate([], { plan: planFile });
+      expect(code).toBe(1);
+      const output = stderrChunks.join('');
+      expect(output).toContain('non-empty JSON array');
+    });
+
+    it('returns error for missing plan file', async () => {
+      const { simulate } = await import('../src/commands/simulate.js');
+      const code = await simulate([], { plan: '/nonexistent/plan.json' });
+      expect(code).toBe(1);
+      const output = stderrChunks.join('');
+      expect(output).toContain('Failed to load plan');
+    });
+
+    it('evaluates governance for each plan step with --policy', async () => {
+      const planFile = join(planDir, 'gov-plan.json');
+      writeFileSync(
+        planFile,
+        JSON.stringify([
+          { tool: 'Write', file: '.env', label: 'Write secrets' },
+          { tool: 'Write', file: 'src/safe.ts', label: 'Write safe file' },
+        ])
+      );
+
+      const policyFile = join(planDir, 'deny-env-plan.yaml');
+      writeFileSync(
+        policyFile,
+        `id: plan-deny
+name: Plan Deny Policy
+severity: 4
+rules:
+  - action: file.write
+    effect: deny
+    target: .env
+    reason: Env files blocked in plan
+`
+      );
+
+      const { simulate } = await import('../src/commands/simulate.js');
+      const code = await simulate(['--json'], { plan: planFile, policy: policyFile });
+      expect(code).toBe(2); // policy denial
+      const output = stdoutChunks.join('');
+      const result = JSON.parse(output.trim());
+      expect(result.governance).toBeDefined();
+      expect(result.governance.allowed).toBe(false);
+    });
+  });
+
   describe('readStdin', () => {
     let origIsTTY: boolean | undefined;
 

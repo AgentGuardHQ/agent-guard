@@ -207,6 +207,7 @@ const COMMANDS: Record<string, CommandHelp> = {
       { flag: '--target <path>', description: 'Target file or resource path' },
       { flag: '--command <cmd>', description: 'Shell command (for shell.exec actions)' },
       { flag: '--branch <name>', description: 'Git branch name' },
+      { flag: '--plan <file>', description: 'JSON file with an action plan (array of actions)' },
       { flag: '--policy <file>', description: 'Policy file (YAML/JSON) to evaluate against' },
       { flag: '--json', description: 'Output raw result as JSON' },
     ],
@@ -215,6 +216,7 @@ const COMMANDS: Record<string, CommandHelp> = {
       'agentguard simulate --action file.write --target .env',
       'agentguard simulate --action git.push --branch main --json',
       'agentguard simulate --action file.write --target .env --policy agentguard.yaml',
+      'agentguard simulate --plan plan.json --policy agentguard.yaml',
     ],
   },
   diff: {
@@ -436,7 +438,13 @@ async function main() {
       const jsonOut = flags.includes('--json');
       const policyIdx = flags.findIndex((f) => f === '--policy' || f === '-p');
       const simulatePolicy = policyIdx !== -1 ? flags[policyIdx + 1] : undefined;
-      const code = await simulateCmd(flags, { json: jsonOut, policy: simulatePolicy });
+      const planIdx = flags.indexOf('--plan');
+      const simulatePlanPath = planIdx !== -1 ? flags[planIdx + 1] : undefined;
+      const code = await simulateCmd(flags, {
+        json: jsonOut,
+        policy: simulatePolicy,
+        plan: simulatePlanPath,
+      });
       process.exit(code);
       break;
     }
@@ -586,6 +594,7 @@ function printHelp(): void {
   \x1b[1mSimulation:\x1b[0m
     agentguard simulate <action-json>          Simulate action and show predicted impact
     agentguard simulate --action <type>        Simulate by action type and flags
+    agentguard simulate --plan <file>          Simulate an action plan (batch)
     agentguard simulate ... --policy <file>    Evaluate against policy (non-zero on deny)
     agentguard simulate ... --json             Output raw JSON result
 
