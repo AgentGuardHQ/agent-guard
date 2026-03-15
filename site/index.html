@@ -255,6 +255,7 @@
         <a href="#architecture" class="text-muted hover:text-text transition-colors text-sm font-medium cursor-pointer">Architecture</a>
         <a href="#invariants" class="text-muted hover:text-text transition-colors text-sm font-medium cursor-pointer">Invariants</a>
         <a href="#cli" class="text-muted hover:text-text transition-colors text-sm font-medium cursor-pointer">CLI</a>
+        <a href="#swarm" class="text-muted hover:text-text transition-colors text-sm font-medium cursor-pointer">Swarm</a>
         <a href="https://github.com/AgentGuardHQ/agent-guard" target="_blank" rel="noopener noreferrer" class="text-muted hover:text-text transition-colors text-sm font-medium cursor-pointer">GitHub</a>
         <a href="#quickstart" class="bg-cta hover:bg-cta-dark text-bg font-semibold text-sm px-4 py-2 rounded-lg transition-colors cursor-pointer">Get Started</a>
       </div>
@@ -274,6 +275,7 @@
         <a href="#architecture" class="text-muted hover:text-text transition-colors text-sm font-medium cursor-pointer">Architecture</a>
         <a href="#invariants" class="text-muted hover:text-text transition-colors text-sm font-medium cursor-pointer">Invariants</a>
         <a href="#cli" class="text-muted hover:text-text transition-colors text-sm font-medium cursor-pointer">CLI</a>
+        <a href="#swarm" class="text-muted hover:text-text transition-colors text-sm font-medium cursor-pointer">Swarm</a>
         <a href="https://github.com/AgentGuardHQ/agent-guard" target="_blank" rel="noopener noreferrer" class="text-muted hover:text-text transition-colors text-sm font-medium cursor-pointer">GitHub</a>
         <a href="#quickstart" class="bg-cta hover:bg-cta-dark text-bg font-semibold text-sm px-4 py-2 rounded-lg transition-colors text-center cursor-pointer">Get Started</a>
       </div>
@@ -1131,9 +1133,145 @@ rules:
     </section>
 
     <!-- ============================================ -->
+    <!-- AGENT SWARM                                  -->
+    <!-- ============================================ -->
+    <section id="swarm" class="py-24 bg-surface/30" aria-labelledby="swarm-heading">
+      <div class="max-w-7xl mx-auto px-6">
+        <div class="text-center mb-6 reveal">
+          <h2 id="swarm-heading" class="font-mono font-bold text-3xl sm:text-4xl mb-4">Agent Swarm</h2>
+          <p class="text-muted text-lg max-w-2xl mx-auto">Deploy a coordinated team of governed AI agents. 26 agents across 5 tiers, each with dedicated skills, schedules, and governance policies.</p>
+        </div>
+
+        <!-- Stats -->
+        <div class="flex justify-center gap-8 mb-14 reveal">
+          <div class="text-center">
+            <span class="block font-mono font-bold text-2xl text-cta">26</span>
+            <span class="text-muted text-xs uppercase tracking-wider">Agents</span>
+          </div>
+          <div class="text-center">
+            <span class="block font-mono font-bold text-2xl text-cta">5</span>
+            <span class="text-muted text-xs uppercase tracking-wider">Tiers</span>
+          </div>
+          <div class="text-center">
+            <span class="block font-mono font-bold text-2xl text-cta">60+</span>
+            <span class="text-muted text-xs uppercase tracking-wider">Skills</span>
+          </div>
+          <div class="text-center">
+            <span class="block font-mono font-bold text-2xl text-cta">24</span>
+            <span class="text-muted text-xs uppercase tracking-wider">Prompts</span>
+          </div>
+        </div>
+
+        <!-- Tier cards -->
+        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-12 reveal-stagger">
+          <!-- Core -->
+          <div class="reveal bg-surface border border-surface-light rounded-xl p-5">
+            <div class="flex items-center gap-2 mb-3">
+              <span class="w-2 h-2 rounded-full bg-cta"></span>
+              <h3 class="font-mono font-semibold text-cta text-xs uppercase tracking-wider">Core</h3>
+              <span class="ml-auto text-muted text-xs font-mono">7 agents</span>
+            </div>
+            <ul class="space-y-2 text-sm font-mono">
+              <li class="text-muted"><span class="text-text">Implementation</span> &mdash; Picks issues, codes, opens PRs</li>
+              <li class="text-muted"><span class="text-text">Code Review</span> &mdash; Reviews open PRs</li>
+              <li class="text-muted"><span class="text-text">PR Merger</span> &mdash; Auto-merges approved PRs</li>
+              <li class="text-muted"><span class="text-text">CI Triage</span> &mdash; Diagnoses failing CI</li>
+              <li class="text-muted"><span class="text-text">Conflict Resolver</span> &mdash; Fixes merge conflicts</li>
+              <li class="text-muted"><span class="text-text">PR Responder</span> &mdash; Addresses review comments</li>
+              <li class="text-muted"><span class="text-text">Branch Janitor</span> &mdash; Cleans stale branches</li>
+            </ul>
+          </div>
+
+          <!-- Governance -->
+          <div class="reveal bg-surface border border-surface-light rounded-xl p-5">
+            <div class="flex items-center gap-2 mb-3">
+              <span class="w-2 h-2 rounded-full bg-danger"></span>
+              <h3 class="font-mono font-semibold text-danger text-xs uppercase tracking-wider">Governance</h3>
+              <span class="ml-auto text-muted text-xs font-mono">3 agents</span>
+            </div>
+            <ul class="space-y-2 text-sm font-mono">
+              <li class="text-muted"><span class="text-text">Risk Escalation</span> &mdash; Assesses cumulative risk</li>
+              <li class="text-muted"><span class="text-text">Recovery Controller</span> &mdash; Self-healing playbooks</li>
+              <li class="text-muted"><span class="text-text">Governance Monitor</span> &mdash; Audits governance logs</li>
+            </ul>
+          </div>
+
+          <!-- Ops -->
+          <div class="reveal bg-surface border border-surface-light rounded-xl p-5">
+            <div class="flex items-center gap-2 mb-3">
+              <span class="w-2 h-2 rounded-full bg-warning"></span>
+              <h3 class="font-mono font-semibold text-warning text-xs uppercase tracking-wider">Ops</h3>
+              <span class="ml-auto text-muted text-xs font-mono">8 agents</span>
+            </div>
+            <ul class="space-y-2 text-sm font-mono">
+              <li class="text-muted"><span class="text-text">Planning</span> &mdash; Sprint planning from backlog</li>
+              <li class="text-muted"><span class="text-text">Observability</span> &mdash; Monitors runtime health</li>
+              <li class="text-muted"><span class="text-text">Backlog Groomer</span> &mdash; Triages stale issues</li>
+              <li class="text-muted"><span class="text-text">Docs</span> &mdash; Keeps docs in sync</li>
+              <li class="text-muted"><span class="text-text">Product Health</span> &mdash; Dependency &amp; coverage checks</li>
+              <li class="text-muted"><span class="text-text">Progress Controller</span> &mdash; Tracks sprint velocity</li>
+              <li class="text-muted"><span class="text-text">Repo Hygiene</span> &mdash; Labels, templates, configs</li>
+              <li class="text-muted"><span class="text-text">Retrospective</span> &mdash; Weekly retrospectives</li>
+            </ul>
+          </div>
+
+          <!-- Quality -->
+          <div class="reveal bg-surface border border-surface-light rounded-xl p-5">
+            <div class="flex items-center gap-2 mb-3">
+              <span class="w-2 h-2 rounded-full bg-info"></span>
+              <h3 class="font-mono font-semibold text-info text-xs uppercase tracking-wider">Quality</h3>
+              <span class="ml-auto text-muted text-xs font-mono">5 agents</span>
+            </div>
+            <ul class="space-y-2 text-sm font-mono">
+              <li class="text-muted"><span class="text-text">Testing</span> &mdash; Expands test coverage</li>
+              <li class="text-muted"><span class="text-text">Security</span> &mdash; Scans for vulnerabilities</li>
+              <li class="text-muted"><span class="text-text">Architecture Review</span> &mdash; Detects drift &amp; debt</li>
+              <li class="text-muted"><span class="text-text">CI/CD Hardener</span> &mdash; Strengthens pipelines</li>
+              <li class="text-muted"><span class="text-text">Audit</span> &mdash; Audits merged PRs</li>
+            </ul>
+          </div>
+
+          <!-- Marketing -->
+          <div class="reveal bg-surface border border-surface-light rounded-xl p-5">
+            <div class="flex items-center gap-2 mb-3">
+              <span class="w-2 h-2 rounded-full bg-surface-light"></span>
+              <h3 class="font-mono font-semibold text-muted text-xs uppercase tracking-wider">Marketing</h3>
+              <span class="ml-auto text-muted text-xs font-mono">3 agents</span>
+            </div>
+            <ul class="space-y-2 text-sm font-mono">
+              <li class="text-muted"><span class="text-text">Changelog</span> &mdash; Generates release notes</li>
+              <li class="text-muted"><span class="text-text">Social Content</span> &mdash; Drafts announcements</li>
+              <li class="text-muted"><span class="text-text">Community</span> &mdash; Engages discussions</li>
+            </ul>
+          </div>
+
+          <!-- Quick Start card -->
+          <div class="reveal bg-surface border border-cta/20 rounded-xl p-5">
+            <div class="flex items-center gap-2 mb-3">
+              <span class="w-2 h-2 rounded-full bg-cta"></span>
+              <h3 class="font-mono font-semibold text-cta text-xs uppercase tracking-wider">Quick Start</h3>
+            </div>
+            <div class="space-y-3">
+              <div>
+                <p class="text-muted text-xs mb-1">Scaffold all tiers:</p>
+                <pre class="bg-bg rounded-lg px-3 py-2 text-sm font-mono text-text overflow-x-auto"><code>npx agentguard init swarm</code></pre>
+              </div>
+              <div>
+                <p class="text-muted text-xs mb-1">Select specific tiers:</p>
+                <pre class="bg-bg rounded-lg px-3 py-2 text-sm font-mono text-text overflow-x-auto"><code>npx agentguard init swarm \
+  --tiers core,governance</code></pre>
+              </div>
+              <p class="text-muted text-xs mt-3">Generates <span class="text-text font-mono">.claude/skills/</span>, agent prompts, and <span class="text-text font-mono">agentguard-swarm.yaml</span> config.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================ -->
     <!-- INTEGRATIONS                                 -->
     <!-- ============================================ -->
-    <section class="py-24 bg-surface/30" aria-labelledby="integrations-heading">
+    <section class="py-24" aria-labelledby="integrations-heading">
       <div class="max-w-7xl mx-auto px-6">
         <div class="text-center mb-16 reveal">
           <h2 id="integrations-heading" class="font-mono font-bold text-3xl sm:text-4xl mb-4">Integrations</h2>
@@ -1390,6 +1528,7 @@ rules:
             <li><a href="#architecture" class="text-muted hover:text-text transition-colors text-sm cursor-pointer">Architecture</a></li>
             <li><a href="#invariants" class="text-muted hover:text-text transition-colors text-sm cursor-pointer">Invariants</a></li>
             <li><a href="#cli" class="text-muted hover:text-text transition-colors text-sm cursor-pointer">CLI Commands</a></li>
+            <li><a href="#swarm" class="text-muted hover:text-text transition-colors text-sm cursor-pointer">Agent Swarm</a></li>
             <li><a href="https://www.npmjs.com/package/@red-codes/agentguard" target="_blank" rel="noopener noreferrer" class="text-muted hover:text-text transition-colors text-sm cursor-pointer">npm Package</a></li>
           </ul>
         </div>
