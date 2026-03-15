@@ -48,6 +48,20 @@ describe('claudeInit', () => {
     expect(written.hooks.PostToolUse[0].hooks[0].command).toContain('post');
   });
 
+  it('installs SessionStart build hook on first install', async () => {
+    vi.mocked(existsSync).mockReturnValue(false);
+
+    await claudeInit([]);
+
+    const written = JSON.parse(vi.mocked(writeFileSync).mock.calls[0][1] as string);
+    expect(written.hooks.SessionStart).toHaveLength(1);
+    expect(written.hooks.SessionStart[0].hooks[0].type).toBe('command');
+    expect(written.hooks.SessionStart[0].hooks[0].command).toContain('apps/cli/dist/bin.js');
+    expect(written.hooks.SessionStart[0].hooks[0].command).toContain('npm run build');
+    expect(written.hooks.SessionStart[0].hooks[0].blocking).toBe(true);
+    expect(written.hooks.SessionStart[0].hooks[0].timeout).toBe(120000);
+  });
+
   it('detects already-configured hook in PreToolUse and warns', async () => {
     vi.mocked(existsSync).mockReturnValue(true);
     vi.mocked(readFileSync).mockReturnValue(
@@ -133,11 +147,23 @@ describe('claudeInit', () => {
     );
   });
 
-  it('removes hooks from both PreToolUse and PostToolUse with --remove flag', async () => {
+  it('removes hooks from PreToolUse, PostToolUse, and SessionStart with --remove flag', async () => {
     vi.mocked(existsSync).mockReturnValue(true);
     vi.mocked(readFileSync).mockReturnValue(
       JSON.stringify({
         hooks: {
+          SessionStart: [
+            {
+              hooks: [
+                {
+                  type: 'command',
+                  command: 'test -f apps/cli/dist/bin.js || npm run build',
+                  timeout: 120000,
+                  blocking: true,
+                },
+              ],
+            },
+          ],
           PreToolUse: [
             {
               hooks: [{ type: 'command', command: 'node /path/to/claude-hook.js pre' }],
@@ -157,7 +183,7 @@ describe('claudeInit', () => {
 
     expect(writeFileSync).toHaveBeenCalledTimes(1);
     const written = JSON.parse(vi.mocked(writeFileSync).mock.calls[0][1] as string);
-    // Both hook types should be cleaned up
+    // All hook types should be cleaned up
     expect(written.hooks).toBeUndefined();
   });
 
