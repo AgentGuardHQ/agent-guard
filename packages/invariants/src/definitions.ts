@@ -973,6 +973,86 @@ export const DEFAULT_INVARIANTS: AgentGuardInvariant[] = [
   },
 
   {
+    id: 'no-destructive-migration',
+    name: 'No Destructive Migration',
+    description:
+      'Detects potentially destructive database migration files — flags writes to migration directories containing DROP, TRUNCATE, or other destructive DDL',
+    severity: 3,
+    check(state) {
+      const actionType = state.currentActionType || '';
+
+      // Only applies to file.write actions
+      if (actionType !== '' && actionType !== 'file.write') {
+        return {
+          holds: true,
+          expected: 'N/A',
+          actual: `Action type ${actionType} is not file.write`,
+        };
+      }
+
+      const target = state.currentTarget || '';
+      if (target === '') {
+        return { holds: true, expected: 'N/A', actual: 'No target specified' };
+      }
+
+      // Check if target is in a migration directory
+      const normalizedTarget = target.replace(/\\/g, '/').toLowerCase();
+      const MIGRATION_DIR_PATTERNS = [
+        'migrations/',
+        'db/migrate/',
+        'prisma/migrations/',
+        'drizzle/',
+        'knex/migrations/',
+        'sequelize/migrations/',
+      ];
+
+      const isMigrationFile = MIGRATION_DIR_PATTERNS.some((p) =>
+        normalizedTarget.includes(p)
+      );
+
+      if (!isMigrationFile) {
+        return { holds: true, expected: 'N/A', actual: 'Target is not in a migration directory' };
+      }
+
+      const content = state.fileContentDiff || '';
+      if (content === '') {
+        return {
+          holds: true,
+          expected: 'N/A',
+          actual: 'No file content available for migration file',
+        };
+      }
+
+      // Destructive DDL patterns (case-insensitive)
+      const DESTRUCTIVE_DDL_PATTERNS: { pattern: RegExp; label: string }[] = [
+        { pattern: /\bDROP\s+TABLE\b/i, label: 'DROP TABLE' },
+        { pattern: /\bDROP\s+COLUMN\b/i, label: 'DROP COLUMN' },
+        { pattern: /\bDROP\s+INDEX\b/i, label: 'DROP INDEX' },
+        { pattern: /\bDROP\s+DATABASE\b/i, label: 'DROP DATABASE' },
+        { pattern: /\bTRUNCATE\b/i, label: 'TRUNCATE' },
+        { pattern: /\bALTER\s+TABLE\s+\S+\s+DROP\b/i, label: 'ALTER TABLE ... DROP' },
+        { pattern: /\bDELETE\s+FROM\s+\S+\s*(?:;|\s*$)/im, label: 'DELETE FROM (without WHERE)' },
+      ];
+
+      const violations: string[] = [];
+      for (const entry of DESTRUCTIVE_DDL_PATTERNS) {
+        if (entry.pattern.test(content)) {
+          violations.push(entry.label);
+        }
+      }
+
+      const holds = violations.length === 0;
+      return {
+        holds,
+        expected: 'No destructive DDL in migration files',
+        actual: holds
+          ? 'Migration file contains no destructive DDL'
+          : `Destructive DDL detected: ${violations.join(', ')}`,
+      };
+    },
+  },
+
+  {
     id: 'transitive-effect-analysis',
     name: 'Transitive Effect Analysis',
     description:

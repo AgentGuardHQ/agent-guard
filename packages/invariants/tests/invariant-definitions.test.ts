@@ -2197,6 +2197,212 @@ describe('no-env-var-modification', () => {
   });
 });
 
+// ─── no-destructive-migration invariant ────────────────────────────────────
+
+describe('no-destructive-migration', () => {
+  const inv = findInvariant('no-destructive-migration');
+
+  it('holds for safe migrations (CREATE TABLE)', () => {
+    const result = inv.check({
+      currentTarget: 'db/migrations/001_create_users.sql',
+      currentActionType: 'file.write',
+      fileContentDiff: 'CREATE TABLE users (id SERIAL PRIMARY KEY, name TEXT NOT NULL);',
+    });
+    expect(result.holds).toBe(true);
+  });
+
+  it('holds for safe migrations (ADD COLUMN)', () => {
+    const result = inv.check({
+      currentTarget: 'prisma/migrations/20240101_add_email/migration.sql',
+      currentActionType: 'file.write',
+      fileContentDiff: 'ALTER TABLE users ADD COLUMN email VARCHAR(255);',
+    });
+    expect(result.holds).toBe(true);
+  });
+
+  it('detects DROP TABLE in migration', () => {
+    const result = inv.check({
+      currentTarget: 'db/migrations/002_drop_legacy.sql',
+      currentActionType: 'file.write',
+      fileContentDiff: 'DROP TABLE legacy_users;',
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('DROP TABLE');
+  });
+
+  it('detects DROP COLUMN in migration', () => {
+    const result = inv.check({
+      currentTarget: 'migrations/003_remove_field.sql',
+      currentActionType: 'file.write',
+      fileContentDiff: 'ALTER TABLE users DROP COLUMN deprecated_field;',
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('DROP COLUMN');
+  });
+
+  it('detects DROP INDEX in migration', () => {
+    const result = inv.check({
+      currentTarget: 'knex/migrations/004_cleanup.sql',
+      currentActionType: 'file.write',
+      fileContentDiff: 'DROP INDEX idx_users_email;',
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('DROP INDEX');
+  });
+
+  it('detects DROP DATABASE in migration', () => {
+    const result = inv.check({
+      currentTarget: 'db/migrations/005_nuke.sql',
+      currentActionType: 'file.write',
+      fileContentDiff: 'DROP DATABASE production;',
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('DROP DATABASE');
+  });
+
+  it('detects TRUNCATE in migration', () => {
+    const result = inv.check({
+      currentTarget: 'sequelize/migrations/006_reset_data.sql',
+      currentActionType: 'file.write',
+      fileContentDiff: 'TRUNCATE TABLE sessions;',
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('TRUNCATE');
+  });
+
+  it('detects ALTER TABLE ... DROP in migration', () => {
+    const result = inv.check({
+      currentTarget: 'drizzle/007_alter.sql',
+      currentActionType: 'file.write',
+      fileContentDiff: 'ALTER TABLE orders DROP CONSTRAINT fk_user;',
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('ALTER TABLE ... DROP');
+  });
+
+  it('detects DELETE FROM without WHERE in migration', () => {
+    const result = inv.check({
+      currentTarget: 'db/migrate/008_purge.sql',
+      currentActionType: 'file.write',
+      fileContentDiff: 'DELETE FROM temp_data;',
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('DELETE FROM (without WHERE)');
+  });
+
+  it('detects multiple destructive statements in one migration', () => {
+    const result = inv.check({
+      currentTarget: 'migrations/009_big_cleanup.sql',
+      currentActionType: 'file.write',
+      fileContentDiff:
+        'DROP TABLE old_users;\nTRUNCATE TABLE sessions;\nDROP INDEX idx_old;',
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('DROP TABLE');
+    expect(result.actual).toContain('TRUNCATE');
+    expect(result.actual).toContain('DROP INDEX');
+  });
+
+  it('detects case-insensitive DDL (drop table)', () => {
+    const result = inv.check({
+      currentTarget: 'migrations/010_case.sql',
+      currentActionType: 'file.write',
+      fileContentDiff: 'drop table users;',
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('DROP TABLE');
+  });
+
+  it('detects case-insensitive DDL (Truncate)', () => {
+    const result = inv.check({
+      currentTarget: 'migrations/011_mixed_case.sql',
+      currentActionType: 'file.write',
+      fileContentDiff: 'Truncate Table sessions;',
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('TRUNCATE');
+  });
+
+  it('holds for files outside migration directories', () => {
+    const result = inv.check({
+      currentTarget: 'src/models/user.ts',
+      currentActionType: 'file.write',
+      fileContentDiff: 'DROP TABLE users;',
+    });
+    expect(result.holds).toBe(true);
+    expect(result.actual).toContain('not in a migration directory');
+  });
+
+  it('holds for non-write actions', () => {
+    const result = inv.check({
+      currentTarget: 'migrations/012_read.sql',
+      currentActionType: 'file.read',
+      fileContentDiff: 'DROP TABLE users;',
+    });
+    expect(result.holds).toBe(true);
+  });
+
+  it('holds when no content is available', () => {
+    const result = inv.check({
+      currentTarget: 'migrations/013_no_content.sql',
+      currentActionType: 'file.write',
+    });
+    expect(result.holds).toBe(true);
+    expect(result.actual).toContain('No file content available');
+  });
+
+  it('recognizes prisma/migrations/ directory', () => {
+    const result = inv.check({
+      currentTarget: 'prisma/migrations/20240101/migration.sql',
+      currentActionType: 'file.write',
+      fileContentDiff: 'DROP TABLE _prisma_migrations;',
+    });
+    expect(result.holds).toBe(false);
+  });
+
+  it('recognizes knex/migrations/ directory', () => {
+    const result = inv.check({
+      currentTarget: 'knex/migrations/20240101_create.js',
+      currentActionType: 'file.write',
+      fileContentDiff: "knex.schema.dropTable('users');",
+    });
+    // dropTable is not SQL DDL — the invariant checks SQL DDL patterns specifically
+    expect(result.holds).toBe(true);
+  });
+
+  it('recognizes db/migrate/ directory (Rails convention)', () => {
+    const result = inv.check({
+      currentTarget: 'db/migrate/20240101_drop_users.rb',
+      currentActionType: 'file.write',
+      fileContentDiff: 'DROP TABLE users;',
+    });
+    expect(result.holds).toBe(false);
+  });
+
+  it('handles Windows-style paths', () => {
+    const result = inv.check({
+      currentTarget: 'db\\migrations\\014_drop.sql',
+      currentActionType: 'file.write',
+      fileContentDiff: 'DROP TABLE users;',
+    });
+    expect(result.holds).toBe(false);
+    expect(result.actual).toContain('DROP TABLE');
+  });
+
+  it('has severity 3', () => {
+    expect(inv.severity).toBe(3);
+  });
+
+  it('holds when no target is specified', () => {
+    const result = inv.check({
+      currentActionType: 'file.write',
+      fileContentDiff: 'DROP TABLE users;',
+    });
+    expect(result.holds).toBe(true);
+    expect(result.actual).toContain('No target specified');
+  });
+});
+
 describe('checkAllInvariants interaction tests', () => {
   it('reports multiple simultaneous violations', () => {
     // State that triggers both no-secret-exposure and protected-branch

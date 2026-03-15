@@ -159,9 +159,9 @@ describe('governance-data loader', () => {
       expect(() => new RegExp(INVARIANT_DOCKERFILE_SUFFIX_REGEX_SOURCE)).not.toThrow();
     });
 
-    it('exports invariant metadata for all 18 invariants', () => {
+    it('exports invariant metadata for all 19 invariants', () => {
       expect(Array.isArray(INVARIANT_METADATA)).toBe(true);
-      expect(INVARIANT_METADATA.length).toBe(18);
+      expect(INVARIANT_METADATA.length).toBe(19);
       for (const inv of INVARIANT_METADATA) {
         expect(typeof inv.id).toBe('string');
         expect(typeof inv.name).toBe('string');

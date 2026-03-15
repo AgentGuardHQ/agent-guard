@@ -42,6 +42,7 @@
     { "id": "lockfile-integrity", "name": "Lockfile Integrity", "description": "Package lockfiles must stay in sync with manifests", "severity": 2 },
     { "id": "no-container-config-modification", "name": "No Container Config Modification", "description": "Container configuration files (Dockerfile, docker-compose, .dockerignore, Containerfile) must not be modified without authorization", "severity": 3 },
     { "id": "no-env-var-modification", "name": "No Environment Variable Modification", "description": "Detects attempts to modify environment variables or shell profile files — environment variables often contain secrets and profile modifications can establish persistent backdoors", "severity": 3 },
+    { "id": "no-destructive-migration", "name": "No Destructive Migration", "description": "Detects potentially destructive database migration files — flags writes to migration directories containing DROP, TRUNCATE, or other destructive DDL", "severity": 3 },
     { "id": "transitive-effect-analysis", "name": "Transitive Effect Analysis", "description": "Detects when an agent writes a script or config file whose contents would produce effects that would be denied if executed directly — closes the creative circumvention gap", "severity": 4 }
   ]
 }
