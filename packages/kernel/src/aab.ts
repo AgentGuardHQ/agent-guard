@@ -10,7 +10,12 @@ import {
 } from '@red-codes/core';
 import type { CompiledDestructivePattern } from '@red-codes/core';
 import { evaluate } from '@red-codes/policy';
-import type { NormalizedIntent, EvalResult, LoadedPolicy, EvaluateOptions } from '@red-codes/policy';
+import type {
+  NormalizedIntent,
+  EvalResult,
+  LoadedPolicy,
+  EvaluateOptions,
+} from '@red-codes/policy';
 import {
   createEvent,
   POLICY_DENIED,
