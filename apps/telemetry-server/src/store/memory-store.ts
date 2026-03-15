@@ -5,6 +5,7 @@ import type { DomainEvent, GovernanceDecisionRecord } from '@red-codes/core';
 import type { TraceSpan } from '@red-codes/telemetry';
 import type {
   TelemetryDataStore,
+  SessionViewerStore,
   EventQueryFilter,
   DecisionQueryFilter,
   TraceQueryFilter,
@@ -12,6 +13,7 @@ import type {
   QueryResult,
   InstallRecord,
   TelemetryPayloadRecord,
+  SessionViewerRecord,
 } from './types.js';
 
 interface StoredEvent {
@@ -44,12 +46,13 @@ function matchesTimeRange(timestamp: number | string, since?: string, until?: st
   return true;
 }
 
-export function createMemoryStore(maxSize = DEFAULT_MAX_SIZE): TelemetryDataStore {
+export function createMemoryStore(maxSize = DEFAULT_MAX_SIZE): TelemetryDataStore & SessionViewerStore {
   const events: StoredEvent[] = [];
   const decisions: StoredDecision[] = [];
   const traces: TraceSpan[] = [];
   const installs: InstallRecord[] = [];
   const payloads: TelemetryPayloadRecord[] = [];
+  const viewers: SessionViewerRecord[] = [];
 
   function evict<T>(arr: T[]): void {
     if (arr.length > maxSize) {
@@ -198,6 +201,35 @@ export function createMemoryStore(maxSize = DEFAULT_MAX_SIZE): TelemetryDataStor
       const offset = clampOffset(filter.offset);
       const data = filtered.slice(offset, offset + limit);
 
+      return { data, total, limit, offset };
+    },
+
+    // --- Session viewer storage ---
+
+    async uploadSessionViewer(sessionId: string, html: string): Promise<void> {
+      const record: SessionViewerRecord = {
+        session_id: sessionId,
+        html,
+        uploaded_at: new Date().toISOString(),
+      };
+      const idx = viewers.findIndex((v) => v.session_id === sessionId);
+      if (idx >= 0) {
+        viewers[idx] = record;
+      } else {
+        viewers.push(record);
+        evict(viewers);
+      }
+    },
+
+    async getSessionViewer(sessionId: string): Promise<SessionViewerRecord | null> {
+      return viewers.find((v) => v.session_id === sessionId) ?? null;
+    },
+
+    async listSessionViewers(filter: QueryFilter): Promise<QueryResult<SessionViewerRecord>> {
+      const total = viewers.length;
+      const limit = clampLimit(filter.limit);
+      const offset = clampOffset(filter.offset);
+      const data = viewers.slice(offset, offset + limit);
       return { data, total, limit, offset };
     },
   };

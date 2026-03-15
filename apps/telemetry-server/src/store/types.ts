@@ -65,3 +65,17 @@ export interface TelemetryDataStore extends TelemetryStore {
   appendTelemetryPayloads(records: TelemetryPayloadRecord[]): Promise<void>;
   queryTelemetryPayloads(filter: QueryFilter): Promise<QueryResult<TelemetryPayloadRecord>>;
 }
+
+/** Stored session viewer record */
+export interface SessionViewerRecord {
+  readonly session_id: string;
+  readonly html: string;
+  readonly uploaded_at: string; // ISO 8601
+}
+
+/** Store for session viewer HTML uploads */
+export interface SessionViewerStore {
+  uploadSessionViewer(sessionId: string, html: string): Promise<void>;
+  getSessionViewer(sessionId: string): Promise<SessionViewerRecord | null>;
+  listSessionViewers(filter: QueryFilter): Promise<QueryResult<SessionViewerRecord>>;
+}

@@ -280,6 +280,15 @@ const COMMANDS: Record<string, CommandHelp> = {
       'agentguard traces run_1234567890_abc',
     ],
   },
+  status: {
+    name: 'agentguard status',
+    description: 'Check AgentGuard governance readiness (hooks, policy, directories)',
+    usage: 'agentguard status [flags]',
+    flags: [
+      { flag: '--quiet, -q', description: 'Machine-readable output (exit 0 if ready, 1 if not)' },
+    ],
+    examples: ['agentguard status', 'agentguard status --quiet'],
+  },
   telemetry: {
     name: 'agentguard telemetry',
     description: 'Manage telemetry enrollment and settings',
@@ -315,6 +324,52 @@ const COMMANDS: Record<string, CommandHelp> = {
       'agentguard evidence-pr --pr 42',
       'agentguard evidence-pr --last --dry-run',
       'agentguard evidence-pr --run run_1234567890_abc',
+    ],
+  },
+  'audit-verify': {
+    name: 'agentguard audit-verify',
+    description: 'Verify tamper-resistant audit chain integrity and generate enforcement report',
+    usage: 'agentguard audit-verify [runId] [flags]',
+    flags: [
+      { flag: '--last', description: 'Verify the most recent chained audit trail' },
+      { flag: '--list', description: 'List all chained audit trails' },
+      { flag: '--report', description: 'Generate full enforcement audit report' },
+      { flag: '--json', description: 'Output as JSON' },
+    ],
+    examples: [
+      'agentguard audit-verify --last',
+      'agentguard audit-verify --list',
+      'agentguard audit-verify --last --report',
+      'agentguard audit-verify --last --report --json',
+      'agentguard audit-verify run_1234567890_abc',
+    ],
+  },
+  'session-viewer': {
+    name: 'agentguard session-viewer',
+    description: 'Generate an interactive HTML visualization of a governance session',
+    usage: 'agentguard session-viewer [runId] [flags]',
+    flags: [
+      { flag: '--last', description: 'Visualize the most recent run' },
+      { flag: '--list', description: 'List available runs' },
+      { flag: '--output, -o <file>', description: 'Output HTML file path' },
+      { flag: '--no-open', description: 'Do not open in browser automatically' },
+      {
+        flag: '--merge-recent <n>',
+        description: 'Merge N most recent runs into one view (auto-detected for hook runs)',
+      },
+      { flag: '--share', description: 'Upload to server and get a shareable URL' },
+      { flag: '--server <url>', description: 'Server URL (default: AGENTGUARD_SERVER_URL or localhost:3001)' },
+      { flag: '--api-key <key>', description: 'API key for server auth (default: AGENTGUARD_API_KEY env)' },
+      { flag: '--store <backend>', description: 'Storage backend: jsonl (default) or sqlite' },
+      { flag: '--db-path <path>', description: 'SQLite database path' },
+    ],
+    examples: [
+      'agentguard session-viewer --last',
+      'agentguard session-viewer --last --share',
+      'agentguard session-viewer run_1234567890_abc',
+      'agentguard session-viewer --last --merge-recent 100',
+      'agentguard session-viewer --last --output report.html',
+      'agentguard session-viewer --last --no-open',
     ],
   },
 };
@@ -528,6 +583,39 @@ async function main() {
       break;
     }
 
+    case 'status': {
+      if (wantsHelp) {
+        console.log(formatHelp(COMMANDS.status));
+        break;
+      }
+      const { status: statusCmd } = await import('./commands/status.js');
+      const code = await statusCmd(args.slice(1));
+      process.exit(code);
+      break;
+    }
+
+    case 'audit-verify': {
+      if (wantsHelp) {
+        console.log(formatHelp(COMMANDS['audit-verify']));
+        break;
+      }
+      const { auditVerify } = await import('./commands/audit-verify.js');
+      const code = await auditVerify(args.slice(1));
+      process.exit(code);
+      break;
+    }
+
+    case 'session-viewer': {
+      if (wantsHelp) {
+        console.log(formatHelp(COMMANDS['session-viewer']));
+        break;
+      }
+      const { sessionViewer } = await import('./commands/session-viewer.js');
+      const code = await sessionViewer(args.slice(1), resolveStorageConfig(args.slice(1)));
+      process.exit(code);
+      break;
+    }
+
     case 'claude-init': {
       const { claudeInit } = await import('./commands/claude-init.js');
       await claudeInit(args.slice(1));
@@ -625,6 +713,17 @@ function printHelp(): void {
     agentguard plugin remove <id>             Remove a plugin by ID
     agentguard plugin search [query]          Search for plugins on npm
 
+  \x1b[1mVisualization:\x1b[0m
+    agentguard session-viewer --last          Open session viewer in browser
+    agentguard session-viewer <runId>         Visualize a specific run
+    agentguard session-viewer --last -o f.html  Save to file without opening
+
+  \x1b[1mAudit:\x1b[0m
+    agentguard audit-verify --last            Verify audit chain integrity
+    agentguard audit-verify --list            List chained audit trails
+    agentguard audit-verify --last --report   Full enforcement audit report
+    agentguard audit-verify ... --json        Output as JSON
+
   \x1b[1mEvidence:\x1b[0m
     agentguard evidence-pr                    Attach governance evidence to a PR
     agentguard evidence-pr --pr <number>      Post evidence to a specific PR
@@ -651,6 +750,8 @@ function printHelp(): void {
   \x1b[1mIntegration:\x1b[0m
     agentguard claude-init                    Set up Claude Code hook integration
     agentguard claude-hook                    PreToolUse/PostToolUse hook handler (internal)
+    agentguard status                         Check governance readiness (hooks, policy, dirs)
+    agentguard status --quiet                 Machine-readable check (exit code only)
 
   \x1b[1mMeta:\x1b[0m
     agentguard --version                      Show version

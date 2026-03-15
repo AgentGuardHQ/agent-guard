@@ -12,11 +12,12 @@ import { decisionRoutes } from './routes/decisions.js';
 import { traceRoutes } from './routes/traces.js';
 import { enrollRoutes } from './routes/enroll.js';
 import { telemetryBatchRoutes } from './routes/telemetry-batch.js';
+import { sessionViewerRoutes, sessionViewerPublicRoutes } from './routes/session-viewer.js';
 import { createMemoryStore } from './store/memory-store.js';
-import type { TelemetryDataStore } from './store/types.js';
+import type { TelemetryDataStore, SessionViewerStore } from './store/types.js';
 import type { ServerConfig } from './config.js';
 
-async function createStore(config: ServerConfig): Promise<TelemetryDataStore> {
+async function createStore(config: ServerConfig): Promise<TelemetryDataStore & SessionViewerStore> {
   if (config.storageBackend === 'postgres') {
     const { createPostgresStore, migratePostgresStore } = await import('./store/postgres-store.js');
     await migratePostgresStore();
@@ -33,6 +34,9 @@ export async function createApp() {
 
   // Health check — no auth required
   app.route('/api', healthRoutes);
+
+  // Public session viewer — serves HTML directly (no auth required)
+  app.route('', sessionViewerPublicRoutes(store));
 
   // Rate limiting on telemetry endpoints (before auth)
   const ipLimiter = createRateLimiter(
@@ -63,6 +67,7 @@ export async function createApp() {
   app.route('/api', eventRoutes(store));
   app.route('/api', decisionRoutes(store));
   app.route('/api', traceRoutes(store));
+  app.route('/api', sessionViewerRoutes(store));
 
   return { app, config };
 }

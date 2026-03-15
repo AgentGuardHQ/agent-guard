@@ -2,7 +2,8 @@
   <img src="site/assets/logo-wordmark.svg" alt="AgentGuard" width="320">
 </p>
 
-<p align="center"><strong>Governed action runtime for AI coding agents.</strong></p>
+<p align="center"><strong>Governed action runtime for AI coding agents.</strong><br>
+<em>Ships with a 26-agent autonomous development swarm.</em></p>
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
@@ -202,13 +203,31 @@ Install globally: `npm i -g @red-codes/agentguard`
 
 ## Claude Code Integration
 
-AgentGuard hooks into [Claude Code](https://docs.anthropic.com/en/docs/claude-code) sessions via PreToolUse/PostToolUse hooks. Every tool call is normalized into a canonical action and evaluated by the kernel.
+AgentGuard integrates with [Claude Code](https://docs.anthropic.com/en/docs/claude-code) via **inline hooks** — not a separate daemon or background process. When a Claude Code session starts, AgentGuard's hooks fire on every tool call, routing each one through the governance kernel for policy and invariant evaluation before Claude Code executes it.
+
+This design is intentional: no daemon to crash, no ports to manage, no IPC. Each hook invocation is self-contained — load policy, evaluate, respond, exit. If anything fails, the hook exits cleanly and Claude Code continues (fail-open).
 
 ```bash
 npx @red-codes/agentguard claude-init    # Set up Claude Code hooks
 ```
 
-Tool call mapping:
+**Three hooks are installed:**
+
+| Hook | Purpose |
+|------|---------|
+| `PreToolUse` | Governance enforcement — evaluates every tool call against policies and invariants, blocks denied actions |
+| `PostToolUse` | Error monitoring — reports Bash stderr errors (informational only) |
+| `SessionStart` | Build check + governance status display on session start |
+
+**How PreToolUse works:**
+
+```
+Claude Code tool call → stdin (JSON) → AgentGuard kernel → stdout (deny) or silent (allow)
+```
+
+The kernel runs in evaluation-only mode (`dryRun: true`) — it checks policies and invariants but doesn't execute actions. Claude Code handles execution; AgentGuard only governs.
+
+**Tool call mapping:**
 
 | Claude Code Tool | AgentGuard Action |
 |-----------------|-------------------|
@@ -218,6 +237,35 @@ Tool call mapping:
 | Bash | shell.exec (or git.push, git.commit if git command detected) |
 | Glob | file.read |
 | Grep | file.read |
+
+See [Hook Architecture](docs/hook-architecture.md) for the full design, configuration options, and debugging guide.
+
+## Agent Swarm
+
+AgentGuard ships with a **26-agent autonomous development swarm** — the same one that builds AgentGuard itself. One command scaffolds the entire pipeline into your repo:
+
+```bash
+agentguard init swarm
+```
+
+This installs 39 skill definitions, governance hooks, and a configurable swarm manifest. Agents handle implementation, code review, CI triage, security audits, planning, docs sync, and more — all under full governance policy enforcement.
+
+```
+ROADMAP.md (you write strategy)
+    │
+    ├── Planning Agent (daily) ─── reads roadmap, sets priorities
+    ├── Coder Agent (2-hourly) ─── picks issues, implements, creates PRs
+    ├── Code Review Agent (2h) ─── reviews PRs for quality
+    ├── CI Triage Agent (hourly) ─ fixes failing CI
+    ├── PR Merger Agent (2h) ───── auto-merges when gates pass
+    ├── Security Audit (weekly) ── dependency + code scanning
+    ├── Recovery Controller (2h) ─ self-healing, detects unhealthy state
+    └── ... 19 more agents across 5 tiers
+```
+
+Select which tiers to enable (core, governance, ops, quality, marketing), override cron schedules, and set behavioral thresholds in `agentguard-swarm.yaml`.
+
+Full documentation: [packages/swarm/README.md](packages/swarm/README.md)
 
 ## Event Trail
 
@@ -300,8 +348,9 @@ pnpm test               # Run all tests (turbo test)
 |----------|-------------|
 | [AgentGuard Spec](docs/agentguard.md) | Governance runtime specification |
 | [Architecture](docs/unified-architecture.md) | Governed action kernel model |
-| [Priorities](docs/current-priorities.md) | Current roadmap and next steps |
-| [Product Positioning](docs/product-positioning.md) | What this is and isn't |
+| [Hook Architecture](docs/hook-architecture.md) | Claude Code hook integration design |
+| [Agent Swarm](packages/swarm/README.md) | 26-agent autonomous development swarm |
+| [Roadmap](ROADMAP.md) | Technical roadmap and next steps |
 | [Event Model](docs/event-model.md) | Canonical event schema |
 | [Plugin API](docs/plugin-api.md) | Event sources and extension points |
 | [Contributing](CONTRIBUTING.md) | How to contribute |

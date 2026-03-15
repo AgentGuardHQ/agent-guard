@@ -19,3 +19,4 @@ export * from './simulation/package-simulator.js';
 export * from './simulation/plan-simulator.js';
 export * from './simulation/dependency-graph-simulator.js';
 export * from './contract.js';
+export * from './enforcement-audit.js';

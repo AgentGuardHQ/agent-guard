@@ -6,6 +6,7 @@ import type { DomainEvent, GovernanceDecisionRecord } from '@red-codes/core';
 import type { TraceSpan } from '@red-codes/telemetry';
 import type {
   TelemetryDataStore,
+  SessionViewerStore,
   EventQueryFilter,
   DecisionQueryFilter,
   TraceQueryFilter,
@@ -13,6 +14,7 @@ import type {
   QueryResult,
   InstallRecord,
   TelemetryPayloadRecord,
+  SessionViewerRecord,
 } from './types.js';
 
 const DEFAULT_LIMIT = 100;
@@ -89,9 +91,17 @@ export async function migratePostgresStore(): Promise<void> {
     )
   `;
   await sql`CREATE INDEX IF NOT EXISTS idx_payloads_received_at ON telemetry_payloads (received_at)`;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS session_viewers (
+      session_id TEXT PRIMARY KEY,
+      html TEXT NOT NULL,
+      uploaded_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `;
 }
 
-export function createPostgresStore(): TelemetryDataStore {
+export function createPostgresStore(): TelemetryDataStore & SessionViewerStore {
   return {
     async appendEvents(runId: string, events: DomainEvent[]): Promise<void> {
       for (const event of events) {
@@ -345,6 +355,47 @@ export function createPostgresStore(): TelemetryDataStore {
         [...params, limit, offset]
       );
       const data = dataResult.rows as TelemetryPayloadRecord[];
+
+      return { data, total, limit, offset };
+    },
+
+    // --- Session viewer storage ---
+
+    async uploadSessionViewer(sessionId: string, html: string): Promise<void> {
+      await sql`
+        INSERT INTO session_viewers (session_id, html, uploaded_at)
+        VALUES (${sessionId}, ${html}, NOW())
+        ON CONFLICT (session_id) DO UPDATE SET
+          html = EXCLUDED.html,
+          uploaded_at = NOW()
+      `;
+    },
+
+    async getSessionViewer(sessionId: string): Promise<SessionViewerRecord | null> {
+      const result = await sql`
+        SELECT session_id, html, uploaded_at FROM session_viewers WHERE session_id = ${sessionId}
+      `;
+      if (result.rows.length === 0) return null;
+      return result.rows[0] as SessionViewerRecord;
+    },
+
+    async listSessionViewers(filter: QueryFilter): Promise<QueryResult<SessionViewerRecord>> {
+      const limit = clampLimit(filter.limit);
+      const offset = clampOffset(filter.offset);
+
+      const countResult = await sql`SELECT COUNT(*)::int as total FROM session_viewers`;
+      const total = countResult.rows[0].total;
+
+      const dataResult = await sql.query(
+        `SELECT session_id, uploaded_at FROM session_viewers ORDER BY uploaded_at DESC LIMIT $1 OFFSET $2`,
+        [limit, offset],
+      );
+      // Omit html from list results for performance
+      const data = dataResult.rows.map((r: Record<string, unknown>) => ({
+        session_id: r.session_id as string,
+        html: '', // omitted in list
+        uploaded_at: r.uploaded_at as string,
+      }));
 
       return { data, total, limit, offset };
     },

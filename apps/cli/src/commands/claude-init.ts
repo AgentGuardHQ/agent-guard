@@ -2,26 +2,27 @@
 
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { execSync } from 'node:child_process';
-import { join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { dirname } from 'node:path';
+import { join } from 'node:path';
 import { homedir } from 'node:os';
 import { RESET, BOLD, DIM, FG } from '../colors.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
 const HOOK_MARKER = 'claude-hook';
+const BUILD_MARKER = 'apps/cli/dist/bin.js';
 
 interface HookEntry {
   matcher?: string;
   hooks?: Array<{ type?: string; command?: string }>;
 }
 
+interface SessionStartHookEntry {
+  hooks?: Array<{ type?: string; command?: string; timeout?: number; blocking?: boolean }>;
+}
+
 interface Settings {
   hooks?: {
     PreToolUse?: HookEntry[];
     PostToolUse?: HookEntry[];
+    SessionStart?: SessionStartHookEntry[];
     [key: string]: unknown;
   };
   [key: string]: unknown;
@@ -40,12 +41,6 @@ export async function claudeInit(args: string[] = []): Promise<void> {
   const dbPathIdx = args.findIndex((a) => a === '--db-path');
   const dbPathValue = dbPathIdx !== -1 ? args[dbPathIdx + 1] : undefined;
   const dbPathSuffix = dbPathValue ? ` --db-path "${dbPathValue}"` : '';
-
-  // Resolve hook script path — handles both tsc output (commands/) and esbuild bundle (cli/)
-  let hookScript = resolve(__dirname, 'claude-hook.js');
-  if (!existsSync(hookScript)) {
-    hookScript = resolve(__dirname, 'commands', 'claude-hook.js');
-  }
 
   const settingsDir = isGlobal ? join(homedir(), '.claude') : join(process.cwd(), '.claude');
   const settingsPath = join(settingsDir, 'settings.json');
@@ -91,7 +86,7 @@ export async function claudeInit(args: string[] = []): Promise<void> {
     hooks: [
       {
         type: 'command',
-        command: `node ${hookScript} pre${storeSuffix}${dbPathSuffix}`,
+        command: `agentguard claude-hook pre${storeSuffix}${dbPathSuffix}`,
       },
     ],
   });
@@ -103,7 +98,39 @@ export async function claudeInit(args: string[] = []): Promise<void> {
     hooks: [
       {
         type: 'command',
-        command: `node ${hookScript} post${storeSuffix}${dbPathSuffix}`,
+        command: `agentguard claude-hook post${storeSuffix}${dbPathSuffix}`,
+      },
+    ],
+  });
+
+  // SessionStart — ensure CLI is built, then show governance status
+  if (!settings.hooks.SessionStart) settings.hooks.SessionStart = [];
+  settings.hooks.SessionStart.push({
+    hooks: [
+      {
+        type: 'command',
+        command: `test -f apps/cli/dist/bin.js || npm run build`,
+        timeout: 120000,
+        blocking: true,
+      },
+      {
+        type: 'command',
+        command: `agentguard status`,
+        timeout: 10000,
+        blocking: false,
+      },
+    ],
+  });
+
+  // Stop — generate session viewer on session end
+  if (!settings.hooks.Stop) (settings.hooks as Record<string, unknown>).Stop = [];
+  ((settings.hooks as Record<string, unknown>).Stop as SessionStartHookEntry[]).push({
+    hooks: [
+      {
+        type: 'command',
+        command: `agentguard claude-hook stop${storeSuffix}${dbPathSuffix}`,
+        timeout: 15000,
+        blocking: false,
       },
     ],
   });
@@ -113,8 +140,10 @@ export async function claudeInit(args: string[] = []): Promise<void> {
   process.stderr.write(
     `  ${FG.green}✓${RESET}  Hooks installed in ${FG.cyan}${settingsLabel}${RESET}\n`
   );
-  process.stderr.write(`  ${DIM}PreToolUse:  governance enforcement (all tools)${RESET}\n`);
-  process.stderr.write(`  ${DIM}PostToolUse: error monitoring (Bash)${RESET}\n`);
+  process.stderr.write(`  ${DIM}SessionStart: auto-build + status check${RESET}\n`);
+  process.stderr.write(`  ${DIM}PreToolUse:   governance enforcement (all tools)${RESET}\n`);
+  process.stderr.write(`  ${DIM}PostToolUse:  error monitoring (Bash)${RESET}\n`);
+  process.stderr.write(`  ${DIM}Stop:         session viewer generation${RESET}\n`);
   if (storeBackend) {
     process.stderr.write(`  ${DIM}Storage:     ${storeBackend}${RESET}\n`);
   }
@@ -182,22 +211,41 @@ function removeHook(settingsPath: string, settingsLabel: string): void {
     return;
   }
 
-  const filterAgentGuard = (entries: HookEntry[]) =>
+  const filterByCommand = (entries: HookEntry[], marker: string) =>
     entries.filter((entry) => {
       const hooks = entry.hooks || [];
-      return !hooks.some((h) => h.command && h.command.includes(HOOK_MARKER));
+      return !hooks.some((h) => h.command && h.command.includes(marker));
     });
 
   const preToolUse = settings.hooks?.PreToolUse || [];
-  settings.hooks!.PreToolUse = filterAgentGuard(preToolUse);
+  settings.hooks!.PreToolUse = filterByCommand(preToolUse, HOOK_MARKER);
   if (settings.hooks!.PreToolUse!.length === 0) {
     delete settings.hooks!.PreToolUse;
   }
 
   const postToolUse = settings.hooks?.PostToolUse || [];
-  settings.hooks!.PostToolUse = filterAgentGuard(postToolUse);
+  settings.hooks!.PostToolUse = filterByCommand(postToolUse, HOOK_MARKER);
   if (settings.hooks!.PostToolUse!.length === 0) {
     delete settings.hooks!.PostToolUse;
+  }
+
+  // Remove SessionStart build hook
+  const sessionStart = (settings.hooks?.SessionStart as HookEntry[]) || [];
+  (settings.hooks as Record<string, unknown>).SessionStart = filterByCommand(
+    sessionStart,
+    BUILD_MARKER
+  );
+  if (
+    ((settings.hooks as Record<string, unknown>).SessionStart as HookEntry[]).length === 0
+  ) {
+    delete (settings.hooks as Record<string, unknown>).SessionStart;
+  }
+
+  // Remove Stop hook
+  const stopHooks = ((settings.hooks as Record<string, unknown>)?.Stop as HookEntry[]) || [];
+  (settings.hooks as Record<string, unknown>).Stop = filterByCommand(stopHooks, HOOK_MARKER);
+  if (((settings.hooks as Record<string, unknown>).Stop as HookEntry[]).length === 0) {
+    delete (settings.hooks as Record<string, unknown>).Stop;
   }
 
   if (Object.keys(settings.hooks!).length === 0) {
@@ -217,7 +265,8 @@ function removeHook(settingsPath: string, settingsLabel: string): void {
 function hasAgentGuardHook(settings: Settings): boolean {
   const preToolUse = settings?.hooks?.PreToolUse || [];
   const postToolUse = settings?.hooks?.PostToolUse || [];
-  const allEntries = [...preToolUse, ...postToolUse];
+  const stopHooks = ((settings?.hooks as Record<string, unknown>)?.Stop || []) as HookEntry[];
+  const allEntries = [...preToolUse, ...postToolUse, ...stopHooks] as HookEntry[];
   return allEntries.some((entry) => {
     const hooks = entry.hooks || [];
     return hooks.some((h) => h.command && h.command.includes(HOOK_MARKER));
