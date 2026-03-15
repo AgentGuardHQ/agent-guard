@@ -7,6 +7,7 @@ vi.mock('node:fs', () => ({
   writeFileSync: vi.fn(),
   existsSync: vi.fn(),
   mkdirSync: vi.fn(),
+  copyFileSync: vi.fn(),
 }));
 
 vi.mock('node:os', () => ({
@@ -28,7 +29,8 @@ describe('claudeInit', () => {
     await claudeInit([]);
 
     expect(mkdirSync).toHaveBeenCalledWith(expect.stringContaining('.claude'), { recursive: true });
-    expect(writeFileSync).toHaveBeenCalledTimes(1);
+    // settings.json + agentguard.yaml (starter policy)
+    expect(writeFileSync).toHaveBeenCalledTimes(2);
 
     const written = JSON.parse(vi.mocked(writeFileSync).mock.calls[0][1] as string);
     expect(written.hooks).toBeDefined();
@@ -113,7 +115,7 @@ describe('claudeInit', () => {
 
     await claudeInit([]);
 
-    // Should still install hooks (with fresh config)
+    // Should still install hooks (with fresh config); policy not generated since existsSync returns true
     expect(writeFileSync).toHaveBeenCalledTimes(1);
     expect(process.stderr.write).toHaveBeenCalledWith(
       expect.stringContaining('Warning')
@@ -241,7 +243,8 @@ describe('claudeInit', () => {
 
     await claudeInit(['--store', 'sqlite']);
 
-    expect(writeFileSync).toHaveBeenCalledTimes(1);
+    // settings.json + agentguard.yaml (starter policy)
+    expect(writeFileSync).toHaveBeenCalledTimes(2);
     const written = JSON.parse(vi.mocked(writeFileSync).mock.calls[0][1] as string);
 
     // PreToolUse command should include --store sqlite
@@ -292,7 +295,8 @@ describe('claudeInit', () => {
 
     await claudeInit(['--db-path', '/home/user/.agentguard/agentguard.db']);
 
-    expect(writeFileSync).toHaveBeenCalledTimes(1);
+    // settings.json + agentguard.yaml (starter policy)
+    expect(writeFileSync).toHaveBeenCalledTimes(2);
     const written = JSON.parse(vi.mocked(writeFileSync).mock.calls[0][1] as string);
 
     expect(written.hooks.PreToolUse[0].hooks[0].command).toContain(
@@ -336,6 +340,51 @@ describe('claudeInit', () => {
     expect(written.hooks.PreToolUse[0].hooks[0].command).toContain('--store sqlite');
     expect(written.hooks.PreToolUse[0].hooks[0].command).toContain(
       '--db-path "/custom/path/db.sqlite"'
+    );
+  });
+
+  // --- Starter policy generation ---
+
+  it('generates starter agentguard.yaml when no policy file exists', async () => {
+    vi.mocked(existsSync).mockReturnValue(false);
+
+    await claudeInit([]);
+
+    // Second writeFileSync call should be the policy file
+    const policyCalls = vi.mocked(writeFileSync).mock.calls.filter(
+      (call) => (call[0] as string).includes('agentguard.yaml')
+    );
+    expect(policyCalls).toHaveLength(1);
+    expect(policyCalls[0][1]).toContain('id: default-policy');
+    expect(policyCalls[0][1]).toContain('git.push');
+    expect(policyCalls[0][1]).toContain('file.write');
+  });
+
+  it('skips policy generation when agentguard.yaml already exists', async () => {
+    vi.mocked(existsSync).mockImplementation((path) => {
+      if ((path as string).includes('agentguard.yaml')) return true;
+      return false;
+    });
+
+    await claudeInit([]);
+
+    // Only settings.json should be written, not policy
+    const policyCalls = vi.mocked(writeFileSync).mock.calls.filter(
+      (call) => (call[0] as string).endsWith('agentguard.yaml')
+    );
+    expect(policyCalls).toHaveLength(0);
+  });
+
+  it('shows active protection summary after install', async () => {
+    vi.mocked(existsSync).mockReturnValue(false);
+
+    await claudeInit([]);
+
+    expect(process.stderr.write).toHaveBeenCalledWith(
+      expect.stringContaining('Active protections')
+    );
+    expect(process.stderr.write).toHaveBeenCalledWith(
+      expect.stringContaining('AgentGuard is active')
     );
   });
 

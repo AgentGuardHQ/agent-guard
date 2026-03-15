@@ -616,6 +616,13 @@ async function main() {
       break;
     }
 
+    case 'demo': {
+      const { demo: demoCmd } = await import('./commands/demo.js');
+      const code = await demoCmd();
+      process.exit(code);
+      break;
+    }
+
     case 'claude-init': {
       const { claudeInit } = await import('./commands/claude-init.js');
       await claudeInit(args.slice(1));
@@ -752,6 +759,7 @@ function printHelp(): void {
     agentguard claude-hook                    PreToolUse/PostToolUse hook handler (internal)
     agentguard status                         Check governance readiness (hooks, policy, dirs)
     agentguard status --quiet                 Machine-readable check (exit code only)
+    agentguard demo                           See governance in action (interactive showcase)
 
   \x1b[1mMeta:\x1b[0m
     agentguard --version                      Show version

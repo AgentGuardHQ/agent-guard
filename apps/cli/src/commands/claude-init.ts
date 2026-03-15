@@ -181,11 +181,11 @@ export async function claudeInit(args: string[] = []): Promise<void> {
     }
   }
 
-  process.stderr.write(
-    `  ${FG.green}${BOLD}Done!${RESET} AgentGuard governance will enforce policies on all Claude Code actions.\n`
-  );
-  process.stderr.write(`  ${DIM}Run "agentguard inspect --last" to view action history.${RESET}\n`);
-  process.stderr.write(`  ${DIM}Use "agentguard claude-init --remove" to uninstall.${RESET}\n\n`);
+  // Auto-generate starter policy if none exists
+  const policyGenerated = generateStarterPolicy();
+
+  // Show what protections are active
+  showProtectionSummary(policyGenerated);
 }
 
 function removeHook(settingsPath: string, settingsLabel: string): void {
@@ -260,6 +260,149 @@ function removeHook(settingsPath: string, settingsLabel: string): void {
   process.stderr.write(
     `  ${DIM}AgentGuard governance will no longer monitor in Claude Code.${RESET}\n\n`
   );
+}
+
+const STARTER_POLICY = `# AgentGuard policy — guardrails for AI coding agents.
+# Customize this file to match your project's security requirements.
+# Docs: https://github.com/AgentGuardHQ/agent-guard
+
+id: default-policy
+name: Default Safety Policy
+description: Baseline guardrails for AI coding agents
+severity: 4
+
+rules:
+  # Protected branches — prevent direct push to main/master
+  - action: git.push
+    effect: deny
+    branches: [main, master]
+    reason: Direct push to protected branch
+
+  # No force push — prevent history rewriting
+  - action: git.force-push
+    effect: deny
+    reason: Force push rewrites shared history
+
+  # Secrets protection — block writes to sensitive files
+  - action: file.write
+    effect: deny
+    target: .env
+    reason: Secrets files must not be modified
+
+  - action: file.write
+    effect: deny
+    target: ".npmrc"
+    reason: npm credentials file must not be modified by agents
+
+  - action: file.write
+    effect: deny
+    target: "id_rsa"
+    reason: SSH private keys must not be modified
+
+  - action: file.write
+    effect: deny
+    target: "id_ed25519"
+    reason: SSH private keys must not be modified
+
+  # Skill protection — prevent agent self-modification
+  - action: file.write
+    effect: deny
+    target: ".claude/skills/"
+    reason: Agent skill files are protected from modification
+
+  - action: file.delete
+    effect: deny
+    target: ".claude/skills/"
+    reason: Agent skill files are protected from deletion
+
+  # Destructive command protection
+  - action: shell.exec
+    effect: deny
+    target: rm -rf
+    reason: Destructive shell commands blocked
+
+  # Deployment protection
+  - action: deploy.trigger
+    effect: deny
+    reason: Deploy actions require explicit authorization
+
+  - action: infra.destroy
+    effect: deny
+    reason: Infrastructure destruction requires explicit authorization
+
+  # Defaults
+  - action: file.read
+    effect: allow
+    reason: Reading is always safe
+
+  - action: file.write
+    effect: allow
+    reason: File writes allowed by default
+`;
+
+const POLICY_CANDIDATES = [
+  'agentguard.yaml',
+  'agentguard.yml',
+  'agentguard.json',
+  '.agentguard.yaml',
+  '.agentguard.yml',
+];
+
+function generateStarterPolicy(): boolean {
+  // Check if any policy file already exists
+  for (const candidate of POLICY_CANDIDATES) {
+    if (existsSync(join(process.cwd(), candidate))) {
+      return false;
+    }
+  }
+
+  const policyPath = join(process.cwd(), 'agentguard.yaml');
+  writeFileSync(policyPath, STARTER_POLICY, 'utf8');
+  process.stderr.write(
+    `  ${FG.green}✓${RESET}  Policy created: ${FG.cyan}agentguard.yaml${RESET}\n`
+  );
+  return true;
+}
+
+function showProtectionSummary(policyGenerated: boolean): void {
+  process.stderr.write('\n');
+  process.stderr.write(`  ${FG.green}${BOLD}AgentGuard is active.${RESET}\n\n`);
+
+  process.stderr.write(`  ${BOLD}Active protections:${RESET}\n`);
+  process.stderr.write(`  ${FG.red}■${RESET} ${DIM}Block${RESET} push to main/master\n`);
+  process.stderr.write(`  ${FG.red}■${RESET} ${DIM}Block${RESET} force push\n`);
+  process.stderr.write(`  ${FG.red}■${RESET} ${DIM}Block${RESET} writes to .env, .npmrc, SSH keys\n`);
+  process.stderr.write(`  ${FG.red}■${RESET} ${DIM}Block${RESET} rm -rf, deploy, infra destroy\n`);
+  process.stderr.write(`  ${FG.red}■${RESET} ${DIM}Block${RESET} agent skill self-modification\n`);
+  process.stderr.write(
+    `  ${FG.green}■${RESET} ${DIM}Allow${RESET} file reads, file writes (non-sensitive)\n`
+  );
+  process.stderr.write(`  ${FG.blue}■${RESET} ${DIM}Track${RESET} all actions with audit trail\n`);
+  process.stderr.write('\n');
+
+  process.stderr.write(`  ${BOLD}Next steps:${RESET}\n`);
+  if (policyGenerated) {
+    process.stderr.write(
+      `  ${DIM}1. Edit ${FG.cyan}agentguard.yaml${RESET}${DIM} to customize rules for your project${RESET}\n`
+    );
+    process.stderr.write(
+      `  ${DIM}2. Start a Claude Code session — governance is automatic${RESET}\n`
+    );
+    process.stderr.write(
+      `  ${DIM}3. Run ${FG.cyan}agentguard inspect --last${RESET}${DIM} to review decisions${RESET}\n`
+    );
+  } else {
+    process.stderr.write(
+      `  ${DIM}1. Start a Claude Code session — governance is automatic${RESET}\n`
+    );
+    process.stderr.write(
+      `  ${DIM}2. Run ${FG.cyan}agentguard inspect --last${RESET}${DIM} to review decisions${RESET}\n`
+    );
+  }
+  process.stderr.write(
+    `\n  ${DIM}Try it: ${FG.cyan}agentguard demo${RESET}${DIM} — see governance in action${RESET}\n`
+  );
+  process.stderr.write(`  ${DIM}Remove: ${FG.cyan}agentguard claude-init --remove${RESET}\n\n`);
 }
 
 function hasAgentGuardHook(settings: Settings): boolean {
