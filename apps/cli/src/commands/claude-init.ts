@@ -7,16 +7,22 @@ import { homedir } from 'node:os';
 import { RESET, BOLD, DIM, FG } from '../colors.js';
 
 const HOOK_MARKER = 'claude-hook';
+const BUILD_MARKER = 'apps/cli/dist/bin.js';
 
 interface HookEntry {
   matcher?: string;
   hooks?: Array<{ type?: string; command?: string }>;
 }
 
+interface SessionStartHookEntry {
+  hooks?: Array<{ type?: string; command?: string; timeout?: number; blocking?: boolean }>;
+}
+
 interface Settings {
   hooks?: {
     PreToolUse?: HookEntry[];
     PostToolUse?: HookEntry[];
+    SessionStart?: SessionStartHookEntry[];
     [key: string]: unknown;
   };
   [key: string]: unknown;
@@ -97,13 +103,27 @@ export async function claudeInit(args: string[] = []): Promise<void> {
     ],
   });
 
+  // SessionStart — ensure CLI is built so hook commands resolve
+  if (!settings.hooks.SessionStart) settings.hooks.SessionStart = [];
+  settings.hooks.SessionStart.push({
+    hooks: [
+      {
+        type: 'command',
+        command: `test -f apps/cli/dist/bin.js || npm run build`,
+        timeout: 120000,
+        blocking: true,
+      },
+    ],
+  });
+
   writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf8');
 
   process.stderr.write(
     `  ${FG.green}✓${RESET}  Hooks installed in ${FG.cyan}${settingsLabel}${RESET}\n`
   );
-  process.stderr.write(`  ${DIM}PreToolUse:  governance enforcement (all tools)${RESET}\n`);
-  process.stderr.write(`  ${DIM}PostToolUse: error monitoring (Bash)${RESET}\n`);
+  process.stderr.write(`  ${DIM}SessionStart: auto-build if CLI not compiled${RESET}\n`);
+  process.stderr.write(`  ${DIM}PreToolUse:   governance enforcement (all tools)${RESET}\n`);
+  process.stderr.write(`  ${DIM}PostToolUse:  error monitoring (Bash)${RESET}\n`);
   if (storeBackend) {
     process.stderr.write(`  ${DIM}Storage:     ${storeBackend}${RESET}\n`);
   }
@@ -171,22 +191,34 @@ function removeHook(settingsPath: string, settingsLabel: string): void {
     return;
   }
 
-  const filterAgentGuard = (entries: HookEntry[]) =>
+  const filterByCommand = (entries: HookEntry[], marker: string) =>
     entries.filter((entry) => {
       const hooks = entry.hooks || [];
-      return !hooks.some((h) => h.command && h.command.includes(HOOK_MARKER));
+      return !hooks.some((h) => h.command && h.command.includes(marker));
     });
 
   const preToolUse = settings.hooks?.PreToolUse || [];
-  settings.hooks!.PreToolUse = filterAgentGuard(preToolUse);
+  settings.hooks!.PreToolUse = filterByCommand(preToolUse, HOOK_MARKER);
   if (settings.hooks!.PreToolUse!.length === 0) {
     delete settings.hooks!.PreToolUse;
   }
 
   const postToolUse = settings.hooks?.PostToolUse || [];
-  settings.hooks!.PostToolUse = filterAgentGuard(postToolUse);
+  settings.hooks!.PostToolUse = filterByCommand(postToolUse, HOOK_MARKER);
   if (settings.hooks!.PostToolUse!.length === 0) {
     delete settings.hooks!.PostToolUse;
+  }
+
+  // Remove SessionStart build hook
+  const sessionStart = (settings.hooks?.SessionStart as HookEntry[]) || [];
+  (settings.hooks as Record<string, unknown>).SessionStart = filterByCommand(
+    sessionStart,
+    BUILD_MARKER
+  );
+  if (
+    ((settings.hooks as Record<string, unknown>).SessionStart as HookEntry[]).length === 0
+  ) {
+    delete (settings.hooks as Record<string, unknown>).SessionStart;
   }
 
   if (Object.keys(settings.hooks!).length === 0) {
@@ -206,7 +238,7 @@ function removeHook(settingsPath: string, settingsLabel: string): void {
 function hasAgentGuardHook(settings: Settings): boolean {
   const preToolUse = settings?.hooks?.PreToolUse || [];
   const postToolUse = settings?.hooks?.PostToolUse || [];
-  const allEntries = [...preToolUse, ...postToolUse];
+  const allEntries = [...preToolUse, ...postToolUse] as HookEntry[];
   return allEntries.some((entry) => {
     const hooks = entry.hooks || [];
     return hooks.some((h) => h.command && h.command.includes(HOOK_MARKER));
