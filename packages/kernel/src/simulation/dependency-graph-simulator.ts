@@ -270,7 +270,10 @@ export function createDependencyGraphSimulator(): ActionSimulator {
       return isPackageJsonWrite(intent);
     },
 
-    async simulate(intent: NormalizedIntent, _context: Record<string, unknown>): Promise<SimulationResult> {
+    async simulate(
+      intent: NormalizedIntent,
+      _context: Record<string, unknown>
+    ): Promise<SimulationResult> {
       const start = Date.now();
       const target = intent.target || '';
       const predictedChanges: string[] = [];
@@ -315,9 +318,7 @@ export function createDependencyGraphSimulator(): ActionSimulator {
           }
 
           if (analysis.totalDeclaredDeps > 0) {
-            predictedChanges.push(
-              `${analysis.totalDeclaredDeps} declared dependencies in package`
-            );
+            predictedChanges.push(`${analysis.totalDeclaredDeps} declared dependencies in package`);
           }
         }
 
